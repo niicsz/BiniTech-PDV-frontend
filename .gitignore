@@ -1,0 +1,13 @@
+# Angular / Node
+/node_modules
+/dist
+/.angular/cache
+/out-tsc
+npm-debug.log*
+
+# IDE / OS
+/.idea
+/.vscode
+*.iml
+.DS_Store
+Thumbs.db
