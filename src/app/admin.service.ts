@@ -22,6 +22,8 @@ export interface TenantUserDTO {
   role: string;
 }
 
+export type PaymentMethod = 'CASH' | 'PIX';
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private readonly http = inject(HttpClient);
@@ -39,8 +41,8 @@ export class AdminService {
     return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/block`, { reason });
   }
 
-  activateTenant(id: string): Observable<TenantDTO> {
-    return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/activate`, {});
+  activateTenant(id: string, paymentMethod: PaymentMethod): Observable<TenantDTO> {
+    return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/activate`, { paymentMethod });
   }
 
   getTenantUsers(id: string): Observable<TenantUserDTO[]> {

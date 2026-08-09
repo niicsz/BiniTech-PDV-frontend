@@ -6,7 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { AdminService, TenantDTO, TenantUserDTO } from './admin.service';
+import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { AdminService, TenantDTO, TenantUserDTO, PaymentMethod } from './admin.service';
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
@@ -42,6 +43,54 @@ const USER_ROLE_LABEL: Record<string, string> = {
   ADMIN: 'Administrador',
   OPERATOR: 'Operador',
 };
+
+@Component({
+  selector: 'app-payment-method-dialog',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatButtonModule, MatDialogModule, MatIconModule],
+  template: `
+    <h2 mat-dialog-title>Confirmar ativação</h2>
+    <mat-dialog-content>
+      <p>Selecione o método de pagamento para ativar a assinatura de <strong>{{ tenantName }}</strong>:</p>
+      <div class="payment-options">
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="CASH" [(ngModel)]="paymentMethod" />
+          <span class="option-content">
+            <mat-icon>payments</mat-icon>
+            <span>Dinheiro (CASH)</span>
+          </span>
+        </label>
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="PIX" [(ngModel)]="paymentMethod" />
+          <span class="option-content">
+            <mat-icon>qr_code</mat-icon>
+            <span>PIX</span>
+          </span>
+        </label>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="dialogRef.close(null)">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="!paymentMethod" (click)="dialogRef.close(paymentMethod)">
+        Confirmar
+      </button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    mat-dialog-content { min-width: 300px; padding: 16px 0 !important; }
+    .payment-options { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+    .payment-option { display: flex; align-items: center; cursor: pointer; }
+    .payment-option input { margin-right: 12px; }
+    .option-content { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
+    .payment-option:hover .option-content { border-color: var(--primary); background: var(--primary-bg); }
+    .payment-option input:checked + .option-content { border-color: var(--primary); background: var(--primary-bg); color: var(--primary-dark); }
+    .option-content mat-icon { font-size: 24px; width: 24px; height: 24px; }
+  `]
+})
+export class PaymentMethodDialogComponent {
+  paymentMethod: PaymentMethod | null = null;
+  constructor(public dialogRef: MatDialogRef<PaymentMethodDialogComponent>, @Inject(MAT_DIALOG_DATA) public tenantName: string) {}
+}
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -175,6 +224,7 @@ const USER_ROLE_LABEL: Record<string, string> = {
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   tenants = signal<TenantDTO[]>([]);
   loading = signal(false);
@@ -233,15 +283,21 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   activate(t: TenantDTO): void {
-    if (!window.confirm(`Confirmar pagamento e ativar a assinatura de "${t.name}"?`)) {
-      return;
-    }
-    this.adminService.activateTenant(t.id).subscribe({
-      next: () => {
-        this.snackBar.open(`Assinatura de "${t.name}" ativada.`, 'OK', { duration: 4000 });
-        this.load();
-      },
-      error: () => this.snackBar.open('Erro ao ativar assinatura.', 'OK', { duration: 4000 })
+    const dialogRef = this.dialog.open(PaymentMethodDialogComponent, {
+      data: t.name,
+      width: '400px',
+    });
+    dialogRef.afterClosed().subscribe((paymentMethod: PaymentMethod | null) => {
+      if (!paymentMethod) {
+        return;
+      }
+      this.adminService.activateTenant(t.id, paymentMethod).subscribe({
+        next: () => {
+          this.snackBar.open(`Assinatura de "${t.name}" ativada via ${paymentMethod}.`, 'OK', { duration: 4000 });
+          this.load();
+        },
+        error: () => this.snackBar.open('Erro ao ativar assinatura.', 'OK', { duration: 4000 })
+      });
     });
   }
 
