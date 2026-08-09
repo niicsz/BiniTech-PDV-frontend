@@ -112,6 +112,16 @@ import { SaleService } from './pos/services/sale.service';
       <router-outlet></router-outlet>
     </main>
 
+    <a
+      class="help-chat"
+      href="https://wa.me/5511958710404?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20BiniTech%20PDV."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Precisa de ajuda? Falar pelo WhatsApp">
+      <mat-icon aria-hidden="true">chat</mat-icon>
+      <span>Precisa de ajuda?</span>
+    </a>
+
     @if (showSettings) {
       <app-settings-modal (close)="showSettings = false"></app-settings-modal>
     }
@@ -415,6 +425,54 @@ import { SaleService } from './pos/services/sale.service';
       }
       .app-main {
         padding: 10px;
+      }
+    }
+    .help-chat {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 1000;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      background: #25d366;
+      box-shadow: 0 8px 24px rgba(11, 116, 55, 0.34);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .help-chat mat-icon {
+      width: 21px;
+      height: 21px;
+      font-size: 21px;
+    }
+    .help-chat:hover {
+      background: #1ebe5d;
+      box-shadow: 0 12px 30px rgba(11, 116, 55, 0.42);
+      transform: translateY(-2px);
+    }
+    .help-chat:focus-visible {
+      outline: 3px solid var(--primary-light);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .help-chat {
+        right: 16px;
+        bottom: 16px;
+        width: 52px;
+        min-height: 52px;
+        padding: 0;
+        justify-content: center;
+      }
+      .help-chat span {
+        display: none;
       }
     }
   `]
