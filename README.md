@@ -52,7 +52,7 @@ O `Dockerfile` builda o Angular e serve os estáticos via Nginx. Variáveis do s
 
 | Variável   | Descrição                                              | Exemplo                                  |
 | ---------- | ------------------------------------------------------ | ---------------------------------------- |
-| `API_BASE` | URL pública do backend (sem barra final)               | `https://binitech-pdv.up.railway.app`    |
+| `API_BASE` | URL pública do backend (sem barra final)               | `https://www.binitechpdv.com.br`    |
 | `PORT`     | Porta de escuta do Nginx (injetada pelo Railway)       | `8080`                                   |
 
 > O domínio público deste serviço precisa estar liberado no CORS do backend
