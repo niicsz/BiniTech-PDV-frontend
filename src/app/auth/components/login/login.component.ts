@@ -1,10 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Router, RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,13 +52,6 @@ import { AuthService } from '../../services/auth.service';
 
           <form (ngSubmit)="onLogin()" class="login-form">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Loja (identificador)</mat-label>
-              <mat-icon matPrefix>store</mat-icon>
-              <input matInput [(ngModel)]="tenantSlug" name="tenantSlug" placeholder="ex.: minha-loja" />
-              <mat-hint>Em branco apenas para administrador da plataforma.</mat-hint>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
               <mat-label>Usuário</mat-label>
               <mat-icon matPrefix>person</mat-icon>
               <input matInput [(ngModel)]="username" name="username" placeholder="Digite seu usuário" required autofocus />
@@ -78,9 +68,7 @@ import { AuthService } from '../../services/auth.service';
             </mat-form-field>
 
             <div class="row-forgot">
-              <a routerLink="/forgot-password" [queryParams]="tenantSlug ? { tenant: tenantSlug } : {}">
-                Esqueci minha senha
-              </a>
+              <a routerLink="/forgot-password">Esqueci minha senha</a>
             </div>
 
             <div *ngIf="errorMessage" class="error-message">
@@ -170,10 +158,9 @@ import { AuthService } from '../../services/auth.service';
     }
   `]
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
   username = '';
   password = '';
-  tenantSlug = '';
   errorMessage = '';
   loading = false;
   hidePassword = true;
@@ -181,17 +168,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private http: HttpClient
+    private router: Router
   ) {}
-
-  ngOnInit(): void {
-    const slug = this.route.snapshot.queryParamMap.get('tenant');
-    if (slug) {
-      this.tenantSlug = slug;
-    }
-  }
 
   onLogin(): void {
     if (!this.username || !this.password) {
@@ -201,27 +179,7 @@ export class LoginComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    const slug = this.tenantSlug.trim().toLowerCase();
-    this.resolveTenantId(slug).subscribe({
-      next: (tenantId) => this.doLogin(tenantId),
-      error: () => {
-        this.loading = false;
-        this.errorMessage = 'Loja não encontrada. Verifique o identificador informado.';
-      }
-    });
-  }
-
-  private resolveTenantId(slug: string): Observable<string | undefined> {
-    if (!slug) {
-      return of(undefined);
-    }
-    return this.http
-      .get<{ id: string; name: string }>(`/api/public/tenants/slug/${encodeURIComponent(slug)}`)
-      .pipe(map((tenant) => tenant.id));
-  }
-
-  private doLogin(tenantId?: string): void {
-    this.authService.login(this.username, this.password, tenantId).subscribe({
+    this.authService.login(this.username, this.password).subscribe({
       next: () => {
         this.loading = false;
         const target = this.authService.isSuperAdmin() ? '/admin' : '/pdv';

@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -40,19 +40,13 @@ import { AuthService } from '../../services/auth.service';
           </div>
         } @else {
           <h1>Esqueci minha senha</h1>
-          <p class="subtitle">Informe sua loja e usuário. Enviaremos um link de redefinição para o e-mail da loja.</p>
+          <p class="subtitle">Informe seu usuário. Enviaremos um link de redefinição para o e-mail da loja.</p>
 
           <form (ngSubmit)="onSubmit()" class="auth-form">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Loja (identificador)</mat-label>
-              <mat-icon matPrefix>store</mat-icon>
-              <input matInput [(ngModel)]="tenantSlug" name="tenantSlug" placeholder="ex.: minha-loja" required />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
               <mat-label>Usuário</mat-label>
               <mat-icon matPrefix>person</mat-icon>
-              <input matInput [(ngModel)]="username" name="username" placeholder="Seu usuário" required />
+              <input matInput [(ngModel)]="username" name="username" placeholder="Seu usuário" required autofocus />
             </mat-form-field>
 
             @if (errorMessage) {
@@ -104,30 +98,22 @@ import { AuthService } from '../../services/auth.service';
     .done p { color:var(--text-secondary); line-height:1.6; margin:0 0 24px; }
   `]
 })
-export class ForgotPasswordComponent implements OnInit {
-  tenantSlug = '';
+export class ForgotPasswordComponent {
   username = '';
   loading = false;
   sent = false;
   errorMessage = '';
 
-  constructor(private authService: AuthService, private route: ActivatedRoute) {}
-
-  ngOnInit(): void {
-    const slug = this.route.snapshot.queryParamMap.get('tenant');
-    if (slug) {
-      this.tenantSlug = slug;
-    }
-  }
+  constructor(private authService: AuthService) {}
 
   onSubmit(): void {
     this.errorMessage = '';
-    if (!this.tenantSlug || !this.username) {
-      this.errorMessage = 'Preencha a loja e o usuário.';
+    if (!this.username) {
+      this.errorMessage = 'Informe o usuário.';
       return;
     }
     this.loading = true;
-    this.authService.forgotPassword(this.tenantSlug.trim(), this.username.trim()).subscribe({
+    this.authService.forgotPassword(this.username.trim()).subscribe({
       next: () => {
         this.loading = false;
         this.sent = true;
