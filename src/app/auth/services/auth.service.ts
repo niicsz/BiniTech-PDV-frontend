@@ -36,8 +36,8 @@ export class AuthService {
     return this.http.post<void>(`${this.authUrl}/change-password`, { currentPassword, newPassword });
   }
 
-  forgotPassword(tenantSlug: string, username: string): Observable<void> {
-    return this.http.post<void>(`${this.authUrl}/forgot-password`, { tenantSlug, username });
+  forgotPassword(username: string): Observable<void> {
+    return this.http.post<void>(`${this.authUrl}/forgot-password`, { username });
   }
 
   resetPassword(token: string, newPassword: string): Observable<void> {
