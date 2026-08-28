@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { FAQ_ITEMS } from './core/seo-content';
 
 /**
  * Landing page — "O Balcão" (The Counter).
@@ -35,13 +36,14 @@ import { MatIconModule } from '@angular/material/icon';
       <!-- NAVBAR -->
       <header class="nav">
         <div class="nav-inner">
-          <a class="brand" (click)="scrollTo('top')">
+          <a class="brand" href="#top" aria-label="BiniTech PDV — voltar ao início">
             <span class="brand-mark"><mat-icon>point_of_sale</mat-icon></span>
             <span class="brand-name">BiniTech<em>PDV</em></span>
           </a>
           <nav class="nav-links">
-            <a (click)="scrollTo('recursos')">Recursos</a>
-            <a (click)="scrollTo('planos')">Planos</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
+            <a href="#faq">Dúvidas</a>
             <a routerLink="/sobre-nos">Sobre</a>
           </nav>
           <div class="nav-cta">
@@ -59,19 +61,20 @@ import { MatIconModule } from '@angular/material/icon';
           <div class="hero-copy reveal">
             <span class="eyebrow"><span class="blip"></span> Gestão multi-loja na nuvem</span>
             <h1>
-              O caixa que faz<br />
-              sua loja <span class="mark-word">vender mais</span>
+              Sistema PDV online<br />
+              que faz sua loja <span class="mark-word">vender mais</span>
               <span class="serif-stamp">.</span>
             </h1>
             <p class="lede">
-              Frente de caixa, estoque, crediário e relatórios numa plataforma simples,
-              rápida e segura. Comece em minutos — sem instalar nada no balcão.
+              Ponto de venda na nuvem para mercadinhos, padarias e lojas de bairro:
+              frente de caixa, estoque, crediário e relatórios numa plataforma simples
+              e segura. Comece em minutos — sem instalar nada no balcão.
             </p>
             <div class="hero-actions">
               <a class="btn btn-solid btn-lg" routerLink="/signup">
                 Criar conta grátis <mat-icon>arrow_forward</mat-icon>
               </a>
-              <a class="btn btn-outline btn-lg" (click)="scrollTo('planos')">Ver planos</a>
+              <a class="btn btn-outline btn-lg" href="#planos">Ver planos</a>
             </div>
             <ul class="hero-stats">
               <li><strong>2 min</strong><span>pra abrir o caixa</span></li>
@@ -164,6 +167,22 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
       </section>
 
+      <!-- FAQ -->
+      <section class="faq" id="faq" aria-labelledby="faq-heading">
+        <div class="section-head">
+          <span class="kicker">[ dúvidas frequentes ]</span>
+          <h2 id="faq-heading">Perguntas sobre o<br /> sistema PDV</h2>
+          <p>Respostas diretas para quem busca um ponto de venda simples e online.</p>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item reveal" *ngFor="let item of faqs; let i = index"
+                   [style.animation-delay]="(i * 0.05) + 's'">
+            <summary>{{ item.q }}</summary>
+            <p>{{ item.a }}</p>
+          </details>
+        </div>
+      </section>
+
       <!-- CTA BAND -->
       <section class="cta-band">
         <div class="cta-inner">
@@ -180,16 +199,17 @@ import { MatIconModule } from '@angular/material/icon';
       <footer class="footer">
         <div class="footer-inner">
           <div class="footer-brand">
-            <a class="brand" (click)="scrollTo('top')">
+            <a class="brand" href="#top" aria-label="BiniTech PDV — voltar ao início">
               <span class="brand-mark"><mat-icon>point_of_sale</mat-icon></span>
               <span class="brand-name">BiniTech<em>PDV</em></span>
             </a>
-            <p>Gestão de vendas simples para o comércio brasileiro.</p>
+            <p>Gestão de vendas e sistema PDV online para o comércio brasileiro.</p>
           </div>
           <div class="footer-col">
             <h4>Produto</h4>
-            <a (click)="scrollTo('recursos')">Recursos</a>
-            <a (click)="scrollTo('planos')">Planos</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
+            <a href="#faq">Dúvidas frequentes</a>
             <a routerLink="/login">Entrar</a>
           </div>
           <div class="footer-col">
@@ -483,6 +503,7 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class LandingComponent {
   year = new Date().getFullYear();
+  faqs = FAQ_ITEMS;
 
   features = [
     { icon: 'storefront', title: 'Frente de caixa ágil', desc: 'Venda por código de barras, múltiplos pagamentos e troco automático.' },
