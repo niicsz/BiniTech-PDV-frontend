@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -17,7 +16,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatCardModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule
   ],
   template: `
@@ -69,14 +68,10 @@ import { AuthResponse } from '../../../shared/models/api.models';
               </button>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Perfil</mat-label>
-              <mat-icon matPrefix>badge</mat-icon>
-              <mat-select [(ngModel)]="role" name="role" required>
-                <mat-option value="OPERATOR">Operador</mat-option>
-                <mat-option value="ADMIN">Administrador</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <p class="plan-note">
+              <mat-icon>badge</mat-icon>
+              O novo acesso será criado como operador e respeitará o limite do plano contratado.
+            </p>
 
             @if (errorMessage) {
               <div class="error-message">
@@ -151,6 +146,19 @@ import { AuthResponse } from '../../../shared/models/api.models';
       font-size: 13px;
       margin-bottom: 16px;
     }
+    .plan-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 0 0 12px;
+    }
+    .plan-note mat-icon {
+      color: var(--primary-dark);
+      flex: 0 0 auto;
+    }
     .register-btn {
       width: 100%;
       height: 48px;
@@ -167,7 +175,7 @@ export class RegisterComponent {
   username = '';
   password = '';
   confirmPassword = '';
-  role: 'ADMIN' | 'OPERATOR' = 'OPERATOR';
+  readonly role = 'OPERATOR' as const;
   errorMessage = '';
   successMessage = '';
   loading = false;
@@ -208,7 +216,6 @@ export class RegisterComponent {
         this.username = '';
         this.password = '';
         this.confirmPassword = '';
-        this.role = 'OPERATOR';
       },
       error: (err: { error?: { message?: string } }) => {
         this.loading = false;
@@ -218,4 +225,3 @@ export class RegisterComponent {
     });
   }
 }
-

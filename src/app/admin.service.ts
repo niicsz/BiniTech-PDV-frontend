@@ -37,6 +37,10 @@ export class AdminService {
     return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/approve`, {});
   }
 
+  rejectTenant(id: string, reason: string): Observable<TenantDTO> {
+    return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/reject`, { reason });
+  }
+
   blockTenant(id: string, reason: string): Observable<TenantDTO> {
     return this.http.post<TenantDTO>(`${this.base}/tenants/${id}/block`, { reason });
   }
