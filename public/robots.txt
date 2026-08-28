@@ -1,0 +1,23 @@
+# https://www.binitechpdv.com.br/robots.txt
+User-agent: *
+Allow: /
+Allow: /sobre-nos
+Allow: /termos
+Allow: /privacidade
+Allow: /signup
+Allow: /login
+
+# Área autenticada — não indexar
+Disallow: /pdv
+Disallow: /products
+Disallow: /sales-report
+Disallow: /debtors
+Disallow: /billing
+Disallow: /admin
+Disallow: /register
+Disallow: /change-password
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /signup/success
+
+Sitemap: https://www.binitechpdv.com.br/sitemap.xml

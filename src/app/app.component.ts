@@ -13,6 +13,7 @@ import { AuthService } from './auth/services/auth.service';
 import { ThemeService } from './shared/services/theme.service';
 import { SettingsModalComponent } from './shared/components/settings-modal.component';
 import { SaleService } from './pos/services/sale.service';
+import { SeoService } from './core/seo.service';
 
 @Component({
   selector: 'app-root',
@@ -484,11 +485,13 @@ export class AppComponent implements OnInit {
   private router = inject(Router);
   private saleService = inject(SaleService);
   private snackBar = inject(MatSnackBar);
+  private seoService = inject(SeoService);
 
   showSettings = false;
   debtorsCount = 0;
 
   ngOnInit(): void {
+    this.seoService.init();
     this.loadDebtorsCount();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
