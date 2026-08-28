@@ -32,6 +32,7 @@ const PLAN_OPERATOR_LIMIT: Record<string, number> = {
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING_APPROVAL: 'Aguardando',
+  REJECTED: 'Reprovado',
   ACTIVE: 'Ativo',
   BLOCKED: 'Bloqueado',
   CANCELLED: 'Cancelado',
@@ -118,6 +119,7 @@ export class PaymentMethodDialogComponent {
         <div class="stat"><span class="num">{{ tenants().length }}</span><span class="lbl">Tenants</span></div>
         <div class="stat"><span class="num">{{ countByStatus('ACTIVE') }}</span><span class="lbl">Ativos</span></div>
         <div class="stat"><span class="num">{{ countByStatus('PENDING_APPROVAL') }}</span><span class="lbl">Aguardando</span></div>
+        <div class="stat"><span class="num">{{ countByStatus('REJECTED') }}</span><span class="lbl">Reprovados</span></div>
         <div class="stat highlight"><span class="num">R$ {{ mrr() }}</span><span class="lbl">MRR estimado</span></div>
       </section>
 
@@ -133,7 +135,12 @@ export class PaymentMethodDialogComponent {
               <td>{{ t.name }}</td>
               <td><code>{{ t.slug }}</code></td>
               <td>{{ planLabel(t.planId) }}</td>
-              <td><span class="badge" [class]="'st-' + t.status">{{ statusLabel(t.status) }}</span></td>
+              <td>
+                <span class="badge" [class]="'st-' + t.status">{{ statusLabel(t.status) }}</span>
+                <small class="status-reason" *ngIf="t.status === 'REJECTED' && t.blockReason">
+                  {{ t.blockReason }}
+                </small>
+              </td>
               <td>{{ t.billingEmail }}</td>
               <td class="actions">
                 <button mat-button (click)="toggleUsers(t)">
@@ -142,6 +149,8 @@ export class PaymentMethodDialogComponent {
                 </button>
                 <button mat-flat-button color="primary" *ngIf="t.status === 'PENDING_APPROVAL'"
                         (click)="approve(t)">Aprovar</button>
+                <button mat-stroked-button color="warn" *ngIf="t.status === 'PENDING_APPROVAL'"
+                        (click)="reject(t)">Reprovar</button>
                 <button mat-flat-button color="primary" *ngIf="t.status === 'BLOCKED' || t.status === 'CANCELLED'"
                         (click)="activate(t)">Ativar pagamento</button>
                 <button mat-stroked-button color="warn" *ngIf="t.status === 'ACTIVE'"
@@ -154,7 +163,7 @@ export class PaymentMethodDialogComponent {
                   <div class="users-head">
                     <strong>Usuários do tenant</strong>
                     <span class="limit-chip" [class.over]="isOverLimit(t.planId)">
-                      {{ tenantUsers().length }} / {{ operatorLimit(t.planId) }} usuários do plano
+                      {{ operatorCount() }} / {{ operatorLimit(t.planId) }} operadores do plano
                     </span>
                   </div>
                   <div *ngIf="usersLoading()" class="users-loading"><mat-spinner diameter="22"></mat-spinner></div>
@@ -201,9 +210,11 @@ export class PaymentMethodDialogComponent {
     .badge { padding:3px 10px; border-radius:100px; font-size:11.5px; font-weight:700; font-family:var(--font-mono); border:1.5px solid currentColor; }
     .st-ACTIVE { background:var(--success-bg); color:var(--success); }
     .st-PENDING_APPROVAL { background:var(--warning-bg); color:var(--accent); }
+    .st-REJECTED { background:var(--danger-bg); color:var(--danger); }
     .st-BLOCKED { background:var(--danger-bg); color:var(--danger); }
     .st-CANCELLED { background:var(--surface-alt); color:var(--text-secondary); }
     .actions { display:flex; gap:8px; align-items:center; }
+    .status-reason { display:block; max-width:180px; margin-top:6px; color:var(--text-secondary); line-height:1.3; }
     .empty { text-align:center; color:var(--text-tertiary); padding:32px; }
     .users-row td { background:var(--surface-alt); padding:0; }
     .users-panel { padding:16px 20px; }
@@ -268,6 +279,20 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  reject(t: TenantDTO): void {
+    const reason = window.prompt(`Motivo da reprovação de "${t.name}":`);
+    if (!reason?.trim()) {
+      return;
+    }
+    this.adminService.rejectTenant(t.id, reason.trim()).subscribe({
+      next: () => {
+        this.snackBar.open(`Solicitação de "${t.name}" reprovada.`, 'OK', { duration: 4000 });
+        this.load();
+      },
+      error: () => this.snackBar.open('Erro ao reprovar solicitação.', 'OK', { duration: 4000 })
+    });
+  }
+
   block(t: TenantDTO): void {
     const reason = window.prompt(`Motivo do bloqueio de "${t.name}":`, 'Inadimplência');
     if (!reason) {
@@ -322,7 +347,11 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   isOverLimit(planId: string): boolean {
-    return this.tenantUsers().length > this.operatorLimit(planId);
+    return this.operatorCount() > this.operatorLimit(planId);
+  }
+
+  operatorCount(): number {
+    return this.tenantUsers().filter(user => user.role === 'OPERATOR').length;
   }
 
   toggleUsers(t: TenantDTO): void {
