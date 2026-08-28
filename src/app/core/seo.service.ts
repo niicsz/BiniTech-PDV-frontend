@@ -62,7 +62,8 @@ export class SeoService {
     const pageTitle = seo.title ?? DEFAULT_TITLE;
     const description = seo.description ?? DEFAULT_DESCRIPTION;
     const canonicalPath = seo.canonicalPath ?? (path === '' ? '/' : path);
-    const canonical = `${SITE_URL}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
+    const normalizedPath = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
+    const canonical = `${SITE_URL}${normalizedPath}`;
     const robots = seo.noindex
       ? 'noindex, nofollow'
       : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
