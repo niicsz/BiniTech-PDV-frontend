@@ -11,6 +11,7 @@ RUN npm run build -- --configuration=production
 FROM nginx:alpine AS runtime
 
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY nginx/security-headers.inc.template /etc/nginx/templates/security-headers.inc.template
 
 COPY docker-entrypoint.d/40-env-js.sh /docker-entrypoint.d/40-env-js.sh
 RUN chmod +x /docker-entrypoint.d/40-env-js.sh
