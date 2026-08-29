@@ -101,7 +101,10 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
               <mat-icon *ngIf="!paying()">credit_card</mat-icon>
               {{ payButtonLabel() }}
             </button>
-            <p class="pay-hint">Você será redirecionado ao Stripe para concluir o pagamento com segurança.</p>
+            <p class="pay-hint">
+              Você será redirecionado ao Stripe para concluir o pagamento com segurança.<br>
+              Se não conseguir pagar, entre em contato com o suporte.
+            </p>
             <button mat-stroked-button class="manage-btn" *ngIf="canManage()" (click)="managePortal()" [disabled]="managing()">
               <mat-spinner *ngIf="managing()" diameter="20"></mat-spinner>
               <mat-icon *ngIf="!managing()">settings</mat-icon>
@@ -245,9 +248,13 @@ export class BillingComponent implements OnInit {
       next: ({ url }) => {
         window.location.href = url;
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.paying.set(false);
-        this.snackBar.open('Não foi possível gerar o link de pagamento.', 'OK', { duration: 4000 });
+        this.snackBar.open(
+          this.billingErrorMessage(error, 'Não foi possível gerar o link de pagamento.'),
+          'OK',
+          { duration: 7000 },
+        );
       },
     });
   }
@@ -258,9 +265,13 @@ export class BillingComponent implements OnInit {
       next: ({ url }) => {
         window.location.href = url;
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.managing.set(false);
-        this.snackBar.open('Não foi possível abrir a gestão de assinatura.', 'OK', { duration: 4000 });
+        this.snackBar.open(
+          this.billingErrorMessage(error, 'Não foi possível abrir a gestão de assinatura.'),
+          'OK',
+          { duration: 7000 },
+        );
       },
     });
   }
@@ -291,6 +302,14 @@ export class BillingComponent implements OnInit {
       return 'Seu acesso ao sistema está suspenso por pagamento pendente. Regularize para reativar.';
     }
     return 'Conclua o pagamento para liberar todos os recursos da sua loja.';
+  }
+
+  private billingErrorMessage(error: HttpErrorResponse, fallback: string): string {
+    const apiMessage = error.error?.message;
+    if (typeof apiMessage === 'string' && apiMessage.trim()) {
+      return apiMessage;
+    }
+    return `${fallback} Entre em contato com o suporte para realizar o pagamento.`;
   }
 
   formatDate(value: string | null): string {
