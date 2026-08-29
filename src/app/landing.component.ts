@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FAQ_ITEMS } from './core/seo-content';
+import { ThemeService } from './shared/services/theme.service';
 
 /**
  * Landing page — "O Balcão" (The Counter).
@@ -47,6 +48,11 @@ import { FAQ_ITEMS } from './core/seo-content';
             <a routerLink="/sobre-nos">Sobre</a>
           </nav>
           <div class="nav-cta">
+            <button class="theme-toggle" type="button" (click)="themeService.toggleTheme()"
+                    [attr.aria-label]="themeService.isDarkMode() ? 'Ativar modo claro' : 'Ativar modo noturno'"
+                    [title]="themeService.isDarkMode() ? 'Ativar modo claro' : 'Ativar modo noturno'">
+              <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            </button>
             <a class="ghost" routerLink="/login">Entrar</a>
             <a class="btn btn-solid" routerLink="/signup">
               Começar grátis <mat-icon>north_east</mat-icon>
@@ -233,18 +239,17 @@ import { FAQ_ITEMS } from './core/seo-content';
   styles: [`
     /* ====== TOKENS ====== */
     .lp {
-      --paper:#f3ede1;          /* warm cream background */
-      --paper-2:#ece3d3;        /* deeper cream */
-      --surface:#fbf7ef;        /* card surface */
-      --ink:#241a12;            /* espresso near-black */
-      --ink-2:#5d5043;          /* muted brown text */
-      --ink-3:#8a7d6e;          /* faint */
-      --line:#ddd1bd;           /* hairline on paper */
-      --vermillion:#d4391a;     /* commerce accent */
-      --vermillion-d:#b32f13;   /* darker for text-on-paper */
-      --money:#1c6b46;          /* ledger green */
-      --ochre:#c8881f;          /* warm detail */
-      --shadow:30px 30px 0 rgba(36,26,18,0.06);
+      /* Reuse the global theme tokens so the landing page follows dark mode. */
+      --paper:var(--bg);
+      --paper-2:var(--surface-alt);
+      --ink:var(--text);
+      --ink-2:var(--text-secondary);
+      --ink-3:var(--text-tertiary);
+      --line:var(--border);
+      --vermillion:var(--primary);
+      --vermillion-d:var(--primary-dark);
+      --money:var(--success);
+      --ochre:var(--accent);
 
       font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       color:var(--ink); background:var(--paper); overflow-x:hidden;
@@ -284,7 +289,7 @@ import { FAQ_ITEMS } from './core/seo-content';
     @keyframes ticker{ to{ transform:translateX(-50%); } }
 
     /* ====== NAV ====== */
-    .nav{ position:sticky; top:0; z-index:50; background:rgba(243,237,225,0.82);
+    .nav{ position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--paper) 82%, transparent);
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:2px solid var(--ink); }
     .nav-inner{ max-width:1200px; margin:0 auto; padding:14px 28px; display:flex; align-items:center; gap:26px; }
     .nav-links{ display:flex; gap:28px; margin-left:14px; }
@@ -296,6 +301,12 @@ import { FAQ_ITEMS } from './core/seo-content';
     .nav-cta{ margin-left:auto; display:flex; align-items:center; gap:18px; }
     .nav-cta .ghost{ color:var(--ink); font-weight:700; font-size:15px; }
     .nav-cta .btn{ padding:10px 16px; font-size:14px; }
+    .theme-toggle{ display:grid; place-items:center; width:40px; height:40px; padding:0; flex:0 0 40px;
+      border:2px solid var(--ink); border-radius:50%; background:var(--surface); color:var(--ink);
+      box-shadow:3px 3px 0 var(--ink); transition:transform .18s, box-shadow .18s, background .18s; }
+    .theme-toggle:hover{ transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); background:var(--paper-2); }
+    .theme-toggle:focus-visible{ outline:3px solid var(--vermillion); outline-offset:3px; }
+    .theme-toggle mat-icon{ font-size:20px; width:20px; height:20px; }
 
     /* ====== HERO ====== */
     .hero{ position:relative; }
@@ -438,6 +449,27 @@ import { FAQ_ITEMS } from './core/seo-content';
       box-shadow:4px 4px 0 var(--vermillion-d); }
     .plan .plan-cta.btn-outline:hover{ background:var(--ink); color:var(--paper); }
 
+    /* ====== FAQ ====== */
+    .faq{ max-width:1200px; margin:0 auto; padding:20px 28px 110px; display:grid;
+      grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr); gap:72px; align-items:start;
+      scroll-margin-top:92px; }
+    .faq .section-head{ max-width:none; margin:0; padding:0; }
+    .faq-list{ min-width:0; border-top:2px solid var(--ink); }
+    .faq-item{ border-bottom:2px solid var(--ink); }
+    .faq-item summary{ position:relative; list-style:none; cursor:pointer; padding:24px 52px 24px 0;
+      font-family:'Fraunces',serif; font-size:20px; font-weight:700; line-height:1.25;
+      color:var(--ink); transition:color .18s; }
+    .faq-item summary::-webkit-details-marker{ display:none; }
+    .faq-item summary::after{ content:'+'; position:absolute; top:50%; right:8px; transform:translateY(-50%);
+      display:grid; place-items:center; width:30px; height:30px; border:2px solid var(--ink);
+      background:var(--surface); color:var(--ink); font-family:'Spline Sans Mono',monospace;
+      font-size:21px; line-height:1; box-shadow:2px 2px 0 var(--ink); transition:transform .18s, background .18s; }
+    .faq-item summary:hover{ color:var(--vermillion-d); }
+    .faq-item[open] summary::after{ content:'−'; transform:translateY(-50%) rotate(180deg);
+      background:var(--vermillion); color:#fff; }
+    .faq-item p{ max-width:640px; margin:0; padding:0 52px 24px 0; color:var(--ink-2);
+      font-size:16px; line-height:1.65; }
+
     /* ====== CTA BAND ====== */
     .cta-band{ padding:0 28px 100px; }
     .cta-inner{ max-width:1080px; margin:0 auto; text-align:center; color:#fff; padding:72px 32px;
@@ -478,16 +510,22 @@ import { FAQ_ITEMS } from './core/seo-content';
       .feature-grid{ grid-template-columns:1fr 1fr; }
       .strip-inner{ grid-template-columns:1fr 1fr; gap:20px; }
       .plan-grid{ grid-template-columns:1fr; max-width:480px; }
+      .faq{ grid-template-columns:1fr; gap:38px; }
+      .faq .section-head p{ max-width:620px; }
       .footer-inner{ grid-template-columns:1fr 1fr; }
     }
     @media (max-width:640px){
       .nav-links{ display:none; }
       .nav-cta .ghost{ display:none; }
+      .nav-cta{ gap:12px; }
       .hero h1{ letter-spacing:-1px; }
       .hero-stats{ gap:22px; }
       .feature-grid{ grid-template-columns:1fr; }
       .strip-inner{ grid-template-columns:1fr; }
       .feature{ border-right:2px solid var(--ink); }
+      .faq{ padding:8px 24px 82px; gap:30px; }
+      .faq-item summary{ padding:21px 48px 21px 0; font-size:18px; }
+      .faq-item p{ padding:0 0 22px; }
       .footer-inner{ grid-template-columns:1fr 1fr; }
       .footer-bottom{ justify-content:center; text-align:center; }
       .cta-inner{ box-shadow:8px 8px 0 var(--ink); padding:54px 22px; }
@@ -502,6 +540,7 @@ import { FAQ_ITEMS } from './core/seo-content';
   `]
 })
 export class LandingComponent {
+  readonly themeService = inject(ThemeService);
   year = new Date().getFullYear();
   faqs = FAQ_ITEMS;
 
