@@ -5,33 +5,40 @@ server {
     root   /usr/share/nginx/html;
     index  index.html;
 
+    include /etc/nginx/conf.d/security-headers.inc;
+
     gzip            on;
     gzip_types      text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1024;
 
     location = /env.js {
+        include /etc/nginx/conf.d/security-headers.inc;
         add_header Cache-Control "no-store, no-cache, must-revalidate";
         expires    -1;
     }
 
     location = /robots.txt {
+        include /etc/nginx/conf.d/security-headers.inc;
         add_header Cache-Control "public, max-age=86400";
         try_files $uri =404;
     }
 
     location = /sitemap.xml {
+        include /etc/nginx/conf.d/security-headers.inc;
         default_type application/xml;
         add_header Cache-Control "public, max-age=86400";
         try_files $uri =404;
     }
 
     location = /site.webmanifest {
+        include /etc/nginx/conf.d/security-headers.inc;
         default_type application/manifest+json;
         add_header Cache-Control "public, max-age=86400";
         try_files $uri =404;
     }
 
     location ~* \.(?:js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico)$ {
+        include /etc/nginx/conf.d/security-headers.inc;
         try_files   $uri =404;
         expires     1y;
         add_header  Cache-Control "public, immutable";
