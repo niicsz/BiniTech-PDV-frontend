@@ -115,6 +115,11 @@ export class AuthService {
     return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'TENANT_ADMIN';
   }
 
+  canManageTenantUsers(): boolean {
+    const role = this.getRole();
+    return role === 'ADMIN' || role === 'TENANT_ADMIN';
+  }
+
   getTenantId(): string | null {
     return localStorage.getItem('tenantId');
   }

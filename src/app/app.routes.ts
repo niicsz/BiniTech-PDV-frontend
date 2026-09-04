@@ -170,13 +170,14 @@ export const routes: Routes = [
     canActivate: [superAdminGuard]
   },
   {
-    path: 'register',
-    title: 'Cadastrar operador | BiniTech PDV',
-    data: seo({ title: 'Cadastrar operador | BiniTech PDV', noindex: true }),
+    path: 'users',
+    title: 'Usuários | BiniTech PDV',
+    data: seo({ title: 'Usuários | BiniTech PDV', noindex: true }),
     loadComponent: () =>
-      import('./auth/components/register/register.component').then(m => m.RegisterComponent),
+      import('./users/user-management.component').then(m => m.UserManagementComponent),
     canActivate: [adminGuard]
   },
+  { path: 'register', redirectTo: 'users', pathMatch: 'full' },
   {
     path: 'change-password',
     title: 'Alterar senha | BiniTech PDV',
