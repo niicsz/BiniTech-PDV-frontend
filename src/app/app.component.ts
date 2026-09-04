@@ -56,9 +56,9 @@ import { SeoService } from './core/seo.service';
               <mat-icon>account_balance_wallet</mat-icon>
               <span>Devedores</span>
             </a>
-            @if (authService.canManageUsers()) {
-              <a routerLink="/register" routerLinkActive="active-link" class="nav-item">
-                <mat-icon>group_add</mat-icon>
+            @if (authService.canManageTenantUsers()) {
+              <a routerLink="/users" routerLinkActive="active-link" class="nav-item">
+                <mat-icon>manage_accounts</mat-icon>
                 <span>Usuários</span>
               </a>
             }
@@ -546,4 +546,3 @@ export class AppComponent implements OnInit {
     this.authService.logout();
   }
 }
-

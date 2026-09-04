@@ -1,0 +1,161 @@
+<div class="users-page">
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon-wrapper"><mat-icon>manage_accounts</mat-icon></div>
+      <div class="header-text">
+        <h1>Usuários</h1>
+        <p>Gerencie os acessos da sua empresa</p>
+      </div>
+    </div>
+    <button mat-flat-button color="primary" class="btn-new-user" (click)="showCreateForm.set(true)" [disabled]="showCreateForm()">
+      <mat-icon>person_add</mat-icon> Adicionar usuário
+    </button>
+  </header>
+
+  <section class="stats-row" aria-label="Resumo de usuários">
+    <article class="stat-card">
+      <div class="stat-icon total"><mat-icon>groups</mat-icon></div>
+      <div><strong>{{ users().length }}</strong><span>Total de usuários</span></div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-icon active"><mat-icon>person_check</mat-icon></div>
+      <div><strong>{{ activeCount() }}</strong><span>Ativos</span></div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-icon inactive"><mat-icon>person_off</mat-icon></div>
+      <div><strong>{{ inactiveCount() }}</strong><span>Inativos</span></div>
+    </article>
+  </section>
+
+  @if (showCreateForm()) {
+    <section class="form-card">
+      <div class="form-card-header">
+        <div><mat-icon>person_add</mat-icon><h2>Novo usuário</h2></div>
+        <button mat-icon-button matTooltip="Fechar" (click)="cancelCreate()"><mat-icon>close</mat-icon></button>
+      </div>
+      <form class="user-form" (ngSubmit)="createUser()">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput [(ngModel)]="form.name" name="name" maxlength="120" required />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input matInput type="email" [(ngModel)]="form.email" name="email" maxlength="254" required />
+          <mat-hint>Este e-mail será usado para entrar no sistema</mat-hint>
+        </mat-form-field>
+        @if (authService.isAdmin()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Perfil</mat-label>
+            <mat-select [(ngModel)]="form.role" name="role">
+              <mat-option value="OPERATOR">Operador</mat-option>
+              <mat-option value="TENANT_ADMIN">Admin da loja</mat-option>
+            </mat-select>
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>Senha inicial</mat-label>
+          <input matInput type="password" [(ngModel)]="form.password" name="password" minlength="6" maxlength="128" required />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmar senha</mat-label>
+          <input matInput type="password" [(ngModel)]="form.confirmPassword" name="confirmPassword" required />
+        </mat-form-field>
+        <div class="form-actions">
+          <button mat-button type="button" (click)="cancelCreate()">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            @if (saving()) { <mat-spinner diameter="20"></mat-spinner> } @else { <mat-icon>save</mat-icon> }
+            {{ saving() ? 'Criando...' : 'Criar usuário' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (errorMessage()) {
+    <div class="status-bar status-error" role="alert">
+      <mat-icon>error_outline</mat-icon><span>{{ errorMessage() }}</span>
+      <button mat-button (click)="loadUsers()">Tentar novamente</button>
+    </div>
+  }
+
+  <section class="toolbar">
+    <div class="search-wrapper">
+      <mat-icon>search</mat-icon>
+      <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Buscar por nome ou e-mail" aria-label="Buscar usuários" />
+      @if (searchTerm()) {
+        <button type="button" (click)="searchTerm.set('')" aria-label="Limpar busca"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+    <mat-form-field appearance="outline" class="role-filter">
+      <mat-label>Perfil</mat-label>
+      <mat-select [ngModel]="roleFilter()" (ngModelChange)="roleFilter.set($event)">
+        <mat-option value="ALL">Todos</mat-option>
+        <mat-option value="ADMIN">Administrador</mat-option>
+        <mat-option value="TENANT_ADMIN">Admin da loja</mat-option>
+        <mat-option value="OPERATOR">Operador</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <span class="results-count">{{ filteredUsers().length }} resultado(s)</span>
+  </section>
+
+  <section class="table-card">
+    @if (loading()) {
+      <div class="loading-state"><mat-spinner diameter="36"></mat-spinner><span>Carregando usuários...</span></div>
+    } @else if (filteredUsers().length === 0) {
+      <div class="empty-state">
+        <mat-icon>{{ users().length ? 'search_off' : 'group_off' }}</mat-icon>
+        <h2>{{ users().length ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado' }}</h2>
+        <p>{{ users().length ? 'Tente alterar os filtros de busca.' : 'Adicione o primeiro acesso da sua equipe.' }}</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="users-table">
+          <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th class="actions-heading">Ações</th></tr></thead>
+          <tbody>
+            @for (user of filteredUsers(); track user.id) {
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar">{{ user.name.charAt(0).toUpperCase() }}</div>
+                    <div><strong>{{ user.name }}</strong>@if (user.currentUser) { <span class="you-chip">Você</span> }</div>
+                  </div>
+                </td>
+                <td><span [class.muted]="!user.email">{{ user.email || 'Não informado' }}</span></td>
+                <td>
+                  @if (authService.isAdmin() && user.manageable) {
+                    <div class="role-editor">
+                      <mat-select [value]="roleDrafts()[user.id]" (selectionChange)="setRoleDraft(user.id, $event.value)" aria-label="Perfil do usuário">
+                        <mat-option value="OPERATOR">Operador</mat-option>
+                        <mat-option value="TENANT_ADMIN">Admin da loja</mat-option>
+                      </mat-select>
+                      @if (roleDrafts()[user.id] !== user.role) {
+                        <button mat-icon-button matTooltip="Salvar perfil" (click)="saveRole(user)" [disabled]="actionUserId() === user.id">
+                          <mat-icon>check</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    <span class="role-badge" [ngClass]="roleClass(user.role)">{{ roleLabel(user.role) }}</span>
+                  }
+                </td>
+                <td><span class="status-badge" [class.status-active]="user.active" [class.status-inactive]="!user.active"><i></i>{{ user.active ? 'Ativo' : 'Inativo' }}</span></td>
+                <td class="actions-cell">
+                  @if (user.manageable) {
+                    <button mat-stroked-button [class.activate-button]="!user.active" [class.deactivate-button]="user.active"
+                            (click)="confirmStatusChange(user)" [disabled]="actionUserId() === user.id">
+                      @if (actionUserId() === user.id) { <mat-spinner diameter="18"></mat-spinner> }
+                      @else { <mat-icon>{{ user.active ? 'person_off' : 'person_check' }}</mat-icon> }
+                      {{ user.active ? 'Desativar' : 'Ativar' }}
+                    </button>
+                  } @else {
+                    <span class="no-actions">Sem ações disponíveis</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

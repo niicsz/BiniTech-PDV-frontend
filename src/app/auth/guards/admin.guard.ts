@@ -6,7 +6,7 @@ export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isLoggedIn() && authService.canManageUsers()) {
+  if (authService.isLoggedIn() && authService.canManageTenantUsers()) {
     console.debug('[AdminGuard] Acesso permitido - usuário pode gerenciar usuários');
     return true;
   }
