@@ -36,11 +36,11 @@
       <form class="user-form" (ngSubmit)="createUser()">
         <mat-form-field appearance="outline">
           <mat-label>Nome</mat-label>
-          <input matInput [(ngModel)]="form.name" name="name" maxlength="120" required />
+          <input id="new-user-name" matInput [(ngModel)]="form.name" name="name" maxlength="120" required aria-label="Nome" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>E-mail</mat-label>
-          <input matInput type="email" [(ngModel)]="form.email" name="email" maxlength="254" required />
+          <input id="new-user-email" matInput type="email" [(ngModel)]="form.email" name="email" maxlength="254" required aria-label="E-mail" />
           <mat-hint>Este e-mail será usado para entrar no sistema</mat-hint>
         </mat-form-field>
         @if (authService.isAdmin()) {
@@ -54,11 +54,11 @@
         }
         <mat-form-field appearance="outline">
           <mat-label>Senha inicial</mat-label>
-          <input matInput type="password" [(ngModel)]="form.password" name="password" minlength="6" maxlength="128" required />
+          <input id="new-user-password" matInput type="password" [(ngModel)]="form.password" name="password" minlength="6" maxlength="128" required aria-label="Senha inicial" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Confirmar senha</mat-label>
-          <input matInput type="password" [(ngModel)]="form.confirmPassword" name="confirmPassword" required />
+          <input id="new-user-password-confirmation" matInput type="password" [(ngModel)]="form.confirmPassword" name="confirmPassword" required aria-label="Confirmar senha" />
         </mat-form-field>
         <div class="form-actions">
           <button mat-button type="button" (click)="cancelCreate()">Cancelar</button>
