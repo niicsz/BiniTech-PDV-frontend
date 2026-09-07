@@ -1,11 +1,6 @@
 @use '@angular/material' as mat;
 
-/* ============================================================
-   "O Balcão" design system — warm mercantile / editorial.
-   Material is rethemed to a red(vermillion)/green palette and
-   the type hierarchy uses Fraunces (display) + Hanken Grotesk
-   (body). Most screens are driven by the :root tokens below.
-   ============================================================ */
+
 
 $light-theme: mat.define-theme((
   color: (
@@ -53,43 +48,43 @@ body.dark-theme {
 }
 
 :root {
-  /* vermillion — the commerce accent */
+
   --primary: #d4391a;
   --primary-dark: #a82d12;
   --primary-light: #e8624a;
   --primary-bg: rgba(212, 57, 26, 0.08);
 
-  --accent: #c8881f;            /* ochre */
-  --success: #1c6b46;           /* ledger green */
-  --danger: #9b1c1c;            /* deep blood red (distinct from vermillion) */
-  --warning: #c8881f;           /* ochre */
+  --accent: #c8881f;
+  --success: #1c6b46;
+  --danger: #9b1c1c;
+  --warning: #c8881f;
 
-  --bg: #f3ede1;                /* warm cream paper */
-  --surface: #fbf7ef;           /* card surface */
+  --bg: #f3ede1;
+  --surface: #fbf7ef;
   --surface-alt: #f0e8da;
   --surface-hover: #ece3d3;
 
-  --text: #241a12;              /* espresso near-black */
+  --text: #241a12;
   --text-secondary: #5d5043;
   --text-tertiary: #8a7d6e;
 
-  --border: #ddd1bd;            /* warm hairline */
+  --border: #ddd1bd;
   --border-light: #e7ddcb;
   --divider: #ddd1bd;
 
-  /* espresso-tinted, slightly heavier shadows for paper depth */
+
   --shadow-sm: 0 1px 3px rgba(36, 26, 18, 0.10);
   --shadow: 0 2px 10px rgba(36, 26, 18, 0.12);
   --shadow-md: 0 6px 20px rgba(36, 26, 18, 0.14);
   --shadow-lg: 0 14px 40px rgba(36, 26, 18, 0.20);
-  --shadow-hard: 4px 4px 0 var(--text);  /* brutalist offset */
+  --shadow-hard: 4px 4px 0 var(--text);
 
   --radius-sm: 3px;
   --radius: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
 
-  --header-bg: #241a12;         /* espresso ink */
+  --header-bg: #241a12;
   --header-text: #f3ede1;
 
   --input-bg: #fbf7ef;
@@ -117,7 +112,7 @@ body.dark-theme {
 }
 
 body.dark-theme {
-  /* "night ledger" — warm espresso dark */
+
   --primary: #f0653f;
   --primary-dark: #d4391a;
   --primary-light: #f59175;
@@ -222,10 +217,7 @@ body.dark-theme {
     border-color: var(--input-border);
   }
 }
-/* ============================================================
-   Global Material overrides — adopt the "O Balcão" look without
-   touching every component.
-   ============================================================ */
+
 .mdc-button,
 .mat-mdc-button,
 .mat-mdc-raised-button,
@@ -237,7 +229,7 @@ body.dark-theme {
 }
 .mat-mdc-unelevated-button:not(:disabled),
 .mat-mdc-raised-button:not(:disabled) {
-  /* subtle brutalist lift on primary actions */
+
   box-shadow: 2px 2px 0 rgba(36, 26, 18, 0.25);
 }
 
@@ -278,7 +270,7 @@ body.dark-theme {
   font-family: var(--font-mono);
 }
 
-/* numeric/money cells read as a ledger */
+
 .mono, .num, td.amount, .amount {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

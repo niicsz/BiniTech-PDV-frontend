@@ -119,7 +119,6 @@ export class ForgotPasswordComponent {
         this.sent = true;
       },
       error: () => {
-        // Mesmo em erro, mostramos sucesso para não revelar existência da conta.
         this.loading = false;
         this.sent = true;
       }

@@ -48,7 +48,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
         );
       }
       if (error.status === 402) {
-        // Tenant bloqueado/suspenso por pagamento: leva o usuário para a tela de billing.
         console.warn('[AuthInterceptor] Recebido 402 (pagamento pendente), redirecionando para /billing');
         router.navigate(['/billing']);
         return throwError(() => error);

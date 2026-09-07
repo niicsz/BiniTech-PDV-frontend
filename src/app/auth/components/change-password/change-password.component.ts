@@ -107,7 +107,6 @@ export class ChangePasswordComponent implements OnInit {
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
-    // Super admin não altera senha por aqui (gerenciada por variável de ambiente).
     if (this.authService.isSuperAdmin()) {
       this.router.navigate(['/admin']);
     }
