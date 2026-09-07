@@ -6,11 +6,11 @@ import { filter, map, mergeMap } from 'rxjs/operators';
 export interface RouteSeo {
   title?: string;
   description?: string;
-  /** When true, page should not appear in search results. */
+
   noindex?: boolean;
-  /** Path for canonical URL (defaults to current router URL without query). */
+
   canonicalPath?: string;
-  /** JSON-LD data specific to the current public route. */
+
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
