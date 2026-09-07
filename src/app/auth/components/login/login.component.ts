@@ -19,7 +19,7 @@ import { AuthService } from '../../services/auth.service';
   ],
   template: `
     <div class="login-shell">
-      <!-- BRAND SIDE -->
+
       <aside class="brand-side">
         <div class="glow glow-1"></div>
         <div class="glow glow-2"></div>
@@ -39,7 +39,7 @@ import { AuthService } from '../../services/auth.service';
         <div class="brand-foot">© {{ year }} BiniTech PDV</div>
       </aside>
 
-      <!-- FORM SIDE -->
+
       <main class="form-side">
         <div class="form-wrap">
           <div class="brand brand-mobile">
@@ -96,7 +96,7 @@ import { AuthService } from '../../services/auth.service';
     :host { display:block; font-family:var(--font-family); }
     .login-shell { min-height:100vh; display:grid; grid-template-columns:1.05fr 1fr; }
 
-    /* BRAND SIDE — espresso panel */
+
     .brand-side { position:relative; overflow:hidden; color:#e9dfce; padding:52px;
       display:flex; flex-direction:column; justify-content:space-between;
       background:#241a12;
@@ -124,7 +124,7 @@ import { AuthService } from '../../services/auth.service';
     .perks li:nth-child(3) mat-icon { background:var(--success); }
     .brand-foot { position:relative; font-family:var(--font-mono); font-size:12px; letter-spacing:.5px; color:#8a7d6e; }
 
-    /* FORM SIDE — paper */
+
     .form-side { display:flex; align-items:center; justify-content:center; padding:40px 24px; background:var(--bg);
       background-image:radial-gradient(circle at 90% 5%, rgba(212,57,26,0.05), transparent 38%); }
     .form-wrap { width:100%; max-width:400px; }
