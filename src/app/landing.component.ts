@@ -5,25 +5,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { FAQ_ITEMS } from './core/seo-content';
 import { ThemeService } from './shared/services/theme.service';
 
-/**
- * Landing page — "O Balcão" (The Counter).
- *
- * Aesthetic direction: warm mercantile / editorial. The whole product lives at a
- * physical retail counter, so the page borrows that world: warm paper-cream
- * surfaces, deep espresso ink, a vivid commerce-vermillion accent and a
- * money-green secondary. Figures and receipts use a monospace face for a tactile,
- * ledger-like feel. The hero showcase is a real perforated thermal receipt.
- *
- * Type: Fraunces (display serif), Hanken Grotesk (body), Spline Sans Mono (figures).
- * Loaded globally in index.html.
- */
+
 @Component({
   selector: 'app-landing',
   standalone: true,
   imports: [CommonModule, RouterLink, MatIconModule],
   template: `
     <div class="lp">
-      <!-- TICKER -->
+
       <div class="ticker" aria-hidden="true">
         <div class="ticker-track">
           <span *ngFor="let _ of [0,1]" class="ticker-run">
@@ -34,7 +23,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </div>
 
-      <!-- NAVBAR -->
+
       <header class="nav">
         <div class="nav-inner">
           <a class="brand" href="#top" aria-label="BiniTech PDV — voltar ao início">
@@ -61,7 +50,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </header>
 
-      <!-- HERO -->
+
       <section class="hero" id="top">
         <div class="hero-inner">
           <div class="hero-copy reveal">
@@ -89,7 +78,7 @@ import { ThemeService } from './shared/services/theme.service';
             </ul>
           </div>
 
-          <!-- RECEIPT MOCK -->
+
           <div class="hero-visual reveal" style="animation-delay:.15s">
             <div class="receipt">
               <div class="receipt-head">
@@ -118,7 +107,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- MARQUEE STAT STRIP -->
+
       <section class="strip">
         <div class="strip-inner">
           <div class="strip-item"><b>R$ 27,90</b><span>código de barras</span></div>
@@ -128,7 +117,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- FEATURES -->
+
       <section class="features" id="recursos">
         <div class="section-head">
           <span class="kicker">[ tudo em um só lugar ]</span>
@@ -146,7 +135,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- PRICING -->
+
       <section class="pricing" id="planos">
         <div class="section-head">
           <span class="kicker">[ planos ]</span>
@@ -173,7 +162,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- FAQ -->
+
       <section class="faq" id="faq" aria-labelledby="faq-heading">
         <div class="section-head">
           <span class="kicker">[ dúvidas frequentes ]</span>
@@ -189,7 +178,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- CTA BAND -->
+
       <section class="cta-band">
         <div class="cta-inner">
           <span class="cta-kicker">✺ Comece hoje ✺</span>
@@ -201,7 +190,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
       </section>
 
-      <!-- FOOTER -->
+
       <footer class="footer">
         <div class="footer-inner">
           <div class="footer-brand">
@@ -237,9 +226,9 @@ import { ThemeService } from './shared/services/theme.service';
     </div>
   `,
   styles: [`
-    /* ====== TOKENS ====== */
+
     .lp {
-      /* Reuse the global theme tokens so the landing page follows dark mode. */
+
       --paper:var(--bg);
       --paper-2:var(--surface-alt);
       --ink:var(--text);
@@ -253,7 +242,7 @@ import { ThemeService } from './shared/services/theme.service';
 
       font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       color:var(--ink); background:var(--paper); overflow-x:hidden;
-      /* paper grain */
+
       background-image:
         radial-gradient(circle at 18% 12%, rgba(212,57,26,0.05), transparent 38%),
         radial-gradient(circle at 88% 0%, rgba(28,107,70,0.05), transparent 34%);
@@ -261,7 +250,7 @@ import { ThemeService } from './shared/services/theme.service';
     .lp *{ box-sizing:border-box; }
     .lp a{ cursor:pointer; text-decoration:none; }
 
-    /* ====== BUTTONS ====== */
+
     .btn{ display:inline-flex; align-items:center; gap:8px; font-family:inherit;
       font-weight:700; font-size:15px; line-height:1; border-radius:2px; border:2px solid var(--ink);
       padding:13px 20px; transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s; }
@@ -272,7 +261,7 @@ import { ThemeService } from './shared/services/theme.service';
     .btn-outline:hover{ background:var(--ink); color:var(--paper); }
     .btn-lg{ padding:16px 26px; font-size:16px; }
 
-    /* ====== BRAND ====== */
+
     .brand{ display:inline-flex; align-items:center; gap:11px; color:var(--ink); }
     .brand-mark{ display:grid; place-items:center; width:38px; height:38px; border-radius:3px;
       background:var(--vermillion); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--ink); }
@@ -280,7 +269,7 @@ import { ThemeService } from './shared/services/theme.service';
     .brand-name{ font-family:'Fraunces',serif; font-weight:800; font-size:21px; letter-spacing:-.4px; }
     .brand-name em{ font-style:normal; color:var(--vermillion-d); }
 
-    /* ====== TICKER ====== */
+
     .ticker{ background:var(--ink); color:var(--paper); overflow:hidden; border-bottom:2px solid var(--ink); }
     .ticker-track{ display:flex; width:max-content; animation:ticker 38s linear infinite; }
     .ticker-run{ display:inline-flex; align-items:center; gap:18px; padding:8px 18px; white-space:nowrap;
@@ -288,7 +277,7 @@ import { ThemeService } from './shared/services/theme.service';
     .ticker-run i{ color:var(--vermillion); font-style:normal; }
     @keyframes ticker{ to{ transform:translateX(-50%); } }
 
-    /* ====== NAV ====== */
+
     .nav{ position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--paper) 82%, transparent);
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:2px solid var(--ink); }
     .nav-inner{ max-width:1200px; margin:0 auto; padding:14px 28px; display:flex; align-items:center; gap:26px; }
@@ -308,7 +297,7 @@ import { ThemeService } from './shared/services/theme.service';
     .theme-toggle:focus-visible{ outline:3px solid var(--vermillion); outline-offset:3px; }
     .theme-toggle mat-icon{ font-size:20px; width:20px; height:20px; }
 
-    /* ====== HERO ====== */
+
     .hero{ position:relative; }
     .hero-inner{ max-width:1200px; margin:0 auto; padding:74px 28px 88px;
       display:grid; grid-template-columns:1.08fr 0.92fr; gap:60px; align-items:center; }
@@ -336,11 +325,11 @@ import { ThemeService } from './shared/services/theme.service';
     .hero-stats span{ font-family:'Spline Sans Mono',monospace; font-size:11.5px; text-transform:uppercase;
       letter-spacing:.6px; color:var(--ink-3); }
 
-    /* ====== RECEIPT MOCK ====== */
+
     .hero-visual{ position:relative; display:flex; justify-content:center; }
     .receipt{ position:relative; width:340px; max-width:100%; background:var(--surface);
       padding:26px 26px 18px; transform:rotate(1.4deg); filter:drop-shadow(14px 18px 0 rgba(36,26,18,0.12));
-      /* perforated top & bottom edges */
+
       -webkit-mask:
         radial-gradient(9px at 9px 0, transparent 98%, #000) repeat-x 0 0/22px 9px,
         radial-gradient(9px at 9px 100%, transparent 98%, #000) repeat-x 0 100%/22px 9px,
@@ -383,7 +372,7 @@ import { ThemeService } from './shared/services/theme.service';
       letter-spacing:1px; opacity:.92; }
     @keyframes float{ 50%{ transform:rotate(-5deg) translateY(-9px); } }
 
-    /* ====== STAT STRIP ====== */
+
     .strip{ background:var(--ink); color:var(--paper); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
     .strip-inner{ max-width:1200px; margin:0 auto; padding:26px 28px; display:grid;
       grid-template-columns:repeat(4,1fr); gap:24px; }
@@ -393,7 +382,7 @@ import { ThemeService } from './shared/services/theme.service';
     .strip-item span{ font-family:'Spline Sans Mono',monospace; font-size:11px; text-transform:uppercase;
       letter-spacing:.6px; color:#b3a795; }
 
-    /* ====== SECTION HEAD ====== */
+
     .section-head{ max-width:1200px; margin:0 auto; padding:0 28px; }
     .kicker{ font-family:'Spline Sans Mono',monospace; font-size:13px; font-weight:600; letter-spacing:1px;
       text-transform:uppercase; color:var(--vermillion-d); }
@@ -401,7 +390,7 @@ import { ThemeService } from './shared/services/theme.service';
       line-height:1; letter-spacing:-1.5px; margin:14px 0 14px; }
     .section-head p{ font-size:18px; color:var(--ink-2); max-width:520px; margin:0; }
 
-    /* ====== FEATURES ====== */
+
     .features{ padding:96px 0; }
     .feature-grid{ max-width:1200px; margin:46px auto 0; padding:0 28px; display:grid;
       grid-template-columns:repeat(3,1fr); gap:0; border-top:2px solid var(--ink); border-left:2px solid var(--ink); }
@@ -418,7 +407,7 @@ import { ThemeService } from './shared/services/theme.service';
     .feature h3{ font-family:'Fraunces',serif; font-weight:700; font-size:21px; letter-spacing:-.4px; margin:0 0 9px; }
     .feature p{ font-size:15px; line-height:1.6; color:var(--ink-2); margin:0; }
 
-    /* ====== PRICING ====== */
+
     .pricing{ padding:30px 0 110px; }
     .plan-grid{ max-width:1200px; margin:46px auto 0; padding:0 28px; display:grid;
       grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
@@ -449,7 +438,7 @@ import { ThemeService } from './shared/services/theme.service';
       box-shadow:4px 4px 0 var(--vermillion-d); }
     .plan .plan-cta.btn-outline:hover{ background:var(--ink); color:var(--paper); }
 
-    /* ====== FAQ ====== */
+
     .faq{ max-width:1200px; margin:0 auto; padding:20px 28px 110px; display:grid;
       grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr); gap:72px; align-items:start;
       scroll-margin-top:92px; }
@@ -470,7 +459,7 @@ import { ThemeService } from './shared/services/theme.service';
     .faq-item p{ max-width:640px; margin:0; padding:0 52px 24px 0; color:var(--ink-2);
       font-size:16px; line-height:1.65; }
 
-    /* ====== CTA BAND ====== */
+
     .cta-band{ padding:0 28px 100px; }
     .cta-inner{ max-width:1080px; margin:0 auto; text-align:center; color:#fff; padding:72px 32px;
       border:2px solid var(--ink); border-radius:4px; position:relative; overflow:hidden;
@@ -486,7 +475,7 @@ import { ThemeService } from './shared/services/theme.service';
       box-shadow:5px 5px 0 var(--ink); }
     .cta-btn:hover{ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
 
-    /* ====== FOOTER ====== */
+
     .footer{ background:var(--ink); color:#b3a795; padding:64px 28px 30px; border-top:2px solid var(--ink); }
     .footer-inner{ max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1.7fr 1fr 1fr 1fr; gap:36px; }
     .footer-brand .brand{ color:var(--paper); margin-bottom:14px; }
@@ -500,11 +489,11 @@ import { ThemeService } from './shared/services/theme.service';
       gap:12px; flex-wrap:wrap; border-top:2px solid rgba(243,237,225,.12);
       font-family:'Spline Sans Mono',monospace; font-size:12.5px; color:#8a7d6e; }
 
-    /* ====== REVEAL ANIMATION ====== */
+
     .reveal{ opacity:0; transform:translateY(22px); animation:reveal .7s cubic-bezier(.2,.8,.2,1) forwards; }
     @keyframes reveal{ to{ opacity:1; transform:none; } }
 
-    /* ====== RESPONSIVE ====== */
+
     @media (max-width:980px){
       .hero-inner{ grid-template-columns:1fr; gap:56px; padding:54px 24px 72px; }
       .feature-grid{ grid-template-columns:1fr 1fr; }
@@ -531,7 +520,7 @@ import { ThemeService } from './shared/services/theme.service';
       .cta-inner{ box-shadow:8px 8px 0 var(--ink); padding:54px 22px; }
     }
 
-    /* ====== REDUCED MOTION ====== */
+
     @media (prefers-reduced-motion:reduce){
       .ticker-track, .stamp, .blip{ animation:none; }
       .reveal{ opacity:1; transform:none; animation:none; }

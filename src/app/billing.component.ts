@@ -192,7 +192,6 @@ export class BillingComponent implements OnInit {
   paying = signal(false);
   managing = signal(false);
 
-  // Plano vindo da assinatura; quando ainda não há assinatura, cai no fallback do checkout.
   planTier = computed(() => this.subscription()?.planTier?.toLowerCase() ?? '');
 
   isFree = computed(() => this.planTier() === 'free');
@@ -210,7 +209,6 @@ export class BillingComponent implements OnInit {
     return status === 'PAST_DUE' || status === 'CANCELLED';
   });
 
-  // Portal de autoatendimento só faz sentido com assinatura ativa já vinculada ao Stripe.
   canManage = computed(() => {
     const sub = this.subscription();
     return sub?.status === 'ACTIVE' && !!sub?.stripeCustomerId;
@@ -228,7 +226,6 @@ export class BillingComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        // 404 = tenant ainda sem assinatura; não é erro fatal.
         this.subscription.set(null);
         this.loading.set(false);
         if (err.status !== 404) {
