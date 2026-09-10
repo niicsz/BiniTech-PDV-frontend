@@ -1,0 +1,141 @@
+<section class="import-page">
+  <header class="page-header">
+    <div>
+      <a routerLink="/products" class="back-link"><mat-icon>arrow_back</mat-icon> Produtos</a>
+      <h1><mat-icon>upload_file</mat-icon> Importar produtos</h1>
+      <p>Migre seu catálogo de outro sistema com segurança e revise tudo antes de aplicar.</p>
+    </div>
+  </header>
+
+  <ol class="stepper" aria-label="Etapas da importação">
+    @for (label of steps; track label; let index = $index) {
+      <li [class.active]="index === step" [class.done]="index < step">
+        <span>{{ index < step ? '✓' : index + 1 }}</span><small>{{ label }}</small>
+      </li>
+    }
+  </ol>
+
+  @if (error) { <div class="alert error"><mat-icon>error</mat-icon>{{ error }}</div> }
+
+  <div class="card">
+    @if (step === 0) {
+      <div class="upload-step">
+        <mat-icon class="hero-icon">cloud_upload</mat-icon>
+        <h2>Escolha a exportação do seu sistema antigo</h2>
+        <p>Formatos aceitos: CSV, XLSX ou XLS. Tamanho máximo: 20 MB e 50.000 produtos.</p>
+        <label class="file-picker">
+          <input type="file" accept=".csv,.xlsx,.xls" (change)="chooseFile($event)">
+          <mat-icon>attach_file</mat-icon>{{ selectedFile?.name || 'Selecionar arquivo' }}
+        </label>
+        <div class="actions">
+          <button mat-stroked-button (click)="downloadTemplate()"><mat-icon>download</mat-icon>Baixar modelo</button>
+          <button mat-flat-button color="primary" [disabled]="!selectedFile || busy" (click)="upload()">Analisar arquivo</button>
+        </div>
+      </div>
+    }
+
+    @if (step === 1 && job) {
+      <h2>Confirme o significado das colunas</h2>
+      <p>Fizemos uma sugestão automática. Ajuste os campos que não estiverem corretos.</p>
+      <div class="mapping-grid">
+        @for (mapping of mappings; track mapping.sourceColumn) {
+          <div class="mapping-row">
+            <div><strong>{{ mapping.sourceColumn }}</strong><small>Coluna do arquivo</small></div>
+            <mat-icon>arrow_forward</mat-icon>
+            <mat-select [(ngModel)]="mapping.targetField" aria-label="Campo BiniTech">
+              @for (field of fields; track field.value) { <mat-option [value]="field.value">{{ field.label }}</mat-option> }
+            </mat-select>
+          </div>
+        }
+      </div>
+      <label class="select-label">Quando houver código duplicado dentro do arquivo</label>
+      <mat-select [(ngModel)]="duplicateStrategy" class="wide-select">
+        <mat-option value="ERROR">Parar essas linhas para correção</mat-option>
+        <mat-option value="FIRST">Usar a primeira ocorrência</mat-option>
+        <mat-option value="LAST">Usar a última ocorrência</mat-option>
+      </mat-select>
+      <div class="actions end"><button mat-flat-button color="primary" [disabled]="busy" (click)="validate()">Validar todos os produtos</button></div>
+    }
+
+    @if (step === 2 && job) {
+      <h2>Validação concluída</h2>
+      <div class="summary-grid">
+        <article><strong>{{ job.summary.totalRecords }}</strong><span>Encontrados</span></article>
+        <article class="ok"><strong>{{ job.summary.validRecords }}</strong><span>Válidos</span></article>
+        <article class="warn"><strong>{{ job.summary.warningRecords }}</strong><span>Com avisos</span></article>
+        <article class="bad"><strong>{{ job.summary.errorRecords }}</strong><span>Com erros</span></article>
+      </div>
+      @if (job.summary.errorRecords) {
+        <div class="alert warning"><mat-icon>warning</mat-icon>Linhas com erro serão ignoradas. Você pode revisar e baixar o relatório ao final.</div>
+      }
+      <div class="actions end"><button mat-flat-button color="primary" (click)="nextFromValidation()">Revisar importação</button></div>
+    }
+
+    @if (step === 3 && job) {
+      <h2>Revise o que será feito</h2>
+      <div class="options-grid">
+        <fieldset>
+          <legend>Modo de importação</legend>
+          <mat-radio-group [(ngModel)]="mode">
+            <mat-radio-button value="CREATE_ONLY">Criar apenas novos</mat-radio-button>
+            <mat-radio-button value="CREATE_AND_UPDATE">Criar e atualizar existentes</mat-radio-button>
+          </mat-radio-group>
+        </fieldset>
+        <fieldset [disabled]="mode !== 'CREATE_AND_UPDATE'">
+          <legend>Campos que podem ser atualizados</legend>
+          @for (field of updateOptions; track field.value) {
+            <mat-checkbox [checked]="updateFields.has(field.value)" (change)="toggleField(field.value, $event.checked)">{{ field.label }}</mat-checkbox>
+          }
+        </fieldset>
+        <fieldset>
+          <legend>Como tratar o estoque?</legend>
+          <mat-radio-group [(ngModel)]="stockMode">
+            <mat-radio-button value="IGNORE">Ignorar estoque</mat-radio-button>
+            <mat-radio-button value="REPLACE">Definir exatamente como no arquivo</mat-radio-button>
+            <mat-radio-button value="INCREMENT">Adicionar ao estoque atual</mat-radio-button>
+          </mat-radio-group>
+        </fieldset>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Linha</th><th>Nome</th><th>Código</th><th>Preço importado</th><th>Preço atual</th><th>Estoque</th><th>Ação</th><th>Problemas</th></tr></thead>
+          <tbody>@for (row of rows; track row.lineNumber) {
+            <tr [class.row-error]="row.action === 'ERROR'"><td>{{ row.lineNumber }}</td><td>{{ row.name || '—' }}</td><td>{{ row.barcode || '—' }}</td>
+              <td>{{ row.price | currency:'BRL' }}</td><td>{{ row.currentPrice == null ? '—' : (row.currentPrice | currency:'BRL') }}</td>
+              <td>{{ row.stockQuantity ?? '—' }}@if (row.currentStockQuantity != null) { <small class="current-stock"> atual: {{ row.currentStockQuantity }}</small> }</td>
+              <td><span class="action" [attr.data-action]="row.action">{{ row.action }}</span>
+                @if (row.existingProductId && row.action !== 'ERROR') {
+                  <div class="row-decisions">
+                    <button type="button" [class.selected]="row.action === 'IGNORE'" [disabled]="updatingLine != null" (click)="setExistingAction(row, 'IGNORE')">Manter atual</button>
+                    <button type="button" [class.selected]="row.action === 'UPDATE'" [disabled]="updatingLine != null" (click)="setExistingAction(row, 'UPDATE')">Atualizar</button>
+                  </div>
+                }
+              </td>
+              <td><span [title]="row.issues[0]?.message || ''">{{ row.issues[0]?.message || '—' }}</span></td></tr>
+          }</tbody></table>
+      </div>
+      @if (job.summary.totalRecords > rows.length) { <p class="muted">Exibindo as primeiras {{ rows.length }} linhas. Todas serão processadas.</p> }
+      <div class="actions end"><button mat-flat-button color="primary" [disabled]="busy" (click)="start()">Iniciar importação</button></div>
+    }
+
+    @if (step === 4 && job) {
+      <div class="progress-step">
+        <mat-icon class="hero-icon spinning">sync</mat-icon><h2>Importando seus produtos…</h2>
+        <mat-progress-bar mode="determinate" [value]="job.progressPercentage"></mat-progress-bar>
+        <strong>{{ job.progressPercentage }}%</strong>
+        <p>{{ job.summary.processedRecords }} / {{ job.summary.totalRecords }} produtos</p>
+        <div class="mini-summary"><span>✓ {{ job.summary.createdRecords }} criados</span><span>↻ {{ job.summary.updatedRecords }} atualizados</span><span>⚠ {{ job.summary.ignoredRecords }} ignorados</span><span>✕ {{ job.summary.errorRecords }} erros</span></div>
+        <p class="muted">Você pode sair desta tela. O processamento continuará em segundo plano.</p>
+      </div>
+    }
+
+    @if (step === 5 && job) {
+      <div class="result-step" [class.failed]="job.status === 'FAILED'">
+        <mat-icon class="hero-icon">{{ job.status === 'FAILED' ? 'error' : 'task_alt' }}</mat-icon>
+        <h2>{{ job.status === 'FAILED' ? 'A importação falhou' : 'Importação concluída!' }}</h2>
+        @if (job.failureMessage) { <p>{{ job.failureMessage }}</p> }
+        <div class="summary-grid"><article><strong>{{ job.summary.totalRecords }}</strong><span>Total</span></article><article class="ok"><strong>{{ job.summary.createdRecords }}</strong><span>Criados</span></article><article><strong>{{ job.summary.updatedRecords }}</strong><span>Atualizados</span></article><article class="warn"><strong>{{ job.summary.ignoredRecords }}</strong><span>Ignorados</span></article><article class="bad"><strong>{{ job.summary.errorRecords }}</strong><span>Erros</span></article></div>
+        <div class="actions"><button mat-stroked-button routerLink="/products">Voltar aos produtos</button>@if (job.summary.errorRecords) { <button mat-flat-button color="primary" (click)="downloadErrors()"><mat-icon>download</mat-icon>Baixar relatório de erros</button> }</div>
+      </div>
+    }
+  </div>
+</section>

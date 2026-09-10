@@ -147,6 +147,22 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'products/import',
+    title: 'Importar produtos | BiniTech PDV',
+    data: seo({ title: 'Importar produtos | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./products/components/product-import/product-import.component').then(m => m.ProductImportComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'products/import',
+    title: 'Importar produtos | BiniTech PDV',
+    data: seo({ title: 'Importar produtos | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./products/components/product-import/product-import.component').then(m => m.ProductImportComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'sales-report',
     title: 'Relatórios | BiniTech PDV',
     data: seo({ title: 'Relatórios | BiniTech PDV', noindex: true }),
