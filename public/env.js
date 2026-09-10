@@ -1,1 +1,1 @@
-window.__env = { apiBase: '' };
+window.__env = { apiBase: '', importApiBase: '' };
