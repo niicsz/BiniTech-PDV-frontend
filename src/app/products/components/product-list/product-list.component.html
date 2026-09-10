@@ -10,9 +10,19 @@
         <p class="header-subtitle">Gerencie o catálogo de produtos do seu estabelecimento</p>
       </div>
     </div>
-    <button mat-flat-button color="primary" class="btn-new-product" (click)="openCreateForm()">
-      <mat-icon>add</mat-icon> Novo Produto
-    </button>
+    <div class="header-actions">
+      <a mat-stroked-button class="btn-import-products" routerLink="/products/import">
+        <mat-icon>upload_file</mat-icon> Importar produtos
+      </a>
+    <div class="header-actions">
+      <a mat-stroked-button class="btn-import-products" routerLink="/products/import">
+        <mat-icon>upload_file</mat-icon> Importar produtos
+      </a>
+      <button mat-flat-button color="primary" class="btn-new-product" (click)="openCreateForm()">
+        <mat-icon>add</mat-icon> Novo Produto
+      </button>
+    </div>
+    </div>
   </div>
 
   <div class="stats-row" *ngIf="products.length > 0">
