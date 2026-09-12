@@ -45,6 +45,9 @@ a cada mudança de URL, a base da API é lida em **runtime** de `window.__env.ap
 - O `apiBaseInterceptor` (`src/app/core/api-base.interceptor.ts`) prefixa `/api` com `apiBase` quando
   ele está preenchido.
 - No container, o `env.js` é regenerado no start a partir da variável **`API_BASE`**.
+- As chamadas de importação usam `window.__env.importApiBase`, gerado a partir de
+  **`IMPORT_API_BASE`**. A política CSP `connect-src` permite somente o próprio frontend
+  e as URLs configuradas em `API_BASE` e `IMPORT_API_BASE`.
 
 ## Deploy (Railway)
 
@@ -53,6 +56,7 @@ O `Dockerfile` builda o Angular e serve os estáticos via Nginx. Variáveis do s
 | Variável   | Descrição                                              | Exemplo                                  |
 | ---------- | ------------------------------------------------------ | ---------------------------------------- |
 | `API_BASE` | URL pública do backend (sem barra final)               | `https://www.binitechpdv.com.br`    |
+| `IMPORT_API_BASE` | URL pública do microsserviço importador (sem barra final) | `https://binitech-product-import-production.up.railway.app` |
 | `PORT`     | Porta de escuta do Nginx (injetada pelo Railway)       | `8080`                                   |
 
 > O domínio público deste serviço precisa estar liberado no CORS do backend
