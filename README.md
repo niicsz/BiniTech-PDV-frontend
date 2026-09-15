@@ -36,6 +36,13 @@ npm run build -- --configuration=production
 
 Saída em `dist/binitech-pdv-frontend/browser`.
 
+## Testes de renovação da sessão
+
+Execute `npm run test:auth` com Node.js 24 ou superior. Os testes também rodam no CI.
+Erros da requisição reenviada (incluindo importações) não encerram a sessão.
+O logout ocorre se o Auth rejeitar a renovação com 401/403; indisponibilidade
+temporária preserva as credenciais. Requisições concorrentes compartilham a renovação.
+
 ## Configuração da API (runtime)
 
 O frontend fala com o backend por outro domínio em produção. Para não precisar rebuildar a imagem
