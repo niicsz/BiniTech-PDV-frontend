@@ -3,8 +3,10 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { AuthResponse } from '../../shared/models/api.models';
+import { SessionRefreshCoordinator } from './session-refresh';
 
-let isRefreshing = false;
+const sessionRefresh = new SessionRefreshCoordinator<AuthResponse>();
 
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn) => {
   const authService = inject(AuthService);
@@ -27,23 +29,18 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !isRefreshing) {
+      if (error.status === 401 && token && !req.url.includes('/api/auth/logout')) {
         console.warn('[AuthInterceptor] Recebido 401, tentando renovar token para:', req.url);
-        isRefreshing = true;
-        return authService.refreshToken().pipe(
+        return sessionRefresh.refresh(
+          () => authService.refreshToken(),
+          () => authService.logout()
+        ).pipe(
           switchMap(res => {
-            isRefreshing = false;
             console.info('[AuthInterceptor] Token renovado, reenviando requisição:', req.url);
             const newReq = req.clone({
               setHeaders: { Authorization: `Bearer ${res.accessToken}` }
             });
             return next(newReq);
-          }),
-          catchError(refreshError => {
-            isRefreshing = false;
-            console.error('[AuthInterceptor] Falha ao renovar token, realizando logout');
-            authService.logout();
-            return throwError(() => refreshError);
           })
         );
       }
