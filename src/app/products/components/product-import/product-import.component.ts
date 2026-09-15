@@ -35,8 +35,13 @@ export class ProductImportComponent implements OnDestroy {
   duplicateStrategy: 'ERROR' | 'FIRST' | 'LAST' = 'ERROR'; mode: 'CREATE_ONLY' | 'CREATE_AND_UPDATE' = 'CREATE_ONLY';
   stockMode: 'IGNORE' | 'REPLACE' | 'INCREMENT' = 'IGNORE'; updateFields = new Set<string>(['NAME', 'PRICE', 'COST', 'CATEGORY', 'ACTIVE']);
   busy = false; updatingLine?: number; error = ''; private polling?: Subscription;
+  pageIndex = 0; pageSize = 25; loadingRows = false; rowsLoaded = false;
+  private rowsRequest?: Subscription;
+  get totalPages(): number { return Math.max(1, Math.ceil((this.job?.summary.totalRecords ?? 0) / this.pageSize)); }
+  get firstVisible(): number { return this.rows.length ? this.pageIndex * this.pageSize + 1 : 0; }
+  get lastVisible(): number { return this.rows.length ? this.pageIndex * this.pageSize + this.rows.length : 0; }
   constructor(private imports: ProductImportService) {}
-  ngOnDestroy(): void { this.polling?.unsubscribe(); }
+  ngOnDestroy(): void { this.polling?.unsubscribe(); this.rowsRequest?.unsubscribe(); }
   chooseFile(event: Event): void { this.selectedFile = (event.target as HTMLInputElement).files?.[0]; this.error = ''; }
   upload(): void {
     if (!this.selectedFile) return;
@@ -45,10 +50,21 @@ export class ProductImportComponent implements OnDestroy {
   validate(): void {
     if (!this.job) return;
     this.run(this.imports.validate(this.job.id, this.mappings, this.duplicateStrategy), job => {
-      this.job = job; this.imports.rows(job.id).subscribe(rows => this.rows = rows); this.step = 2;
+      this.job = job; this.loadRows(0); this.step = 2;
     });
   }
   review(): void { this.step = 3; }
+  changePageSize(value: number): void { this.pageSize = Number(value); this.loadRows(0); }
+  loadRows(page: number): void {
+    if (!this.job || this.updatingLine != null) return;
+    this.rowsRequest?.unsubscribe();
+    this.pageIndex = Math.max(0, Math.min(page, this.totalPages - 1));
+    this.loadingRows = true; this.rowsLoaded = false; this.rows = []; this.error = '';
+    this.rowsRequest = this.imports.rows(this.job.id, false, this.pageIndex, this.pageSize).subscribe({
+      next: rows => { this.rows = rows; this.loadingRows = false; this.rowsLoaded = true; },
+      error: err => { this.loadingRows = false; this.error = err.error?.message || 'Não foi possível carregar esta página. Tente novamente.'; }
+    });
+  }
   start(): void {
     if (!this.job) return;
     const stockChanges = this.stockMode !== 'IGNORE';
@@ -88,7 +104,7 @@ export class ProductImportComponent implements OnDestroy {
       return;
     }
     if (job.validated) {
-      this.imports.rows(job.id).subscribe(rows => this.rows = rows);
+      this.loadRows(0);
       this.step = 2;
       return;
     }

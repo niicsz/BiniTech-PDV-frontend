@@ -38,6 +38,10 @@ Saída em `dist/binitech-pdv-frontend/browser`.
 
 ## Testes de renovação da sessão
 
+A revisão de importações oferece páginas de 10, 25, 50, 100 ou 200 produtos,
+ordenadas por linha do arquivo. Os botões Primeira, Anterior, Próxima e Última
+consultam a API paginada; as decisões sobre produtos existentes são salvas no servidor.
+
 Execute `npm run test:auth` com Node.js 24 ou superior. Os testes também rodam no CI.
 Erros da requisição reenviada (incluindo importações) não encerram a sessão.
 O logout ocorre se o Auth rejeitar a renovação com 401/403; indisponibilidade
