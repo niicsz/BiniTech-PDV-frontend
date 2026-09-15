@@ -6,6 +6,7 @@
     "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "test": "ng test",
+    "test:auth": "node --experimental-strip-types --test tests/session-refresh.test.mjs",
     "lint": "ng lint"
   },
   "private": true,
