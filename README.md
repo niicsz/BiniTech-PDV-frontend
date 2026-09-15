@@ -36,6 +36,11 @@ npm run build -- --configuration=production
 
 Saída em `dist/binitech-pdv-frontend/browser`.
 
+O build de produção mantém `optimization.styles.inlineCritical: false` para carregar
+o CSS completo por um link normal, compatível com a CSP `script-src 'self'`.
+Ativar a extração de CSS crítico gera um handler inline `onload`, bloqueado pela
+CSP, e impede que os estilos do tema escuro sejam aplicados.
+
 ## Testes de renovação da sessão
 
 A revisão de importações oferece páginas de 10, 25, 50, 100 ou 200 produtos,
