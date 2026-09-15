@@ -96,7 +96,11 @@
           </mat-radio-group>
         </fieldset>
       </div>
-      <div class="table-wrap">
+      @if (loadingRows) { <p role="status">Carregando produtos…</p> }
+      @if (!loadingRows && !rowsLoaded) {
+        <button mat-stroked-button (click)="loadRows(pageIndex)">Tentar carregar novamente</button>
+      }
+      <div class="table-wrap" [attr.aria-busy]="loadingRows">
         <table><thead><tr><th>Linha</th><th>Nome</th><th>Código</th><th>Preço importado</th><th>Preço atual</th><th>Estoque</th><th>Ação</th><th>Problemas</th></tr></thead>
           <tbody>@for (row of rows; track row.lineNumber) {
             <tr [class.row-error]="row.action === 'ERROR'"><td>{{ row.lineNumber }}</td><td>{{ row.name || '—' }}</td><td>{{ row.barcode || '—' }}</td>
@@ -110,11 +114,24 @@
                   </div>
                 }
               </td>
-              <td><span [title]="row.issues[0]?.message || ''">{{ row.issues[0]?.message || '—' }}</span></td></tr>
+              <td>@for (issue of row.issues; track $index) { <p>{{ issue.message }}</p> } @empty { — }</td></tr>
           }</tbody></table>
       </div>
-      @if (job.summary.totalRecords > rows.length) { <p class="muted">Exibindo as primeiras {{ rows.length }} linhas. Todas serão processadas.</p> }
-      <div class="actions end"><button mat-flat-button color="primary" [disabled]="busy" (click)="start()">Iniciar importação</button></div>
+      <nav class="review-pagination" aria-label="Paginação dos produtos para revisão">
+        <label>Produtos por página
+          <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)" [disabled]="loadingRows || updatingLine != null">
+            @for (size of [10, 25, 50, 100, 200]; track size) { <option [ngValue]="size">{{ size }}</option> }
+          </select>
+        </label>
+        <span aria-live="polite">{{ firstVisible }}–{{ lastVisible }} de {{ job.summary.totalRecords }} produtos · Página {{ pageIndex + 1 }} de {{ totalPages }}</span>
+        <div class="actions">
+          <button mat-stroked-button (click)="loadRows(0)" [disabled]="loadingRows || updatingLine != null || pageIndex === 0">Primeira</button>
+          <button mat-stroked-button (click)="loadRows(pageIndex - 1)" [disabled]="loadingRows || updatingLine != null || pageIndex === 0">Anterior</button>
+          <button mat-stroked-button (click)="loadRows(pageIndex + 1)" [disabled]="loadingRows || updatingLine != null || pageIndex + 1 >= totalPages">Próxima</button>
+          <button mat-stroked-button (click)="loadRows(totalPages - 1)" [disabled]="loadingRows || updatingLine != null || pageIndex + 1 >= totalPages">Última</button>
+        </div>
+      </nav>
+      <div class="actions end"><button mat-flat-button color="primary" [disabled]="busy || loadingRows || !rowsLoaded || updatingLine != null" (click)="start()">Iniciar importação</button></div>
     }
 
     @if (step === 4 && job) {

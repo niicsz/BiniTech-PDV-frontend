@@ -35,8 +35,8 @@ export class ProductImportService {
   validate(id: string, mappings: ColumnMapping[], duplicateStrategy: 'ERROR' | 'FIRST' | 'LAST'): Observable<ImportJob> {
     return this.http.post<ImportJob>(`${this.baseUrl}/${id}/validate`, { mappings, duplicateStrategy });
   }
-  rows(id: string, issuesOnly = false): Observable<ImportRow[]> {
-    return this.http.get<ImportRow[]>(`${this.baseUrl}/${id}/rows`, { params: { page: 0, size: 200, issuesOnly } });
+  rows(id: string, issuesOnly = false, page = 0, size = 25): Observable<ImportRow[]> {
+    return this.http.get<ImportRow[]>(`${this.baseUrl}/${id}/rows`, { params: { page, size, issuesOnly } });
   }
   overrideRow(id: string, lineNumber: number, action: 'UPDATE' | 'IGNORE'): Observable<ImportRow> {
     return this.http.patch<ImportRow>(`${this.baseUrl}/${id}/rows/${lineNumber}`, { action });
