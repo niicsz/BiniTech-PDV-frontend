@@ -9,33 +9,34 @@ import { CartItem } from '../../../shared/models/cart.model';
   selector: 'app-cart-table',
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
   template: `
-    <div class="cart-wrapper">
+    <section class="cart-wrapper" aria-label="Itens da venda">
       <table class="cart-table" *ngIf="items.length > 0">
         <thead>
           <tr>
-            <th class="col-seq">#</th>
-            <th class="col-barcode">Código</th>
-            <th class="col-desc">Descrição</th>
-            <th class="col-qty">Qtd</th>
-            <th class="col-price">Preço Unit.</th>
-            <th class="col-subtotal">Subtotal</th>
-            <th class="col-actions"></th>
+            <th scope="col" class="col-seq">Item</th>
+            <th scope="col" class="col-desc">Produto</th>
+            <th scope="col" class="col-qty">Qtd.</th>
+            <th scope="col" class="col-price">Unitário</th>
+            <th scope="col" class="col-subtotal">Subtotal</th>
+            <th scope="col" class="col-actions"><span class="sr-only">Remover</span></th>
           </tr>
         </thead>
         <tbody>
           <tr
             *ngFor="let item of items; let i = index"
             [class.selected]="i === selectedIndex"
-            [class.even]="i % 2 === 0"
+            [attr.aria-selected]="i === selectedIndex"
             (click)="selectItem.emit(i)">
-            <td class="col-seq">{{ i + 1 }}</td>
-            <td class="col-barcode">{{ item.barcode }}</td>
-            <td class="col-desc">{{ item.description }}</td>
-            <td class="col-qty">{{ item.quantity }}</td>
-            <td class="col-price">R$ {{ item.unitPrice | number:'1.2-2' }}</td>
-            <td class="col-subtotal">R$ {{ item.subtotal | number:'1.2-2' }}</td>
+            <td class="col-seq num">{{ i + 1 }}</td>
+            <td class="col-desc">
+              <span class="desc">{{ item.description }}</span>
+              <span class="barcode num">{{ item.barcode }}</span>
+            </td>
+            <td class="col-qty num">{{ item.quantity }}</td>
+            <td class="col-price num">R$ {{ item.unitPrice | number:'1.2-2' }}</td>
+            <td class="col-subtotal num">R$ {{ item.subtotal | number:'1.2-2' }}</td>
             <td class="col-actions">
-              <button mat-icon-button matTooltip="Remover item" color="warn"
+              <button mat-icon-button matTooltip="Remover item" [attr.aria-label]="'Remover ' + item.description"
                       (click)="removeItem.emit(i); $event.stopPropagation()">
                 <mat-icon>close</mat-icon>
               </button>
@@ -45,21 +46,17 @@ import { CartItem } from '../../../shared/models/cart.model';
       </table>
 
       <div class="cart-empty" *ngIf="items.length === 0">
-        <div class="empty-visual">
-          <mat-icon class="empty-icon">shopping_cart</mat-icon>
-        </div>
-        <p class="empty-title">Carrinho vazio</p>
-        <p class="empty-hint">Leia um código de barras ou pesquise um produto para começar</p>
-        <div class="empty-shortcuts">
-          <span class="empty-shortcut"><kbd>Enter</kbd> para adicionar</span>
-          <span class="empty-shortcut"><kbd>F4-F9</kbd> para pagar</span>
-        </div>
+        <p class="empty-title">Nenhum item nesta venda.</p>
+        <p class="empty-hint">
+          Leia o código de barras ou digite o nome do produto e tecle <kbd>Enter</kbd>.
+          Depois escolha a forma de pagamento ao lado.
+        </p>
       </div>
-    </div>
+    </section>
   `,
   styles: [`
     .cart-wrapper {
-      flex: 1;
+      min-height: 420px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
@@ -71,315 +68,136 @@ import { CartItem } from '../../../shared/models/cart.model';
       border-collapse: collapse;
 
       th, td {
-        padding: 10px 14px;
+        padding: 0 12px;
         text-align: left;
       }
 
       thead th {
         position: sticky;
         top: 0;
-        background: var(--table-header-bg);
-        color: var(--table-header-text);
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid var(--border);
         z-index: 1;
+        height: 40px;
+        background: var(--surface);
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 400;
+        border-bottom: 1px solid var(--border);
       }
 
       tbody tr {
+        height: 56px;
         border-bottom: 1px solid var(--border-light);
         cursor: pointer;
-        transition: background 0.15s;
+        transition: background-color 120ms var(--ease);
 
         &:hover {
-          background: var(--surface-hover);
+          background: var(--table-hover);
         }
 
         &.selected {
           background: var(--primary-bg);
-          border-left: 3px solid var(--primary);
         }
       }
 
-      .col-seq {
-        width: 40px;
-        text-align: center;
-        color: var(--text-tertiary);
-        font-size: 12px;
+      tbody tr:last-child {
+        border-bottom: 0;
       }
-      .col-barcode {
-        width: 140px;
-        font-family: var(--font-mono);
-        font-size: 12px;
+
+      th:first-child, td:first-child {
+        padding-left: 20px;
+      }
+
+      .col-seq {
+        width: 56px;
         color: var(--text-secondary);
       }
       .col-desc {
         min-width: 200px;
+      }
+      .desc {
+        display: block;
         font-weight: 500;
       }
+      .barcode {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 16px;
+      }
       .col-qty {
-        width: 60px;
-        text-align: center;
-        font-weight: 700;
-        color: var(--primary);
+        width: 64px;
+        text-align: right;
+        font-weight: 500;
       }
       .col-price {
-        width: 120px;
+        width: 112px;
         text-align: right;
-        font-family: var(--font-mono);
-        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
       }
       .col-subtotal {
-        width: 130px;
+        width: 124px;
         text-align: right;
-        font-weight: 700;
-        font-family: var(--font-mono);
-        color: var(--text);
-        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
       }
       .col-actions {
-        width: 48px;
-        text-align: center;
+        width: 56px;
+        text-align: right;
+        --mat-icon-button-icon-color: var(--text-secondary);
       }
     }
 
     .cart-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 24px;
+      margin: 20px;
+      padding: 16px;
+      border: 1px dashed var(--control);
+      border-radius: var(--radius-md);
       color: var(--text-secondary);
-      min-height: 300px;
-    }
-
-    .empty-visual {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: var(--surface-alt);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      border: 2px dashed var(--border);
-    }
-
-    .empty-icon {
-      font-size: 36px;
-      height: 36px;
-      width: 36px;
-      opacity: 0.4;
-      color: var(--text-tertiary);
     }
 
     .empty-title {
-      font-size: 18px;
-      font-weight: 600;
       color: var(--text);
-      margin-bottom: 6px;
+      font-weight: 500;
+      margin-bottom: 4px;
     }
 
-    .empty-hint {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 20px;
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 6px;
+      border: 1px solid var(--control);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 11px;
     }
 
-    .empty-shortcuts {
-      display: flex;
-      gap: 16px;
-    }
-
-    .empty-shortcut {
-      font-size: 12px;
-      color: var(--text-tertiary);
-
-      kbd {
-        display: inline-block;
-        background: var(--kbd-bg);
-        color: var(--kbd-color);
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        font-weight: 700;
-        font-family: var(--font-mono);
-        margin-right: 4px;
+    @media (max-width: 1100px) {
+      .cart-table .col-price {
+        display: none;
       }
     }
 
-    @media (max-width: 1366px) {
-      .cart-table {
-        th, td {
-          padding: 8px 10px;
-        }
-
-        .col-barcode {
-          width: 120px;
-        }
-        .col-price {
-          width: 100px;
-        }
-        .col-subtotal {
-          width: 110px;
-        }
+    @media (max-width: 860px) {
+      .cart-wrapper {
+        min-height: 0;
       }
-    }
-
-    @media (max-width: 1280px) {
       .cart-table {
         th, td {
-          padding: 7px 8px;
-          font-size: 12px;
+          padding: 0 8px;
         }
-
-        thead th {
-          font-size: 10px;
-        }
-
         .col-seq {
-          width: 32px;
-        }
-        .col-barcode {
-          width: 100px;
-          font-size: 11px;
-        }
-        .col-desc {
-          min-width: 140px;
-        }
-        .col-qty {
-          width: 48px;
-        }
-        .col-price {
-          width: 90px;
-          font-size: 12px;
-        }
-        .col-subtotal {
-          width: 100px;
-          font-size: 13px;
-        }
-        .col-actions {
-          width: 40px;
-        }
-      }
-
-      .cart-empty {
-        padding: 32px 16px;
-        min-height: 200px;
-      }
-
-      .empty-visual {
-        width: 60px;
-        height: 60px;
-        margin-bottom: 14px;
-      }
-
-      .empty-icon {
-        font-size: 28px;
-        height: 28px;
-        width: 28px;
-      }
-
-      .empty-title {
-        font-size: 15px;
-      }
-
-      .empty-hint {
-        font-size: 13px;
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .cart-table {
-        th, td {
-          padding: 5px 6px;
-          font-size: 11px;
-        }
-
-        thead th {
-          font-size: 9px;
-          letter-spacing: 0.3px;
-        }
-
-        .col-seq {
-          width: 28px;
-          font-size: 10px;
-        }
-        .col-barcode {
           display: none;
         }
         .col-desc {
-          min-width: 100px;
-          font-size: 12px;
+          min-width: 0;
         }
-        .col-qty {
-          width: 36px;
-          font-size: 12px;
+        th:nth-child(2), td:nth-child(2) {
+          padding-left: 16px;
         }
-        .col-price {
-          width: 75px;
-          font-size: 11px;
-        }
-        .col-subtotal {
-          width: 85px;
-          font-size: 12px;
-        }
-        .col-actions {
-          width: 32px;
-
-          button {
-            transform: scale(0.8);
-          }
-        }
-      }
-
-      .cart-empty {
-        padding: 20px 12px;
-        min-height: 120px;
-      }
-
-      .empty-visual {
-        width: 50px;
-        height: 50px;
-        margin-bottom: 10px;
-      }
-
-      .empty-icon {
-        font-size: 24px;
-        height: 24px;
-        width: 24px;
-      }
-
-      .empty-title {
-        font-size: 14px;
-      }
-
-      .empty-hint {
-        font-size: 12px;
-        margin-bottom: 12px;
-      }
-
-      .empty-shortcuts {
-        gap: 10px;
-      }
-
-      .empty-shortcut {
-        font-size: 10px;
-      }
-    }
-
-    @media (max-height: 768px) {
-      .cart-table {
-        th, td {
-          padding: 6px 8px;
-        }
-      }
-
-      .cart-empty {
-        padding: 24px 16px;
-        min-height: 150px;
       }
     }
   `]
@@ -390,4 +208,3 @@ export class CartTableComponent {
   @Output() selectItem = new EventEmitter<number>();
   @Output() removeItem = new EventEmitter<number>();
 }
-

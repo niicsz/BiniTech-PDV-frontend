@@ -20,11 +20,9 @@ import { AuthService } from '../../services/auth.service';
   ],
   template: `
     <div class="auth-bg">
-      <div class="glow glow-1"></div>
-      <div class="glow glow-2"></div>
       <mat-card class="auth-card" appearance="outlined">
         <div class="brand">
-          <span class="brand-logo"><mat-icon>lock_reset</mat-icon></span>
+          <span class="brand-logo"><svg class="mark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="currentColor" /><rect x="6" y="6" width="12" height="4" rx="1" fill="var(--surface)" /><path d="M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2M15 17h2" stroke="var(--surface)" stroke-width="1.6" stroke-linecap="round" /></svg></span>
           <span class="brand-name">BiniTech <strong>PDV</strong></span>
         </div>
 
@@ -66,28 +64,25 @@ import { AuthService } from '../../services/auth.service';
   `,
   styles: [`
     .auth-bg { position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-      font-family:var(--font-family); background:#241a12;
-      background-image:
-        radial-gradient(800px 460px at 72% -8%, rgba(212,57,26,0.26) 0%, transparent 58%),
-        radial-gradient(560px 360px at 10% 110%, rgba(28,107,70,0.20) 0%, transparent 60%); overflow:hidden; }
-    .glow { position:absolute; border-radius:50%; filter:blur(90px); opacity:.4; pointer-events:none; }
+      font-family:var(--font-family); background:var(--bg);
+       overflow:hidden; }
+    .glow { display:none;  position:absolute; border-radius:50%;  opacity:.4; pointer-events:none; }
     .glow-1 { width:380px; height:380px; background:#d4391a; top:-120px; right:-60px; }
     .glow-2 { width:320px; height:320px; background:#1c6b46; bottom:-140px; left:-80px; opacity:.35; }
     .auth-card { position:relative; width:100%; max-width:440px; padding:38px !important;
-      background:var(--surface) !important; border:2px solid var(--text) !important;
-      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--text) !important; }
+      background:var(--surface) !important; border:1px solid var(--border) !important;
+      border-radius:var(--radius-md) !important; box-shadow:none; }
     .brand { display:flex; align-items:center; gap:11px; margin-bottom:22px; }
-    .brand-logo { display:grid; place-items:center; width:40px; height:40px; border-radius:var(--radius);
-      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--text); }
-    .brand-logo mat-icon { color:#fff; }
-    .brand-name { font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:-.4px; color:var(--text); }
+    .brand-logo { display:inline-flex; color:var(--primary); }
+    
+    .brand-name {  font-size:20px; font-weight:600; letter-spacing:-.4px; color:var(--text); }
     .brand-name strong { color:var(--primary-dark); }
-    h1 { font-family:var(--font-display); font-size:28px; font-weight:800; letter-spacing:-.8px; margin:0 0 6px; color:var(--text); }
+    h1 {  font-size:28px; font-weight:600; letter-spacing:-.8px; margin:0 0 6px; color:var(--text); }
     .subtitle { color:var(--text-secondary); font-size:14px; margin:0 0 22px; line-height:1.55; }
     .auth-form { display:flex; flex-direction:column; gap:6px; }
     .full-width { width:100%; }
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg); color:var(--danger);
-      padding:12px 16px; border-radius:var(--radius); border:1.5px solid var(--danger); font-size:13px; margin-bottom:8px; }
+      padding:12px 16px; border-radius:var(--radius); border:1px solid var(--danger); font-size:13px; margin-bottom:8px; }
     .submit-btn { width:100%; height:48px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:var(--radius) !important; }
     .back-hint { text-align:center; margin:16px 0 0; font-size:13px; }
     .back-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }

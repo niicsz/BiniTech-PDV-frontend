@@ -11,6 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService } from '../../../pos/services/product.service';
 import { ProductDTO, CreateProductDTO } from '../../../shared/models/api.models';
 
+const LOW_STOCK_LIMIT = 5;
+
 @Component({
   selector: 'app-product-list',
   imports: [
@@ -65,8 +67,21 @@ export class ProductListComponent implements OnInit {
     return this.products.filter(p => p.active).length;
   }
 
+  readonly lowStockLimit = LOW_STOCK_LIMIT;
+
   get lowStockCount(): number {
-    return this.products.filter(p => (p.stockQuantity ?? 0) <= 5 && p.active).length;
+    return this.products.filter(p => p.active && this.stockState(p) === 'low').length;
+  }
+
+  get outOfStockCount(): number {
+    return this.products.filter(p => p.active && this.stockState(p) === 'out').length;
+  }
+
+  stockState(product: ProductDTO): 'out' | 'low' | 'ok' {
+    const stock = product.stockQuantity ?? 0;
+    if (stock <= 0) return 'out';
+    if (stock <= LOW_STOCK_LIMIT) return 'low';
+    return 'ok';
   }
 
   get totalSaleValue(): number {
