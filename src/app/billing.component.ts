@@ -1,10 +1,8 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BillingService, InvoiceDTO, SubscriptionDTO } from './billing.service';
 
@@ -41,145 +39,219 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatIconModule,
     MatButtonModule,
-    MatProgressSpinnerModule,
     MatSnackBarModule,
   ],
   template: `
     <div class="billing">
-      <header class="billing-head">
+      <header class="page-header">
         <div>
-          <a routerLink="/pdv" class="back">← Voltar ao PDV</a>
-          <h1>Minha Assinatura</h1>
+          <h1>Assinatura</h1>
+          <p class="header-subtitle">
+            @if (loading()) {
+              Carregando a assinatura da loja…
+            } @else if (isFree()) {
+              Plano cortesia, sem cobrança.
+            } @else if (!subscription()) {
+              A loja ainda não tem assinatura. Assine para continuar usando o caixa depois do período de teste.
+            } @else {
+              Plano {{ planLabel() }}, {{ statusLabel().toLowerCase() }}.
+              @if (subscription()?.nextBillingDate) { Próxima cobrança em {{ formatDate(subscription()!.nextBillingDate) }}. }
+            }
+          </p>
         </div>
-        <button mat-stroked-button (click)="load()"><mat-icon>refresh</mat-icon> Atualizar</button>
+        <button mat-stroked-button (click)="load()" [disabled]="loading()">Atualizar</button>
       </header>
 
-      <div *ngIf="loading()" class="loading"><mat-spinner diameter="36"></mat-spinner></div>
-
-      <ng-container *ngIf="!loading()">
-        <div *ngIf="needsAction()" class="alert" [class.alert-danger]="isBlocked()">
-          <mat-icon>{{ isBlocked() ? 'error' : 'info' }}</mat-icon>
-          <div>
-            <strong>{{ isBlocked() ? 'Assinatura suspensa' : 'Ative sua assinatura' }}</strong>
-            <p>{{ alertMessage() }}</p>
-          </div>
+      @if (loading()) {
+        <div class="panel loading-panel" aria-busy="true">
+          <span class="skeleton" style="width: 160px"></span>
+          <span class="skeleton tall" style="width: 220px"></span>
         </div>
-
-        <section class="card sub-card">
-          <div class="sub-main">
-            <div>
-              <span class="plan-name">Plano {{ planLabel() }}</span>
-              <span class="plan-price" *ngIf="!isFree()">R$ {{ planPrice() }}<small>/mês</small></span>
-              <span class="plan-price" *ngIf="isFree()">Grátis<small>vitalício</small></span>
-            </div>
-            <span class="badge" [class]="'st-' + (subscription()?.status || 'NONE')">
-              {{ statusLabel() }}
-            </span>
+      } @else {
+        @if (needsAction()) {
+          <div class="status-bar" [class.status-error]="isBlocked()" role="status">
+            <mat-icon aria-hidden="true">{{ isBlocked() ? 'error' : 'info' }}</mat-icon>
+            <span><strong>{{ isBlocked() ? 'Acesso suspenso.' : 'Assinatura pendente.' }}</strong> {{ alertMessage() }}</span>
           </div>
+        }
 
-          <div class="sub-meta" *ngIf="subscription() as s">
-            <div class="meta-item">
-              <span class="meta-lbl">Próxima cobrança</span>
-              <span class="meta-val">{{ formatDate(s.nextBillingDate) }}</span>
+        <div class="billing-grid">
+          <section class="panel sub-card" aria-labelledby="plan-title">
+            <div class="panel-head">
+              <h2 id="plan-title">Plano</h2>
+              @if (subscription(); as s) {
+                <span class="pill" [ngClass]="statusPill(s.status)">{{ statusLabel() }}</span>
+              } @else if (!isFree()) {
+                <span class="pill pill-neutral">Sem assinatura</span>
+              }
             </div>
-            <div class="meta-item">
-              <span class="meta-lbl">Último pagamento</span>
-              <span class="meta-val">{{ formatDate(s.lastPaymentDate) }}</span>
-            </div>
-            <div class="meta-item" *ngIf="s.failedPaymentCount > 0">
-              <span class="meta-lbl">Tentativas falhas</span>
-              <span class="meta-val danger">{{ s.failedPaymentCount }}</span>
-            </div>
-          </div>
+            <div class="sub-body">
+              @if (isFree()) {
+                <p class="plan-price">Cortesia</p>
+                <p class="muted">Acesso liberado sem cobrança, sem data de término.</p>
+              } @else if (subscription()) {
+                <p class="plan-name">{{ planLabel() }}</p>
+                <p class="plan-price num">R$ {{ planPrice() | number:'1.2-2' }}<small> por mês</small></p>
+              } @else {
+                <p class="plan-name">Nenhum plano ativo</p>
+                <p class="muted">Starter R$ 99, Pro R$ 199 ou Enterprise R$ 349 por mês. O plano é escolhido no pagamento.</p>
+              }
 
-          <ng-container *ngIf="!isFree()">
-            <button mat-flat-button color="primary" class="pay-btn" (click)="pay()" [disabled]="paying()">
-              <mat-spinner *ngIf="paying()" diameter="20"></mat-spinner>
-              <mat-icon *ngIf="!paying()">credit_card</mat-icon>
-              {{ payButtonLabel() }}
-            </button>
-            <p class="pay-hint">
-              Você será redirecionado ao Stripe para concluir o pagamento com segurança.<br>
-              Se não conseguir pagar, entre em contato com o suporte.
-            </p>
-            <button mat-stroked-button class="manage-btn" *ngIf="canManage()" (click)="managePortal()" [disabled]="managing()">
-              <mat-spinner *ngIf="managing()" diameter="20"></mat-spinner>
-              <mat-icon *ngIf="!managing()">settings</mat-icon>
-              Gerenciar assinatura
-            </button>
-          </ng-container>
-          <p class="free-note" *ngIf="isFree()">
-            <mat-icon>verified</mat-icon> Plano cortesia vitalício — acesso liberado, sem cobrança.
-          </p>
-        </section>
+              @if (subscription(); as s) {
+                <dl class="sub-meta">
+                  <div>
+                    <dt>Próxima cobrança</dt>
+                    <dd class="num">{{ formatDate(s.nextBillingDate) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Último pagamento</dt>
+                    <dd class="num">{{ formatDate(s.lastPaymentDate) }}</dd>
+                  </div>
+                  @if (s.failedPaymentCount > 0) {
+                    <div>
+                      <dt>Tentativas recusadas</dt>
+                      <dd class="num is-negative">{{ s.failedPaymentCount }}</dd>
+                    </div>
+                  }
+                </dl>
+              }
 
-        <section class="card">
-          <h2>Faturas</h2>
-          <table class="invoice-table" *ngIf="invoices().length > 0">
-            <thead>
-              <tr><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let inv of invoices()">
-                <td>{{ inv.description }}</td>
-                <td>{{ formatDate(inv.dueDate) }}</td>
-                <td>R$ {{ inv.amount.toFixed(2) }}</td>
-                <td><span class="badge inv-{{ inv.status }}">{{ invoiceStatusLabel(inv.status) }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-          <p *ngIf="invoices().length === 0" class="empty">Nenhuma fatura emitida ainda.</p>
-        </section>
-      </ng-container>
+              @if (!isFree()) {
+                <div class="sub-actions">
+                  <button mat-flat-button color="primary" class="pay-btn" (click)="pay()" [disabled]="paying()">
+                    {{ paying() ? 'Abrindo o pagamento…' : payButtonLabel() }}
+                  </button>
+                  @if (canManage()) {
+                    <button mat-stroked-button class="manage-btn" (click)="managePortal()" [disabled]="managing()">
+                      {{ managing() ? 'Abrindo…' : 'Gerenciar assinatura' }}
+                    </button>
+                  }
+                </div>
+                <p class="pay-hint">O pagamento é feito no Stripe. Se não conseguir pagar, fale com o suporte pelo botão Ajuda.</p>
+              }
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="invoices-title">
+            <div class="panel-head">
+              <h2 id="invoices-title">Faturas</h2>
+              <span class="aside">{{ invoices().length }} {{ invoices().length === 1 ? 'fatura' : 'faturas' }}</span>
+            </div>
+            @if (invoices().length > 0) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Descrição</th>
+                    <th scope="col" class="num-col">Vencimento</th>
+                    <th scope="col" class="num-col">Valor</th>
+                    <th scope="col">Situação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let inv of invoices()">
+                    <td>{{ inv.description }}</td>
+                    <td class="num-col num">{{ formatDate(inv.dueDate) }}</td>
+                    <td class="num-col num">R$ {{ inv.amount | number:'1.2-2' }}</td>
+                    <td><span class="pill" [ngClass]="invoicePill(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            } @else {
+              <div class="empty-state">
+                <p>Nenhuma fatura emitida ainda. Elas aparecem aqui depois do primeiro pagamento.</p>
+              </div>
+            }
+          </section>
+        </div>
+      }
     </div>
   `,
   styles: [`
-    .billing { max-width:860px; margin:0 auto; padding:40px 24px; }
-    .billing-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; }
-    .back { color:var(--primary-dark); text-decoration:none; font-size:13px; font-weight:600; }
-    .back:hover { text-decoration:underline; }
-    h1 { font-family:var(--font-display); margin:8px 0 0; font-size:34px; font-weight:800; letter-spacing:-1px; color:var(--text); }
-    h2 { font-family:var(--font-display); font-size:20px; font-weight:700; margin:0 0 16px; color:var(--text); }
-    .loading { display:flex; justify-content:center; padding:60px; }
-    .card { background:var(--surface); border:2px solid var(--text); border-radius:var(--radius-md); padding:26px;
-      box-shadow:6px 6px 0 var(--text); margin-bottom:22px; }
-    .alert { display:flex; gap:12px; align-items:flex-start; background:var(--info-bg); color:var(--text);
-      border:1.5px solid var(--accent); border-radius:var(--radius-md); padding:16px 20px; margin-bottom:22px; }
-    .alert p { margin:4px 0 0; font-size:13.5px; color:var(--text-secondary); }
-    .alert strong { font-family:var(--font-display); }
-    .alert-danger { background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
-    .alert-danger p { color:var(--danger); }
-    .sub-main { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-    .plan-name { display:block; font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); }
-    .plan-price { font-family:var(--font-display); font-size:36px; font-weight:800; letter-spacing:-1.5px; color:var(--text); }
-    .plan-price small { font-family:var(--font-mono); font-size:13px; font-weight:500; color:var(--text-tertiary); margin-left:4px; }
-    .sub-meta { display:flex; gap:32px; flex-wrap:wrap; margin:24px 0; padding:20px 0; border-top:2px dashed var(--border); border-bottom:2px dashed var(--border); }
-    .meta-item { display:flex; flex-direction:column; gap:4px; }
-    .meta-lbl { font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary); }
-    .meta-val { font-size:15px; font-weight:700; color:var(--text); }
-    .meta-val.danger { color:var(--danger); }
-    .badge { padding:4px 12px; border-radius:100px; font-family:var(--font-mono); font-size:11.5px; font-weight:700;
-      white-space:nowrap; border:1.5px solid currentColor; }
-    .st-ACTIVE { background:var(--success-bg); color:var(--success); }
-    .st-PENDING { background:var(--warning-bg); color:var(--accent); }
-    .st-PAST_DUE { background:var(--danger-bg); color:var(--primary-dark); }
-    .st-CANCELLED, .st-NONE { background:var(--surface-alt); color:var(--text-secondary); }
-    .pay-btn { width:100%; height:50px; font-weight:700; margin-top:22px; display:flex; align-items:center; justify-content:center; gap:8px; }
-    .pay-hint { text-align:center; font-size:12px; color:var(--text-tertiary); margin:10px 0 0; }
-    .manage-btn { width:100%; height:46px; font-weight:600; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
-    .free-note { display:flex; align-items:center; justify-content:center; gap:8px; margin:20px 0 0; padding:14px;
-      background:var(--success-bg); color:var(--success); border:1.5px solid var(--success); border-radius:var(--radius); font-size:13.5px; font-weight:600; }
-    .invoice-table { width:100%; border-collapse:separate; border-spacing:0; }
-    .invoice-table th, .invoice-table td { text-align:left; padding:10px 12px; border-bottom:1.5px solid var(--border); font-size:13.5px; color:var(--text); }
-    .invoice-table th { color:var(--table-header-text); font-family:var(--font-mono); font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; }
-    .inv-PAID { background:var(--success-bg); color:var(--success); }
-    .inv-PENDING { background:var(--warning-bg); color:var(--accent); }
-    .inv-OVERDUE { background:var(--danger-bg); color:var(--danger); }
-    .inv-CANCELLED { background:var(--surface-alt); color:var(--text-secondary); }
-    .empty { color:var(--text-tertiary); text-align:center; padding:24px; }
+    .billing {
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+    .billing-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .loading-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+    }
+    .skeleton {
+      display: inline-block;
+      height: 14px;
+      border-radius: 3px;
+      background: var(--surface-hover);
+    }
+    .skeleton.tall {
+      height: 32px;
+    }
+    .sub-body {
+      padding: 16px 20px 20px;
+    }
+    .plan-name {
+      font-weight: 500;
+    }
+    .plan-price {
+      margin-top: 2px;
+      font-size: 30px;
+      line-height: 36px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+    .plan-price small {
+      font-family: var(--font-family);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+    .sub-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 16px 0 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+    .sub-meta dt {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .sub-meta dd {
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .is-negative {
+      color: var(--danger);
+    }
+    .sub-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .pay-hint {
+      margin-top: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    @media (max-width: 900px) {
+      .billing-grid {
+        grid-template-columns: 1fr;
+      }
+      .pay-btn,
+      .manage-btn {
+        flex: 1 1 100%;
+      }
+    }
   `]
 })
 export class BillingComponent implements OnInit {
@@ -286,12 +358,26 @@ export class BillingComponent implements OnInit {
     return status ? (SUB_STATUS_LABEL[status] ?? status) : 'Sem assinatura';
   }
 
+  statusPill(status: string): string {
+    if (status === 'ACTIVE') return 'pill-positive';
+    if (status === 'PAST_DUE') return 'pill-negative';
+    if (status === 'PENDING') return 'pill-warning';
+    return 'pill-neutral';
+  }
+
+  invoicePill(status: string): string {
+    if (status === 'PAID') return 'pill-positive';
+    if (status === 'OVERDUE') return 'pill-negative';
+    if (status === 'PENDING') return 'pill-warning';
+    return 'pill-neutral';
+  }
+
   invoiceStatusLabel(status: string): string {
     return INVOICE_STATUS_LABEL[status] ?? status;
   }
 
   payButtonLabel(): string {
-    return this.isBlocked() ? 'Regularizar pagamento' : 'Assinar / Pagar agora';
+    return this.isBlocked() ? 'Regularizar pagamento' : 'Assinar agora';
   }
 
   alertMessage(): string {

@@ -20,11 +20,20 @@ import {
 } from './user-management.service';
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  SUPER_ADMIN: 'Super Admin',
+  SUPER_ADMIN: 'Administração da plataforma',
   ADMIN: 'Administrador',
-  TENANT_ADMIN: 'Admin da loja',
-  OPERATOR: 'Operador',
+  TENANT_ADMIN: 'Administrador da loja',
+  OPERATOR: 'Operador de caixa',
 };
+
+const AVATAR_TINTS = [
+  { bg: '#dbe7f7', ink: '#0d3a7a' },
+  { bg: '#f6e3cf', ink: '#6b3a10' },
+  { bg: '#dcf2e4', ink: '#14532d' },
+  { bg: '#f3dcee', ink: '#6b1d5c' },
+  { bg: '#e6e2f7', ink: '#33276b' },
+  { bg: '#f7efc9', ink: '#5c4708' },
+];
 
 @Component({
   selector: 'app-confirm-user-status-dialog',
@@ -219,6 +228,14 @@ export class UserManagementComponent implements OnInit {
 
   roleLabel(role: UserRole): string {
     return ROLE_LABELS[role];
+  }
+
+  avatarTint(name: string): { bg: string; ink: string } {
+    let hash = 0;
+    for (const char of name) {
+      hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+    }
+    return AVATAR_TINTS[hash % AVATAR_TINTS.length];
   }
 
   roleClass(role: UserRole): string {

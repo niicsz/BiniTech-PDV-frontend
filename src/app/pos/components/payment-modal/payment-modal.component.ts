@@ -24,40 +24,38 @@ export interface PaymentConfirmation {
   ],
   template: `
     <div class="modal-overlay" (click)="cancel.emit()">
-      <mat-card class="modal-content modal-payment" (click)="$event.stopPropagation()" appearance="outlined">
+      <mat-card class="modal-content modal-payment" role="dialog" aria-modal="true" aria-labelledby="payment-title" (click)="$event.stopPropagation()" appearance="outlined">
         <div class="modal-header">
-          <mat-icon class="modal-header-icon">payment</mat-icon>
-          <h3>Finalizar Venda</h3>
+          <h3 id="payment-title">Receber pagamento</h3>
         </div>
 
         <mat-card-content>
           <div class="payment-total">
-            <span class="total-label">Total da Venda</span>
-            <strong class="total-amount">R$ {{ total | number:'1.2-2' }}</strong>
+            <span class="total-label">Total da venda</span>
+            <strong class="total-amount num">R$ {{ total | number:'1.2-2' }}</strong>
           </div>
 
           <div class="payments-list" *ngIf="payments.length > 0">
             <h4>Pagamentos adicionados</h4>
             <div class="payment-entry" *ngFor="let p of payments; let i = index">
-              <mat-icon class="entry-icon">{{ getMethodIcon(p.method) }}</mat-icon>
               <span class="entry-label">{{ getPaymentLabel(p.method) }}</span>
-              <strong class="entry-amount">R$ {{ p.amount | number:'1.2-2' }}</strong>
-              <button mat-icon-button color="warn" (click)="removePayment(i)" class="entry-remove">
+              <strong class="entry-amount num">R$ {{ p.amount | number:'1.2-2' }}</strong>
+              <button mat-icon-button (click)="removePayment(i)" class="entry-remove" [attr.aria-label]="'Remover pagamento em ' + getPaymentLabel(p.method)">
                 <mat-icon>close</mat-icon>
               </button>
             </div>
             <div class="payments-summary">
               <div class="summary-line">
                 <span>Total pago</span>
-                <strong>R$ {{ getTotalPaid() | number:'1.2-2' }}</strong>
+                <strong class="num">R$ {{ getTotalPaid() | number:'1.2-2' }}</strong>
               </div>
               <div class="summary-line remaining" *ngIf="getRemaining() > 0">
                 <span>Falta pagar</span>
-                <strong class="text-danger">R$ {{ getRemaining() | number:'1.2-2' }}</strong>
+                <strong class="num">R$ {{ getRemaining() | number:'1.2-2' }}</strong>
               </div>
               <div class="summary-line change" *ngIf="getTotalChange() > 0">
                 <span>Troco</span>
-                <strong class="text-success">R$ {{ getTotalChange() | number:'1.2-2' }}</strong>
+                <strong class="num">R$ {{ getTotalChange() | number:'1.2-2' }}</strong>
               </div>
             </div>
           </div>
@@ -68,9 +66,9 @@ export interface PaymentConfirmation {
               <button mat-stroked-button
                 *ngFor="let m of availableMethods"
                 [class.active]="selectedMethod === m.value"
+                [attr.aria-pressed]="selectedMethod === m.value"
                 (click)="selectMethod(m.value)"
                 class="method-btn">
-                <mat-icon>{{ m.icon }}</mat-icon>
                 {{ m.label }}
               </button>
             </div>
@@ -78,7 +76,7 @@ export interface PaymentConfirmation {
             <div class="amount-section" *ngIf="selectedMethod">
               <div class="crediario-fields" *ngIf="selectedMethod === 'CREDIARIO'">
                 <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Nome do Cliente</mat-label>
+                  <mat-label>Nome do cliente</mat-label>
                   <input matInput #customerNameInput type="text"
                          [(ngModel)]="customerName"
                          (ngModelChange)="onCustomerNameChange($event)"
@@ -87,22 +85,19 @@ export interface PaymentConfirmation {
                 </mat-form-field>
 
                 <div class="debtor-suggestions" *ngIf="filteredDebtors.length > 0 && showSuggestions">
-                  <div class="suggestion-header">
-                    <mat-icon>people</mat-icon>
-                    <span>Devedores cadastrados</span>
-                  </div>
+                  <div class="suggestion-header">Já deve no crediário</div>
                   <div class="suggestion-item" *ngFor="let d of filteredDebtors"
                        (click)="selectDebtor(d)">
                     <div class="suggestion-info">
                       <strong>{{ d.name }}</strong>
                       <span *ngIf="d.phone" class="suggestion-phone">{{ d.phone }}</span>
                     </div>
-                    <span class="suggestion-debt">R$ {{ d.totalDebt | number:'1.2-2' }}</span>
+                    <span class="suggestion-debt num">R$ {{ d.totalDebt | number:'1.2-2' }}</span>
                   </div>
                 </div>
 
                 <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Telefone do Cliente</mat-label>
+                  <mat-label>Telefone do cliente</mat-label>
                   <input matInput type="tel"
                          [(ngModel)]="customerPhone"
                          (ngModelChange)="onPhoneChange($event)"
@@ -110,52 +105,51 @@ export interface PaymentConfirmation {
                          (keydown.enter)="addPayment()"
                          maxlength="15" />
                   <mat-hint *ngIf="customerPhone && !isPhoneValid()" class="phone-error">
-                    Telefone inválido. Use: (00) 00000-0000
+                    Use DDD e número: (11) 98765-4321
                   </mat-hint>
                 </mat-form-field>
 
-                <div class="duplicate-warning" *ngIf="duplicatePhoneWarning">
-                  <mat-icon>warning</mat-icon>
+                <div class="duplicate-warning" *ngIf="duplicatePhoneWarning" role="status">
                   <span>{{ duplicatePhoneWarning }}</span>
                 </div>
               </div>
 
               <mat-form-field appearance="outline" class="full-width" *ngIf="selectedMethod === 'CASH'">
-                <mat-label>Valor Recebido (R$)</mat-label>
+                <mat-label>Valor recebido</mat-label>
+                <span matTextPrefix>R$&nbsp;</span>
                 <input matInput #amountInput type="number" step="0.01" min="0"
                        class="amount-input" [(ngModel)]="currentAmount"
                        (keydown.enter)="addPayment()" autofocus />
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width" *ngIf="selectedMethod !== 'CASH'">
-                <mat-label>Valor (R$)</mat-label>
+                <mat-label>Valor</mat-label>
+                <span matTextPrefix>R$&nbsp;</span>
                 <input matInput #amountInputCard type="number" step="0.01" min="0.01"
                        class="amount-input" [(ngModel)]="currentAmount"
                        (keydown.enter)="addPayment()" autofocus />
               </mat-form-field>
 
-              <button mat-flat-button color="primary" (click)="addPayment()" class="btn-add">
-                <mat-icon>add</mat-icon>
-                Adicionar Pagamento
+              <button mat-stroked-button (click)="addPayment()" class="btn-add">
+                Adicionar pagamento
               </button>
             </div>
           </div>
         </mat-card-content>
 
-        <div class="error-banner" *ngIf="errorMessage">
-          <mat-icon class="error-icon">error</mat-icon>
+        <div class="error-banner" *ngIf="errorMessage" role="alert">
+          <mat-icon class="error-icon" aria-hidden="true">error</mat-icon>
           <span>{{ errorMessage }}</span>
         </div>
 
         <mat-card-actions align="end">
           <button mat-stroked-button (click)="cancel.emit()">
-            Cancelar (Esc)
+            Cancelar <kbd>Esc</kbd>
           </button>
-          <button mat-flat-button class="confirm-btn"
+          <button mat-flat-button color="primary" class="confirm-btn"
             (click)="confirmAll()"
             [disabled]="payments.length === 0 || getRemaining() > 0.001 || processing">
-            <mat-icon>{{ processing ? 'hourglass_empty' : 'check' }}</mat-icon>
-            {{ processing ? 'Processando...' : 'Confirmar Pagamento' }}
+            {{ processing ? 'Registrando venda…' : 'Finalizar venda' }}
           </button>
         </mat-card-actions>
       </mat-card>
@@ -164,116 +158,104 @@ export interface PaymentConfirmation {
   styles: [`
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      inset: 0;
+      z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
-      animation: fadeIn 0.2s ease;
-      backdrop-filter: blur(4px);
+      padding: 16px;
+      background: rgba(10, 10, 10, 0.45);
+      animation: fadeIn 120ms var(--ease);
     }
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
     .modal-content {
-      animation: scaleIn 0.2s ease;
-      max-height: 90vh;
+      max-height: calc(100vh - 32px);
       overflow-y: auto;
-      padding: 24px;
-      border-radius: var(--radius-md);
+      padding: 20px;
+      background: var(--surface) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius-md) !important;
+      box-shadow: var(--shadow-lg) !important;
     }
-    .modal-payment { width: 540px; max-width: 95vw; }
-    @keyframes scaleIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
+    .modal-payment { width: 520px; max-width: 100%; }
+    mat-card-content { padding: 0 !important; }
     .modal-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .modal-header-icon {
-      font-size: 28px;
-      height: 28px;
-      width: 28px;
-      color: var(--primary);
+      margin-bottom: 12px;
     }
     .modal-header h3 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0;
+      font-size: 18px;
+      line-height: 26px;
+      font-weight: 600;
     }
     h4 {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
     }
     .payment-total {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      background: var(--primary);
-      color: #fff;
-      border-radius: var(--radius);
-      margin-bottom: 20px;
+      align-items: baseline;
+      padding: 0 0 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
     }
     .total-label {
-      font-size: 14px;
-      font-weight: 500;
-      opacity: 0.9;
+      color: var(--text-secondary);
     }
     .total-amount {
-      font-size: 28px;
-      font-family: var(--font-mono);
-      letter-spacing: -0.5px;
+      font-size: 32px;
+      line-height: 38px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
     }
     .payments-list {
-      margin-bottom: 20px;
-      padding: 16px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
       background: var(--surface-alt);
       border-radius: var(--radius);
-      border: 1px solid var(--border);
     }
     .payment-entry {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      min-height: 40px;
+      border-bottom: 1px solid var(--border-light);
     }
-    .entry-icon { font-size: 20px; height: 20px; width: 20px; color: var(--primary); }
-    .entry-label { flex: 1; font-size: 14px; color: var(--text); }
-    .entry-amount { font-size: 15px; color: var(--text); font-weight: 600; font-family: var(--font-mono); }
-    .entry-remove { transform: scale(0.85); }
+    .entry-label { flex: 1; }
+    .entry-amount { font-weight: 500; }
+    .entry-remove { --mat-icon-button-icon-color: var(--text-secondary); }
     .payments-summary {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 2px solid var(--border);
+      margin-top: 8px;
     }
     .summary-line {
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
       padding: 4px 0;
+      color: var(--text-secondary);
+    }
+    .summary-line strong {
       color: var(--text);
+      font-weight: 500;
     }
-    .summary-line.remaining { color: var(--danger); }
+    .summary-line.remaining strong {
+      color: var(--danger);
+    }
     .summary-line.change {
+      margin-top: 6px;
       padding: 10px 12px;
-      background: var(--success-bg);
       border-radius: var(--radius);
-      margin-top: 8px;
+      background: var(--success-bg);
+      color: var(--success-ink);
     }
-    .text-danger { color: var(--danger); }
-    .text-success { color: var(--success); }
+    .summary-line.change strong {
+      color: var(--success-ink);
+      font-size: 18px;
+    }
     .method-buttons {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -281,181 +263,126 @@ export interface PaymentConfirmation {
       margin-bottom: 16px;
     }
     .method-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-      height: 48px;
-      font-weight: 600;
-      border-radius: var(--radius) !important;
-      transition: all 0.15s;
+      height: 44px;
+      justify-content: flex-start !important;
+      padding: 0 14px !important;
       &.active {
         background: var(--primary) !important;
-        color: #fff !important;
+        color: var(--surface) !important;
         border-color: var(--primary) !important;
       }
     }
     .amount-section {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
     }
     .full-width { width: 100%; }
     .amount-input {
-      font-size: 24px !important;
-      font-weight: 700;
+      font-size: 22px !important;
+      font-weight: 500;
       text-align: right;
       font-family: var(--font-mono) !important;
+      font-variant-numeric: tabular-nums;
     }
     .btn-add { align-self: flex-end; }
     .crediario-fields {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin-bottom: 8px;
-      padding: 12px 16px;
-      background: var(--surface-alt, #f5f5f5);
-      border-radius: var(--radius, 8px);
-      border-left: 3px solid #8a4f2a;
+      margin-bottom: 4px;
     }
     .debtor-suggestions {
-      margin: -4px 0 8px;
-      border: 1px solid var(--border, #e0e0e0);
-      border-radius: var(--radius, 8px);
-      background: var(--surface, #fff);
-      max-height: 180px;
+      margin: -8px 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      max-height: 200px;
       overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-lg);
     }
     .suggestion-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       padding: 8px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-secondary, #888);
-      border-bottom: 1px solid var(--border, #e0e0e0);
-    }
-    .suggestion-header mat-icon {
-      font-size: 16px; height: 16px; width: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
     }
     .suggestion-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
+      min-height: 48px;
+      padding: 6px 12px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background-color 120ms var(--ease);
     }
     .suggestion-item:hover {
-      background: var(--primary-bg, rgba(66,165,245,0.08));
+      background: var(--primary-bg);
     }
     .suggestion-item:not(:last-child) {
-      border-bottom: 1px solid var(--border, #eee);
+      border-bottom: 1px solid var(--border-light);
     }
     .suggestion-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
     }
     .suggestion-info strong {
-      font-size: 14px;
-      color: var(--text, #333);
+      font-weight: 500;
     }
     .suggestion-phone {
       font-size: 12px;
-      color: var(--text-secondary, #888);
+      color: var(--text-secondary);
     }
     .suggestion-debt {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--danger, #ef5350);
-      font-family: var(--font-mono, monospace);
+      font-weight: 500;
     }
     .phone-error {
-      color: var(--danger, #ef5350) !important;
-      font-weight: 500;
+      color: var(--danger) !important;
     }
     .duplicate-warning {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      background: rgba(200, 136, 31, 0.12);
-      border: 1px solid rgba(200, 136, 31, 0.45);
-      border-radius: var(--radius, 8px);
-      color: #8a5a12;
+      padding: 10px 12px;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius);
+      background: var(--warning-bg);
+      color: var(--warning-ink);
       font-size: 13px;
-      font-weight: 500;
-      margin-top: 4px;
-      animation: fadeIn 0.2s ease;
     }
-    .duplicate-warning mat-icon {
-      font-size: 20px;
-      height: 20px;
-      width: 20px;
-      color: var(--accent);
-      flex-shrink: 0;
-    }
-    .confirm-btn {
-      background-color: var(--success) !important;
-      color: #fff !important;
+    kbd {
+      margin-left: 6px;
+      padding: 0 5px;
+      border: 1px solid var(--control);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
     }
     mat-card-actions {
       display: flex;
-      gap: 10px;
-      padding: 16px 0 0;
+      gap: 8px;
+      padding: 16px 0 0 !important;
     }
     .add-payment-section {
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .error-banner {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
+      gap: 8px;
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border-radius: var(--radius);
       background: var(--danger-bg);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      border-radius: var(--radius, 8px);
-      margin: 12px 0 4px;
-      font-size: 14px;
-      font-weight: 500;
-      animation: shakeIn 0.3s ease;
+      color: var(--danger-ink);
     }
     .error-banner .error-icon {
-      font-size: 22px;
-      height: 22px;
-      width: 22px;
-      color: var(--danger);
-      flex-shrink: 0;
+      flex: none;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
-    @keyframes shakeIn {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-6px); }
-      40% { transform: translateX(6px); }
-      60% { transform: translateX(-4px); }
-      80% { transform: translateX(4px); }
-    }
-
-    @media (max-width: 1280px) {
-      .modal-payment { width: 480px; }
-      .total-amount { font-size: 24px; }
-      .payment-total { padding: 12px 16px; }
-      .amount-input { font-size: 20px !important; }
-    }
-
-    @media (max-height: 768px) {
-      .modal-content { padding: 16px; }
-      .modal-header { margin-bottom: 14px; }
-      .payment-total { padding: 10px 14px; margin-bottom: 14px; }
-      .total-amount { font-size: 22px; }
-      .payments-list { margin-bottom: 14px; padding: 12px; }
-      .method-btn { height: 42px; }
-      mat-card-actions { padding: 12px 0 0; }
+    @media (max-width: 480px) {
+      .method-buttons { grid-template-columns: 1fr; }
+      .total-amount { font-size: 28px; }
     }
   `]
 })
@@ -488,9 +415,9 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
 
   availableMethods = [
     { value: 'CASH' as PaymentMethodEnum, label: 'Dinheiro', icon: 'payments' },
-    { value: 'CREDIT_CARD' as PaymentMethodEnum, label: 'Crédito', icon: 'credit_card' },
-    { value: 'DEBIT_CARD' as PaymentMethodEnum, label: 'Débito', icon: 'credit_card' },
-    { value: 'PIX' as PaymentMethodEnum, label: 'PIX', icon: 'pix' },
+    { value: 'CREDIT_CARD' as PaymentMethodEnum, label: 'Cartão de crédito', icon: 'credit_card' },
+    { value: 'DEBIT_CARD' as PaymentMethodEnum, label: 'Cartão de débito', icon: 'credit_card' },
+    { value: 'PIX' as PaymentMethodEnum, label: 'Pix', icon: 'pix' },
     { value: 'CREDIARIO' as PaymentMethodEnum, label: 'Crediário', icon: 'account_balance_wallet' },
   ];
 

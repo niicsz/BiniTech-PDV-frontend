@@ -1,10 +1,8 @@
 import { Component, OnInit, inject, signal, computed, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { AdminService, TenantDTO, TenantUserDTO, PaymentMethod } from './admin.service';
@@ -31,7 +29,7 @@ const PLAN_OPERATOR_LIMIT: Record<string, number> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING_APPROVAL: 'Aguardando',
+  PENDING_APPROVAL: 'Aguardando aprovação',
   REJECTED: 'Reprovado',
   ACTIVE: 'Ativo',
   BLOCKED: 'Bloqueado',
@@ -57,15 +55,13 @@ const USER_ROLE_LABEL: Record<string, string> = {
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="CASH" [(ngModel)]="paymentMethod" />
           <span class="option-content">
-            <mat-icon>payments</mat-icon>
-            <span>Dinheiro (CASH)</span>
+            <span>Dinheiro</span>
           </span>
         </label>
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="PIX" [(ngModel)]="paymentMethod" />
           <span class="option-content">
-            <mat-icon>qr_code</mat-icon>
-            <span>PIX</span>
+            <span>Pix</span>
           </span>
         </label>
       </div>
@@ -82,9 +78,9 @@ const USER_ROLE_LABEL: Record<string, string> = {
     .payment-options { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
     .payment-option { display: flex; align-items: center; cursor: pointer; }
     .payment-option input { margin-right: 12px; }
-    .option-content { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
+    .option-content { display: flex; align-items: center; gap: 12px; flex: 1; height: 44px; padding: 0 14px; border: 1px solid var(--control); border-radius: var(--radius); transition: background-color 120ms var(--ease), border-color 120ms var(--ease); }
     .payment-option:hover .option-content { border-color: var(--primary); background: var(--primary-bg); }
-    .payment-option input:checked + .option-content { border-color: var(--primary); background: var(--primary-bg); color: var(--primary-dark); }
+    .payment-option input:checked + .option-content { border-color: var(--primary); background: var(--primary-bg); font-weight: 500; }
     .option-content mat-icon { font-size: 24px; width: 24px; height: 24px; }
   `]
 })
@@ -99,137 +95,218 @@ export class PaymentMethodDialogComponent {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MatIconModule,
     MatButtonModule,
-    MatProgressSpinnerModule,
     MatSnackBarModule,
   ],
   template: `
     <div class="admin">
-      <header class="admin-head">
+      <header class="page-header">
         <div>
-          <a routerLink="/pdv" class="back">← Voltar ao PDV</a>
-          <h1>Painel do Super Admin</h1>
+          <h1>Lojas</h1>
+          <p class="header-subtitle">
+            @if (loading() && tenants().length === 0) {
+              Carregando as lojas da plataforma…
+            } @else if (countByStatus('PENDING_APPROVAL') > 0) {
+              {{ countByStatus('PENDING_APPROVAL') }} {{ countByStatus('PENDING_APPROVAL') === 1 ? 'loja espera' : 'lojas esperam' }} sua aprovação.
+              A mais antiga pediu em {{ oldestPendingDate() | date:'dd/MM' }}.
+            } @else {
+              Nenhuma loja esperando aprovação.
+            }
+          </p>
         </div>
-        <button mat-stroked-button (click)="load()"><mat-icon>refresh</mat-icon> Atualizar</button>
+        <button mat-stroked-button (click)="load()" [disabled]="loading()">Atualizar</button>
       </header>
 
-      <section class="stats">
-        <div class="stat"><span class="num">{{ tenants().length }}</span><span class="lbl">Tenants</span></div>
-        <div class="stat"><span class="num">{{ countByStatus('ACTIVE') }}</span><span class="lbl">Ativos</span></div>
-        <div class="stat"><span class="num">{{ countByStatus('PENDING_APPROVAL') }}</span><span class="lbl">Aguardando</span></div>
-        <div class="stat"><span class="num">{{ countByStatus('REJECTED') }}</span><span class="lbl">Reprovados</span></div>
-        <div class="stat highlight"><span class="num">R$ {{ mrr() }}</span><span class="lbl">MRR estimado</span></div>
+      <dl class="stats-strip">
+        <div class="stat">
+          <dt>Receita mensal estimada</dt>
+          <dd class="lead">R$ {{ mrr() | number:'1.2-2' }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Lojas ativas</dt>
+          <dd>{{ countByStatus('ACTIVE') }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Aguardando aprovação</dt>
+          <dd [class.is-warning]="countByStatus('PENDING_APPROVAL') > 0">{{ countByStatus('PENDING_APPROVAL') }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Bloqueadas</dt>
+          <dd [class.is-negative]="countByStatus('BLOCKED') > 0">{{ countByStatus('BLOCKED') }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Reprovadas</dt>
+          <dd>{{ countByStatus('REJECTED') }}</dd>
+        </div>
+      </dl>
+
+      <section class="table-card" aria-labelledby="tenants-title">
+        <div class="panel-head">
+          <h2 id="tenants-title">Todas as lojas</h2>
+          <span class="aside">pendentes primeiro · receita estimada pelo plano de cada loja ativa</span>
+        </div>
+
+        @if (loading() && tenants().length === 0) {
+          <div class="empty-state"><p>Carregando…</p></div>
+        } @else if (tenants().length === 0) {
+          <div class="empty-state"><p>Nenhuma loja cadastrada ainda. Os cadastros feitos no site aparecem aqui para aprovação.</p></div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Loja</th>
+                  <th scope="col">Plano</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col" class="col-email">E-mail de cobrança</th>
+                  <th scope="col" class="col-actions"><span class="sr-only">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let t of sortedTenants()">
+                  <tr [class.is-pending]="t.status === 'PENDING_APPROVAL'">
+                    <td>
+                      <span class="tenant-name">{{ t.name }}</span>
+                      <span class="tenant-slug num">{{ t.slug }}</span>
+                    </td>
+                    <td>{{ planLabel(t.planId) }}</td>
+                    <td>
+                      <span class="pill" [ngClass]="statusPill(t.status)">{{ statusLabel(t.status) }}</span>
+                      <small class="status-reason" *ngIf="t.blockReason && (t.status === 'REJECTED' || t.status === 'BLOCKED')">
+                        {{ t.blockReason }}
+                      </small>
+                    </td>
+                    <td class="col-email muted">{{ t.billingEmail }}</td>
+                    <td class="col-actions">
+                      <div class="actions">
+                        <button mat-button (click)="toggleUsers(t)" [attr.aria-expanded]="expandedTenantId() === t.id">
+                          {{ expandedTenantId() === t.id ? 'Ocultar usuários' : 'Usuários' }}
+                        </button>
+                        <button mat-stroked-button *ngIf="t.status === 'PENDING_APPROVAL'" (click)="reject(t)">Reprovar</button>
+                        <button mat-flat-button color="primary" *ngIf="t.status === 'PENDING_APPROVAL'" (click)="approve(t)">Aprovar</button>
+                        <button mat-flat-button color="primary" *ngIf="t.status === 'BLOCKED' || t.status === 'CANCELLED'" (click)="activate(t)">Registrar pagamento</button>
+                        <button mat-stroked-button class="btn-block" *ngIf="t.status === 'ACTIVE'" (click)="block(t)">Bloquear</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="expandedTenantId() === t.id" class="users-row">
+                    <td colspan="5">
+                      <div class="users-panel">
+                        <div class="users-head">
+                          <strong>Usuários de {{ t.name }}</strong>
+                          <span class="pill num" [class.pill-negative]="isOverLimit(t.planId)" [class.pill-neutral]="!isOverLimit(t.planId)">
+                            {{ operatorCount() }} de {{ operatorLimit(t.planId) === Infinity ? 'ilimitados' : operatorLimit(t.planId) }} operadores do plano
+                          </span>
+                        </div>
+                        @if (usersLoading()) {
+                          <p class="muted">Carregando…</p>
+                        } @else if (tenantUsers().length === 0) {
+                          <p class="muted">Nenhum usuário.</p>
+                        } @else {
+                          <ul class="users-list">
+                            <li *ngFor="let u of tenantUsers()">
+                              <span class="num">{{ u.username }}</span>
+                              <span class="muted">{{ roleLabel(u.role) }}</span>
+                            </li>
+                          </ul>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
-
-      <div *ngIf="loading()" class="loading"><mat-spinner diameter="32"></mat-spinner></div>
-
-      <table *ngIf="!loading()" class="tenant-table">
-        <thead>
-          <tr><th>Empresa</th><th>Slug</th><th>Plano</th><th>Status</th><th>E-mail</th><th>Ações</th></tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let t of tenants()">
-            <tr>
-              <td>{{ t.name }}</td>
-              <td><code>{{ t.slug }}</code></td>
-              <td>{{ planLabel(t.planId) }}</td>
-              <td>
-                <span class="badge" [class]="'st-' + t.status">{{ statusLabel(t.status) }}</span>
-                <small class="status-reason" *ngIf="t.status === 'REJECTED' && t.blockReason">
-                  {{ t.blockReason }}
-                </small>
-              </td>
-              <td>{{ t.billingEmail }}</td>
-              <td class="actions">
-                <button mat-button (click)="toggleUsers(t)">
-                  <mat-icon>{{ expandedTenantId() === t.id ? 'expand_less' : 'group' }}</mat-icon>
-                  Usuários
-                </button>
-                <button mat-flat-button color="primary" *ngIf="t.status === 'PENDING_APPROVAL'"
-                        (click)="approve(t)">Aprovar</button>
-                <button mat-stroked-button color="warn" *ngIf="t.status === 'PENDING_APPROVAL'"
-                        (click)="reject(t)">Reprovar</button>
-                <button mat-flat-button color="primary" *ngIf="t.status === 'BLOCKED' || t.status === 'CANCELLED'"
-                        (click)="activate(t)">Ativar pagamento</button>
-                <button mat-stroked-button color="warn" *ngIf="t.status === 'ACTIVE'"
-                        (click)="block(t)">Bloquear</button>
-              </td>
-            </tr>
-            <tr *ngIf="expandedTenantId() === t.id" class="users-row">
-              <td colspan="6">
-                <div class="users-panel">
-                  <div class="users-head">
-                    <strong>Usuários do tenant</strong>
-                    <span class="limit-chip" [class.over]="isOverLimit(t.planId)">
-                      {{ operatorCount() }} / {{ operatorLimit(t.planId) }} operadores do plano
-                    </span>
-                  </div>
-                  <div *ngIf="usersLoading()" class="users-loading"><mat-spinner diameter="22"></mat-spinner></div>
-                  <table *ngIf="!usersLoading()" class="users-table">
-                    <thead><tr><th>Usuário</th><th>Perfil</th></tr></thead>
-                    <tbody>
-                      <tr *ngFor="let u of tenantUsers()">
-                        <td>{{ u.username }}</td>
-                        <td><span class="role-badge">{{ roleLabel(u.role) }}</span></td>
-                      </tr>
-                      <tr *ngIf="tenantUsers().length === 0"><td colspan="2" class="empty">Nenhum usuário.</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </td>
-            </tr>
-          </ng-container>
-          <tr *ngIf="tenants().length === 0"><td colspan="6" class="empty">Nenhum tenant cadastrado.</td></tr>
-        </tbody>
-      </table>
     </div>
   `,
   styles: [`
-    .admin { max-width:1100px; margin:0 auto; padding:40px 24px; }
-    .admin-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; }
-    .back { color:var(--primary-dark); text-decoration:none; font-size:13px; font-weight:600; }
-    .back:hover { text-decoration:underline; }
-    h1 { font-family:var(--font-display); margin:8px 0 0; font-size:34px; font-weight:800; letter-spacing:-1px; color:var(--text); }
-    .stats { display:flex; gap:16px; margin-bottom:30px; flex-wrap:wrap; }
-    .stat { background:var(--surface); border:2px solid var(--text); border-radius:var(--radius-md); padding:18px 24px;
-      min-width:150px; display:flex; flex-direction:column; gap:4px; box-shadow:5px 5px 0 var(--text); }
-    .stat .num { font-family:var(--font-display); font-size:30px; font-weight:800; letter-spacing:-1px; color:var(--text); }
-    .stat .lbl { font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); }
-    .stat.highlight { background:var(--primary); border-color:var(--text); color:#fff; }
-    .stat.highlight .num { color:#fff; }
-    .stat.highlight .lbl { color:#ffe1d7; }
-    .loading { display:flex; justify-content:center; padding:40px; }
-    .tenant-table { width:100%; border-collapse:separate; border-spacing:0; background:var(--surface);
-      border:2px solid var(--text); border-radius:var(--radius-md); overflow:hidden; box-shadow:6px 6px 0 var(--text); }
-    th, td { text-align:left; padding:12px 16px; border-bottom:1.5px solid var(--border); font-size:14px; color:var(--text); }
-    th { background:var(--table-header-bg); color:var(--table-header-text); font-weight:700; font-family:var(--font-mono);
-      font-size:11.5px; text-transform:uppercase; letter-spacing:.6px; }
-    code { font-family:var(--font-mono); background:var(--surface-alt); padding:2px 6px; border-radius:var(--radius-sm); font-size:12px; }
-    .badge { padding:3px 10px; border-radius:100px; font-size:11.5px; font-weight:700; font-family:var(--font-mono); border:1.5px solid currentColor; }
-    .st-ACTIVE { background:var(--success-bg); color:var(--success); }
-    .st-PENDING_APPROVAL { background:var(--warning-bg); color:var(--accent); }
-    .st-REJECTED { background:var(--danger-bg); color:var(--danger); }
-    .st-BLOCKED { background:var(--danger-bg); color:var(--danger); }
-    .st-CANCELLED { background:var(--surface-alt); color:var(--text-secondary); }
-    .actions { display:flex; gap:8px; align-items:center; }
-    .status-reason { display:block; max-width:180px; margin-top:6px; color:var(--text-secondary); line-height:1.3; }
-    .empty { text-align:center; color:var(--text-tertiary); padding:32px; }
-    .users-row td { background:var(--surface-alt); padding:0; }
-    .users-panel { padding:16px 20px; }
-    .users-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-    .users-head strong { font-family:var(--font-display); }
-    .limit-chip { background:var(--primary-bg); color:var(--primary-dark); padding:4px 12px; border-radius:100px;
-      font-family:var(--font-mono); font-size:11.5px; font-weight:600; border:1.5px solid var(--primary); }
-    .limit-chip.over { background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
-    .users-loading { display:flex; justify-content:center; padding:16px; }
-    .users-table { width:100%; border-collapse:separate; border-spacing:0; background:var(--surface);
-      border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; }
-    .users-table th, .users-table td { text-align:left; padding:8px 14px; border-bottom:1.5px solid var(--border); font-size:13px; }
-    .users-table th { background:var(--table-header-bg); color:var(--table-header-text); font-weight:700; }
-    .role-badge { background:var(--surface-alt); color:var(--text); padding:2px 10px; border-radius:100px;
-      font-family:var(--font-mono); font-size:11.5px; font-weight:600; }
+    .admin {
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .tenant-name {
+      display: block;
+      font-weight: 500;
+    }
+    .tenant-slug {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    .status-reason {
+      display: block;
+      max-width: 240px;
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 16px;
+    }
+    .col-actions {
+      text-align: right;
+    }
+    .actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .btn-block:hover:not(:disabled) {
+      color: var(--danger) !important;
+      border-color: var(--danger) !important;
+    }
+    .users-row td {
+      padding: 0 !important;
+      background: var(--surface-alt);
+    }
+    .users-row:hover {
+      background: transparent !important;
+    }
+    .users-panel {
+      padding: 12px 20px 16px;
+    }
+    .users-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .users-head strong {
+      font-weight: 500;
+    }
+    .users-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .users-list li {
+      display: flex;
+      justify-content: space-between;
+      min-height: 36px;
+      align-items: center;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .users-list li:last-child {
+      border-bottom: 0;
+    }
+    @media (max-width: 900px) {
+      .col-email {
+        display: none;
+      }
+    }
   `]
 })
 export class AdminDashboardComponent implements OnInit {
@@ -242,6 +319,23 @@ export class AdminDashboardComponent implements OnInit {
   expandedTenantId = signal<string | null>(null);
   tenantUsers = signal<TenantUserDTO[]>([]);
   usersLoading = signal(false);
+
+  readonly Infinity = Number.POSITIVE_INFINITY;
+
+  sortedTenants = computed(() => {
+    const order: Record<string, number> = { PENDING_APPROVAL: 0, BLOCKED: 1, ACTIVE: 2, CANCELLED: 3, REJECTED: 4 };
+    return [...this.tenants()].sort((a, b) =>
+      (order[a.status] ?? 9) - (order[b.status] ?? 9) || a.name.localeCompare(b.name, 'pt-BR'));
+  });
+
+  oldestPendingDate = computed(() => {
+    const dates = this.tenants()
+      .filter(t => t.status === 'PENDING_APPROVAL')
+      .map(t => (t as TenantDTO & { createdAt?: string }).createdAt)
+      .filter((d): d is string => !!d)
+      .sort();
+    return dates[0] ?? null;
+  });
 
   mrr = computed(() =>
     this.tenants()
@@ -332,6 +426,13 @@ export class AdminDashboardComponent implements OnInit {
 
   planLabel(planId: string): string {
     return PLAN_LABELS[planId] ?? planId;
+  }
+
+  statusPill(status: string): string {
+    if (status === 'ACTIVE') return 'pill-positive';
+    if (status === 'PENDING_APPROVAL') return 'pill-warning';
+    if (status === 'BLOCKED') return 'pill-negative';
+    return 'pill-neutral';
   }
 
   statusLabel(status: string): string {

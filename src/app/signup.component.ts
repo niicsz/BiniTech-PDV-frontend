@@ -31,10 +31,9 @@ import { TenantPublicService } from './tenant-public.service';
     <div class="signup-page">
       <mat-card class="signup-card" appearance="outlined">
         <a class="brand" routerLink="/">
-          <span class="brand-mark"><mat-icon>point_of_sale</mat-icon></span>
-          <span class="brand-name">BiniTech<em>PDV</em></span>
+          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--primary)"><rect width="24" height="24" rx="6" fill="currentColor" /><rect x="6" y="6" width="12" height="4" rx="1" fill="var(--surface)" /><path d="M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2M15 17h2" stroke="var(--surface)" stroke-width="1.6" stroke-linecap="round" /></svg>
+          <span class="brand-name">BiniTech PDV</span>
         </a>
-        <span class="kicker">[ abra seu caixa ]</span>
         <h1>Crie a conta da sua empresa</h1>
         <p class="subtitle">Comece agora. Após o cadastro, sua conta passará por uma rápida aprovação.</p>
 
@@ -78,21 +77,18 @@ import { TenantPublicService } from './tenant-public.service';
   styles: [`
     .signup-page { display:flex; justify-content:center; align-items:center; min-height:100vh;
       background:var(--bg); padding:24px;
-      background-image:
-        radial-gradient(circle at 12% 8%, rgba(212,57,26,0.06), transparent 36%),
-        radial-gradient(circle at 90% 100%, rgba(28,107,70,0.05), transparent 34%); }
+       }
     .signup-card { width:100%; max-width:460px; padding:36px 34px !important;
-      background:var(--surface) !important; border:2px solid var(--text) !important;
-      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--text) !important; }
+      background:var(--surface) !important; border:1px solid var(--border) !important;
+      border-radius:var(--radius-md) !important; box-shadow:none; }
     .brand { display:inline-flex; align-items:center; gap:11px; margin-bottom:24px; color:var(--text); }
-    .brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:var(--radius);
-      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--text); }
-    .brand-mark mat-icon { color:#fff; font-size:21px; width:21px; height:21px; }
-    .brand-name { font-family:var(--font-display); font-weight:800; font-size:21px; letter-spacing:-.4px; }
+    
+    
+    .brand-name {  font-weight:600; font-size:21px; letter-spacing:-.4px; }
     .brand-name em { font-style:normal; color:var(--primary-dark); }
-    .kicker { font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:1px;
-      text-transform:uppercase; color:var(--primary-dark); }
-    h1 { font-family:var(--font-display); font-size:30px; font-weight:800; letter-spacing:-1px;
+    .kicker { font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:0;
+      text-transform:none; color:var(--primary-dark); }
+    h1 {  font-size:30px; font-weight:600; letter-spacing:-1px;
       margin:8px 0 6px; color:var(--text); line-height:1.05; }
     .subtitle { color:var(--text-secondary); font-size:14.5px; line-height:1.55; margin:0 0 26px; }
     form { display:flex; flex-direction:column; gap:4px; }
@@ -100,7 +96,7 @@ import { TenantPublicService } from './tenant-public.service';
     .submit-btn { width:100%; height:50px; margin-top:6px; font-weight:700; font-size:15px;
       display:flex; align-items:center; justify-content:center; gap:8px; }
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg);
-      color:var(--danger); padding:11px 14px; border-radius:var(--radius); border:1.5px solid var(--danger);
+      color:var(--danger); padding:11px 14px; border-radius:var(--radius); border:1px solid var(--danger);
       font-size:13px; margin-bottom:10px; }
     .login-hint { text-align:center; font-size:13.5px; color:var(--text-secondary); margin-top:18px; }
     .login-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }

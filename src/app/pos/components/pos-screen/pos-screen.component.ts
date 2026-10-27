@@ -535,10 +535,10 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   getPaymentLabel(method: string): string {
     const labels: Record<string, string> = {
       'CASH': 'Dinheiro',
-      'CREDIT_CARD': 'Cartão de Crédito',
-      'DEBIT_CARD': 'Cartão de Débito',
-      'PIX': 'PIX',
-      'CREDIARIO': 'Crediário / Fiado'
+      'CREDIT_CARD': 'Cartão de crédito',
+      'DEBIT_CARD': 'Cartão de débito',
+      'PIX': 'Pix',
+      'CREDIARIO': 'Crediário'
     };
     return labels[method] || method;
   }

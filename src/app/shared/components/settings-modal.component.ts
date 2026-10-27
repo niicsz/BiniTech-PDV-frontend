@@ -119,7 +119,7 @@ import { ThemeService, ThemeColors } from '../services/theme.service';
     .color-value {
       font-family: monospace;
       color: var(--text-secondary);
-      text-transform: uppercase;
+      text-transform:none;
     }
     mat-card-actions {
       display: flex;
