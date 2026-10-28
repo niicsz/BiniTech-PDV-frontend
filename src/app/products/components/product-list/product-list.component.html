@@ -217,12 +217,18 @@
             </td>
             <td class="text-center">
               <div class="actions">
-                <button mat-icon-button matTooltip="Editar" class="action-edit" (click)="openEditForm(product)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button matTooltip="Remover" class="action-delete" (click)="deleteProduct(product.id!)">
-                  <mat-icon>delete_outline</mat-icon>
-                </button>
+                <ng-container *ngIf="canModify(product)">
+                  <button mat-icon-button matTooltip="Editar" aria-label="Editar produto" class="action-edit" (click)="openEditForm(product)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button *ngIf="product.active" mat-icon-button matTooltip="Inativar" aria-label="Inativar produto" class="action-delete" (click)="deleteProduct(product.id!)">
+                    <mat-icon>block</mat-icon>
+                  </button>
+                  <button *ngIf="!product.active" mat-icon-button matTooltip="Reativar" aria-label="Reativar produto" class="action-edit" (click)="reactivateProduct(product)">
+                    <mat-icon>restart_alt</mat-icon>
+                  </button>
+                </ng-container>
+                <span *ngIf="!canModify(product)" class="no-actions" matTooltip="Só quem cadastrou ou um administrador pode alterar">—</span>
               </div>
             </td>
           </tr>

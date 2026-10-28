@@ -11,6 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService } from '../../../pos/services/product.service';
 import { ProductDTO, CreateProductDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
+import { AuthService } from '../../../auth/services/auth.service';
+import { isValidBarcode } from '../../../core/barcode';
 
 @Component({
   selector: 'app-product-list',
@@ -48,8 +50,30 @@ export class ProductListComponent implements OnInit {
 
   statusMessage = '';
   statusType: 'success' | 'error' = 'success';
+  private statusTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private productService: ProductService, private analytics: AnalyticsService) {}
+  constructor(
+    private productService: ProductService,
+    private analytics: AnalyticsService,
+    private authService: AuthService
+  ) {}
+
+  canModify(product: ProductDTO): boolean {
+    return this.authService.canManageAllProducts() || product.userId === this.authService.getUserId();
+  }
+
+  private validateForm(): string | null {
+    const f = this.form;
+    if (!f.barcode?.trim()) return 'Informe o código de barras.';
+    if (!isValidBarcode(f.barcode)) return 'Código de barras inválido: o dígito verificador não confere.';
+    if (!f.description?.trim()) return 'Informe a descrição do produto.';
+    if (!(Number(f.price) > 0)) return 'Informe um preço de venda maior que zero.';
+    if (Number(f.costPrice) < 0) return 'O preço de custo não pode ser negativo.';
+    if (!Number.isInteger(Number(f.stockQuantity)) || Number(f.stockQuantity) < 0) {
+      return 'O estoque deve ser um número inteiro igual ou maior que zero.';
+    }
+    return null;
+  }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -163,6 +187,11 @@ export class ProductListComponent implements OnInit {
   }
 
   saveProduct(): void {
+    const invalid = this.validateForm();
+    if (invalid) {
+      this.showStatus(invalid, 'error');
+      return;
+    }
     if (this.editingId) {
       console.info('[ProductList] Atualizando produto:', this.editingId);
       this.productService.update(this.editingId, this.form).subscribe({
@@ -198,20 +227,39 @@ export class ProductListComponent implements OnInit {
   }
 
   deleteProduct(id: string): void {
-    if (confirm('Deseja realmente remover este produto?')) {
-      console.info('[ProductList] Removendo produto:', id);
+    if (confirm('Inativar este produto? Ele sai do caixa e pode ser reativado depois.')) {
+      console.info('[ProductList] Inativando produto:', id);
       this.productService.delete(id).subscribe({
         next: () => {
-          console.info('[ProductList] Produto removido com sucesso:', id);
-          this.showStatus('Produto removido.', 'success');
+          console.info('[ProductList] Produto inativado com sucesso:', id);
+          this.showStatus('Produto inativado. Ele não aparece mais no caixa.', 'success');
           this.loadProducts();
         },
-        error: () => {
-          console.error('[ProductList] Erro ao remover produto:', id);
-          this.showStatus('Erro ao remover produto.', 'error');
+        error: (err) => {
+          console.error('[ProductList] Erro ao inativar produto:', id);
+          this.showStatus(err.error?.message || 'Erro ao inativar produto.', 'error');
         }
       });
     }
+  }
+
+  reactivateProduct(product: ProductDTO): void {
+    const dto: CreateProductDTO = {
+      barcode: product.barcode || '',
+      description: product.description || '',
+      price: product.price || 0,
+      costPrice: product.costPrice || 0,
+      stockQuantity: product.stockQuantity || 0,
+      category: product.category || '',
+      active: true
+    };
+    this.productService.update(product.id!, dto).subscribe({
+      next: () => {
+        this.showStatus('Produto reativado.', 'success');
+        this.loadProducts();
+      },
+      error: (err) => this.showStatus(err.error?.message || 'Erro ao reativar produto.', 'error')
+    });
   }
 
   cancelForm(): void {
@@ -221,6 +269,7 @@ export class ProductListComponent implements OnInit {
   showStatus(message: string, type: 'success' | 'error'): void {
     this.statusMessage = message;
     this.statusType = type;
-    setTimeout(() => this.statusMessage = '', 4000);
+    if (this.statusTimeout) clearTimeout(this.statusTimeout);
+    this.statusTimeout = setTimeout(() => this.statusMessage = '', 4000);
   }
 }
