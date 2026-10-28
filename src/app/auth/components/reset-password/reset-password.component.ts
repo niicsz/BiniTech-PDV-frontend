@@ -154,9 +154,13 @@ export class ResetPasswordComponent implements OnInit {
         this.done = true;
         this.analytics.track('password_reset_completed');
       },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err: { status?: number; error?: { message?: string } }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || 'Não foi possível redefinir a senha. O link pode ter expirado.';
+        const message = err?.error?.message ?? '';
+        const invalidLink = err?.status === 401 || /credenciais|sess[aã]o|token/i.test(message);
+        this.errorMessage = invalidLink || !message
+          ? 'Este link de redefinição é inválido ou expirou. Peça um novo em “Esqueci minha senha”.'
+          : message;
       }
     });
   }
