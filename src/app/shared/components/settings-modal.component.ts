@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ThemeService, ThemeColors } from '../services/theme.service';
+import { AnalyticsService } from '../../core/analytics.service';
 
 @Component({
   selector: 'app-settings-modal',
@@ -132,6 +133,7 @@ export class SettingsModalComponent {
   @Output() close = new EventEmitter<void>();
 
   themeService = inject(ThemeService);
+  private analytics = inject(AnalyticsService);
   colors: ThemeColors = {};
 
   constructor() {
@@ -142,10 +144,12 @@ export class SettingsModalComponent {
 
   updateColor(key: keyof ThemeColors, value: string) {
     this.themeService.updateColor(key, value);
+    this.analytics.track('settings_changed', { setting: `color_${key}` });
   }
 
   resetColors() {
     this.themeService.resetColors();
+    this.analytics.track('settings_changed', { setting: 'color_reset' });
     this.colors = { primary: '#d4391a', headerBg: '#241a12' };
   }
 }

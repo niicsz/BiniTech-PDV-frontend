@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -104,7 +105,7 @@ export class ForgotPasswordComponent {
   sent = false;
   errorMessage = '';
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private analytics: AnalyticsService) {}
 
   onSubmit(): void {
     this.errorMessage = '';
@@ -113,6 +114,7 @@ export class ForgotPasswordComponent {
       return;
     }
     this.loading = true;
+    this.analytics.track('password_reset_requested');
     this.authService.forgotPassword(this.username.trim()).subscribe({
       next: () => {
         this.loading = false;

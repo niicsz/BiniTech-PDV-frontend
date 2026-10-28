@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, afterNextRender, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FAQ_ITEMS } from './core/seo-content';
 import { ThemeService } from './shared/services/theme.service';
+import { AnalyticsService } from './core/analytics.service';
 
 
 @Component({
@@ -43,7 +44,7 @@ import { ThemeService } from './shared/services/theme.service';
               <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
             </button>
             <a class="ghost" routerLink="/login">Entrar</a>
-            <a class="btn btn-solid" routerLink="/signup">
+            <a class="btn btn-solid" routerLink="/signup" (click)="trackCta('header')">
               Começar grátis <mat-icon>north_east</mat-icon>
             </a>
           </div>
@@ -66,7 +67,7 @@ import { ThemeService } from './shared/services/theme.service';
               e segura. Comece em minutos — sem instalar nada no balcão.
             </p>
             <div class="hero-actions">
-              <a class="btn btn-solid btn-lg" routerLink="/signup">
+              <a class="btn btn-solid btn-lg" routerLink="/signup" (click)="trackCta('hero')">
                 Criar conta grátis <mat-icon>arrow_forward</mat-icon>
               </a>
               <a class="btn btn-outline btn-lg" href="#planos">Ver planos</a>
@@ -155,7 +156,7 @@ import { ThemeService } from './shared/services/theme.service';
               <li *ngFor="let item of p.items"><mat-icon>check</mat-icon> {{ item }}</li>
             </ul>
             <a class="btn plan-cta" [class.btn-solid]="p.featured" [class.btn-outline]="!p.featured"
-               routerLink="/signup">
+               routerLink="/signup" (click)="trackCta('plans', p.name)">
               Assinar {{ p.name }}
             </a>
           </article>
@@ -171,7 +172,7 @@ import { ThemeService } from './shared/services/theme.service';
         </div>
         <div class="faq-list">
           <details class="faq-item reveal" *ngFor="let item of faqs; let i = index"
-                   [style.animation-delay]="(i * 0.05) + 's'">
+                   [style.animation-delay]="(i * 0.05) + 's'" (toggle)="onFaqToggle($event, i)">
             <summary>{{ item.q }}</summary>
             <p>{{ item.a }}</p>
           </details>
@@ -184,7 +185,7 @@ import { ThemeService } from './shared/services/theme.service';
           <span class="cta-kicker">✺ Comece hoje ✺</span>
           <h2>Pronto para modernizar sua loja?</h2>
           <p>Crie sua conta agora e venda ainda hoje. Sem cartão, sem compromisso.</p>
-          <a class="btn cta-btn btn-lg" routerLink="/signup">
+          <a class="btn cta-btn btn-lg" routerLink="/signup" (click)="trackCta('footer_cta')">
             Começar grátis <mat-icon>arrow_forward</mat-icon>
           </a>
         </div>
@@ -530,6 +531,33 @@ import { ThemeService } from './shared/services/theme.service';
 })
 export class LandingComponent {
   readonly themeService = inject(ThemeService);
+  private readonly analytics = inject(AnalyticsService);
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const pricing = document.getElementById('planos');
+      if (!pricing || typeof IntersectionObserver === 'undefined') return;
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          this.analytics.track('pricing_viewed');
+          observer.disconnect();
+        }
+      }, { threshold: 0.4 });
+      observer.observe(pricing);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
+
+  trackCta(position: string, plan?: string): void {
+    this.analytics.track('landing_cta', plan ? { position, plan } : { position });
+  }
+
+  onFaqToggle(event: Event, index: number): void {
+    if ((event.target as HTMLDetailsElement).open) {
+      this.analytics.track('faq_opened', { question_index: index + 1 });
+    }
+  }
   year = new Date().getFullYear();
   faqs = FAQ_ITEMS;
 

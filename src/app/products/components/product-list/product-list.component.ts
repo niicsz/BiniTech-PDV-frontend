@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService } from '../../../pos/services/product.service';
 import { ProductDTO, CreateProductDTO } from '../../../shared/models/api.models';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-product-list',
@@ -48,7 +49,7 @@ export class ProductListComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' = 'success';
 
-  constructor(private productService: ProductService) {}
+  constructor(private productService: ProductService, private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
     this.loadProducts();
@@ -178,9 +179,12 @@ export class ProductListComponent implements OnInit {
       });
     } else {
       console.info('[ProductList] Criando novo produto:', this.form.description);
+      const firstProduct = this.products.length === 0;
       this.productService.create(this.form).subscribe({
         next: () => {
           console.info('[ProductList] Produto criado com sucesso:', this.form.description);
+          this.analytics.track('product_created', { source: 'manual' });
+          if (firstProduct) this.analytics.trackOnce('first_product', 'first_product_created', { source: 'manual' });
           this.showStatus('Produto cadastrado com sucesso!', 'success');
           this.showForm = false;
           this.loadProducts();
