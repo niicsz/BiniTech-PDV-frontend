@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 import { SaleDTO, CreateSaleDTO } from '../../shared/models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -8,12 +8,17 @@ export class SaleService {
 
   private readonly baseUrl = '/api/sales';
 
+  readonly debtsChanged = new Subject<void>();
+
   constructor(private http: HttpClient) {}
 
   create(sale: CreateSaleDTO): Observable<SaleDTO> {
     console.info('[SaleService] Criando venda com', sale.items?.length ?? 0, 'item(ns)');
     return this.http.post<SaleDTO>(this.baseUrl, sale).pipe(
-      tap(created => console.info('[SaleService] Venda criada com sucesso:', created.id, 'total:', created.totalAmount))
+      tap(created => {
+        console.info('[SaleService] Venda criada com sucesso:', created.id, 'total:', created.totalAmount);
+        if (created.payments?.some(p => p.method === 'CREDIARIO')) this.debtsChanged.next();
+      })
     );
   }
 
@@ -57,7 +62,10 @@ export class SaleService {
   markAsPaid(id: string): Observable<SaleDTO> {
     console.info('[SaleService] Marcando venda como paga:', id);
     return this.http.patch<SaleDTO>(`${this.baseUrl}/${id}/mark-paid`, {}).pipe(
-      tap(() => console.info('[SaleService] Venda marcada como paga com sucesso:', id))
+      tap(() => {
+        console.info('[SaleService] Venda marcada como paga com sucesso:', id);
+        this.debtsChanged.next();
+      })
     );
   }
 }
