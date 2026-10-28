@@ -118,6 +118,8 @@ export interface PaymentConfirmation {
                   <mat-icon>warning</mat-icon>
                   <span>{{ duplicatePhoneWarning }}</span>
                 </div>
+
+                <p class="crediario-error" *ngIf="crediarioError" role="alert">{{ crediarioError }}</p>
               </div>
 
               <mat-form-field appearance="outline" class="full-width" *ngIf="selectedMethod === 'CASH'">
@@ -308,6 +310,12 @@ export interface PaymentConfirmation {
       font-family: var(--font-mono) !important;
     }
     .btn-add { align-self: flex-end; }
+    .crediario-error {
+      margin: 0;
+      color: var(--danger);
+      font-size: 13px;
+    }
+
     .crediario-fields {
       display: flex;
       flex-direction: column;
@@ -477,6 +485,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   selectedMethod: PaymentMethodEnum | null = null;
   currentAmount = 0;
   customerName = '';
+  crediarioError = '';
   customerPhone = '';
   showSuggestions = false;
 
@@ -505,6 +514,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   }
 
   selectMethod(method: PaymentMethodEnum): void {
+    this.crediarioError = '';
     this.selectedMethod = method;
     const remaining = this.getRemaining();
     this.currentAmount = remaining > 0 ? parseFloat(remaining.toFixed(2)) : parseFloat(this.total.toFixed(2));
@@ -592,9 +602,9 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
       const currentName = this.customerName.trim().toLowerCase();
       const matchName = match.name.trim().toLowerCase();
       if (currentName && matchName !== currentName) {
-        this.duplicatePhoneWarning = `Este telefone já está cadastrado para "${match.name}" com dívida de R$ ${match.totalDebt.toFixed(2)}. Verifique se é o mesmo cliente.`;
+        this.duplicatePhoneWarning = `Este telefone já está cadastrado para "${match.name}" com dívida de R$ ${this.formatMoney(match.totalDebt)}. Verifique se é o mesmo cliente.`;
       } else {
-        this.duplicatePhoneWarning = `Cliente "${match.name}" já possui dívida de R$ ${match.totalDebt.toFixed(2)} neste telefone.`;
+        this.duplicatePhoneWarning = `Cliente "${match.name}" já possui dívida de R$ ${this.formatMoney(match.totalDebt)} neste telefone.`;
       }
     }
   }
@@ -609,12 +619,15 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
     if (!this.selectedMethod || this.currentAmount <= 0) return;
 
     if (this.selectedMethod === 'CREDIARIO' && (!this.customerName.trim() || !this.customerPhone.trim())) {
+      this.crediarioError = 'Informe o nome e o telefone do cliente para vender no crediário.';
       return;
     }
 
     if (this.selectedMethod === 'CREDIARIO' && !this.isPhoneValid()) {
+      this.crediarioError = 'Telefone inválido. Use o formato (00) 00000-0000.';
       return;
     }
+    this.crediarioError = '';
 
     this.payments.push({
       method: this.selectedMethod,
@@ -661,5 +674,9 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
       'CREDIARIO': 'account_balance_wallet'
     };
     return icons[method] || 'payment';
+  }
+
+  private formatMoney(value: number): string {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 }
