@@ -10,6 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
 import { SaleDTO, SaleItemDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
+import { localIsoDate } from '../../../core/local-date';
 
 interface ProductRanking {
   name: string;
@@ -33,6 +34,7 @@ export class SalesReportComponent implements OnInit {
   filterMode: 'today' | 'period' = 'today';
   startDate = '';
   endDate = '';
+  periodError = '';
   totalRevenue = 0;
   totalCost = 0;
   totalProfit = 0;
@@ -47,8 +49,9 @@ export class SalesReportComponent implements OnInit {
 
   loadToday(): void {
     this.filterMode = 'today';
+    this.periodError = '';
     this.analytics.track('report_viewed', { period: 'day' });
-    const today = new Date().toISOString().split('T')[0];
+    const today = localIsoDate();
     console.info('[SalesReport] Carregando vendas do dia:', today);
     this.saleService.listByDay(today).subscribe({
       next: (sales) => {
@@ -64,7 +67,15 @@ export class SalesReportComponent implements OnInit {
   }
 
   loadByPeriod(): void {
-    if (!this.startDate || !this.endDate) return;
+    if (!this.startDate || !this.endDate) {
+      this.periodError = 'Informe a data inicial e a final.';
+      return;
+    }
+    if (this.startDate > this.endDate) {
+      this.periodError = 'A data inicial precisa ser anterior ou igual à final.';
+      return;
+    }
+    this.periodError = '';
     this.filterMode = 'period';
     const days = Math.round((new Date(this.endDate).getTime() - new Date(this.startDate).getTime()) / 86_400_000) + 1;
     this.analytics.track('report_viewed', { period: 'custom', days: Number.isFinite(days) ? days : 0 });
@@ -100,9 +111,9 @@ export class SalesReportComponent implements OnInit {
         map.set(name, existing);
       }
     }
-    const sorted = Array.from(map.values()).sort((a, b) => b.quantity - a.quantity);
+    const sorted = Array.from(map.values()).sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue);
     this.topProducts = sorted.slice(0, 5);
-    this.bottomProducts = [...sorted].reverse().slice(0, 5);
+    this.bottomProducts = sorted.slice(5).reverse().slice(0, 5);
   }
 
   getPaymentLabel(method: string | undefined): string {
