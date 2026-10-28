@@ -18,6 +18,7 @@ import {
 } from '../../../shared/models/api.models';
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-pos-screen',
@@ -71,7 +72,8 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   constructor(
     private productService: ProductService,
     private saleService: SaleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private analytics: AnalyticsService
   ) {}
 
   ngOnInit(): void {
@@ -214,6 +216,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
     if (this.showDropdown && this.dropdownSelectedIndex >= 0) {
       const selected = this.filteredProducts[this.dropdownSelectedIndex];
+      this.trackSearch();
       this.addToCart(selected);
       this.barcodeValue = '';
       this.hideDropdown();
@@ -240,6 +243,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       },
       error: () => {
         console.warn('[PosScreen] Produto não encontrado por barcode:', barcode);
+        this.analytics.track('product_not_found');
         this.showStatus(`Produto não encontrado: ${barcode}`, 'error');
         this.barcodeValue = '';
         this.hideDropdown();
@@ -249,6 +253,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   selectFromDropdown(product: ProductDTO): void {
+    this.trackSearch();
     this.addToCart(product);
     this.barcodeValue = '';
     this.hideDropdown();
@@ -351,6 +356,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       this.selectedCartIndex--;
     }
     this.recalculateTotal();
+    this.analytics.track('item_removed_from_cart', { quantity: item.quantity, cart_items: this.cart.length });
     this.showStatus(`${item.description} removido`, 'info');
     this.focusBarcode();
   }
@@ -367,6 +373,13 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   recalculateTotal(): void {
     this.total = this.cart.reduce((sum, item) => sum + item.subtotal, 0);
+  }
+
+  cancelSale(): void {
+    if (this.cart.length > 0) {
+      this.analytics.track('sale_canceled', { value: this.total, currency: 'BRL', items_count: this.getTotalQty() });
+    }
+    this.clearCart();
   }
 
   clearCart(): void {
@@ -437,10 +450,21 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     this.paymentProcessing = true;
     this.paymentErrorMessage = '';
 
+    const methods = [...new Set(confirmation.payments.map(p => p.method))];
+    const saleParams = {
+      currency: 'BRL',
+      payment_method: methods.length === 1 ? methods[0] : 'MULTIPLE',
+      payment_count: confirmation.payments.length,
+      items_count: this.getTotalQty(),
+      on_credit: methods.includes('CREDIARIO'),
+      skip_stock: this.hasOutOfStockItems
+    };
+
     console.info('[PosScreen] Finalizando venda com', items.length, 'item(ns), total:', this.total);
     this.saleService.create(sale).subscribe({
       next: (result: SaleDTO) => {
         this.paymentProcessing = false;
+        this.trackSaleCompleted({ ...saleParams, value: result.totalAmount ?? this.total });
         this.lastSale = result;
         this.showPaymentModal = false;
         this.showReceiptModal = true;
@@ -454,9 +478,44 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         this.paymentProcessing = false;
         const msg = err.error?.message || 'Erro ao finalizar a venda.';
         this.paymentErrorMessage = msg;
+        this.analytics.track('payment_failed', {
+          ...saleParams,
+          value: this.total,
+          reason: this.paymentFailureReason(msg),
+          status: err.status ?? 0
+        });
         console.error('[PosScreen] Erro ao finalizar venda:', msg);
       }
     });
+  }
+
+  private trackSaleCompleted(params: Record<string, string | number | boolean>): void {
+    this.analytics.track('sale_completed', params);
+    if (!this.analytics.enabled || this.analytics.hasDone('first_sale')) return;
+    // Uma consulta por loja/navegador: confirma que é a primeira venda da loja.
+    this.saleService.listAll().subscribe({
+      next: sales => {
+        if (sales.length <= 1) this.analytics.trackOnce('first_sale', 'first_sale_completed', params);
+        else this.analytics.markDone('first_sale');
+      },
+      error: () => {}
+    });
+  }
+
+  /** Categoria do erro, sem repassar a mensagem (pode conter nomes de produtos/clientes). */
+  private paymentFailureReason(message: string): string {
+    const msg = message.toLowerCase();
+    if (msg.includes('pagamento insuficiente')) return 'insufficient_payment';
+    if (msg.includes('estoque')) return 'insufficient_stock';
+    if (msg.includes('cliente') || msg.includes('crediário') || msg.includes('crediario')) return 'credit_customer';
+    return 'other';
+  }
+
+  private trackSearch(): void {
+    const term = this.barcodeValue.trim();
+    if (term && !/^\d+$/.test(term)) {
+      this.analytics.track('search', { search_term: term.slice(0, 100) });
+    }
   }
 
   private checkLowStock(productIds: string[]): void {

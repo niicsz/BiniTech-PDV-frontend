@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-login',
@@ -168,7 +169,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private analytics: AnalyticsService
   ) {}
 
   onLogin(): void {
@@ -183,10 +185,14 @@ export class LoginComponent {
       next: () => {
         this.loading = false;
         const target = this.authService.isSuperAdmin() ? '/admin' : '/pdv';
+        const role = this.authService.getRole() ?? 'unknown';
+        this.analytics.setUserProperties({ role });
+        this.analytics.track('login', { method: 'password', role });
         this.router.navigate([target]);
       },
       error: (err) => {
         this.loading = false;
+        this.analytics.track('login_failed', { method: 'password', status: err?.status ?? 0 });
         this.errorMessage = err?.error?.message || 'Erro ao fazer login. Verifique suas credenciais.';
       }
     });

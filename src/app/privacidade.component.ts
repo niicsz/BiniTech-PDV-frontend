@@ -16,10 +16,12 @@ import { MatIconModule } from '@angular/material/icon';
         <h2>1. Dados coletados</h2>
         <p>Coletamos dados de cadastro da empresa, de usuários e informações operacionais necessárias ao funcionamento do PDV.</p>
         <h2>2. Uso dos dados</h2>
-        <p>Os dados são utilizados exclusivamente para a prestação do serviço, cobrança e suporte.</p>
-        <h2>3. Compartilhamento</h2>
-        <p>Não compartilhamos seus dados com terceiros, exceto provedores essenciais (ex.: processamento de pagamentos).</p>
-        <h2>4. Seus direitos</h2>
+        <p>Os dados são utilizados exclusivamente para a prestação do serviço, cobrança, suporte e melhoria do produto.</p>
+        <h2>3. Cookies e estatísticas de uso</h2>
+        <p>Usamos o <a href="https://policies.google.com/technologies/partner-sites?hl=pt-BR" target="_blank" rel="noopener noreferrer">Google Analytics</a> para entender como a plataforma é usada e melhorá-la. Ele utiliza cookies e coleta as páginas acessadas (sem parâmetros de endereço), dados técnicos do navegador e do dispositivo, localização aproximada e eventos de uso, como cadastro, login e início de pagamento. Não enviamos nomes, e-mails, nomes de usuário ou dados de clientes da loja. Essas informações são processadas pelo Google, inclusive em servidores fora do Brasil. Você pode bloquear cookies nas configurações do navegador ou instalar o <a href="https://tools.google.com/dlpage/gaoptout?hl=pt-BR" target="_blank" rel="noopener noreferrer">complemento de desativação do Google Analytics</a>.</p>
+        <h2>4. Compartilhamento</h2>
+        <p>Não compartilhamos seus dados com terceiros, exceto provedores essenciais (ex.: processamento de pagamentos) e o Google Analytics, conforme o item 3.</p>
+        <h2>5. Seus direitos</h2>
         <p>Você pode solicitar acesso, correção ou exclusão dos seus dados conforme a LGPD.</p>
       </article>
     </div>
@@ -39,6 +41,7 @@ import { MatIconModule } from '@angular/material/icon';
     h2 { font-family:var(--font-display); font-size:21px; font-weight:700; letter-spacing:-.3px;
       margin:30px 0 8px; color:var(--text); }
     p { color:var(--text-secondary); line-height:1.75; font-size:15.5px; margin:0; }
+    p a { color:var(--primary-dark); font-weight:600; }
   `]
 })
 export class PrivacidadeComponent {}
