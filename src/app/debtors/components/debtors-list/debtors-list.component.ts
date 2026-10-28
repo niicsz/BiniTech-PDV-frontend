@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
 import { SaleDTO } from '../../../shared/models/api.models';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 interface DebtorGroup {
   customerName: string;
@@ -429,7 +430,7 @@ export class DebtorsListComponent implements OnInit {
   totalDebt = 0;
   loading = true;
 
-  constructor(private saleService: SaleService) {}
+  constructor(private saleService: SaleService, private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
     this.loadDebtors();
@@ -492,6 +493,10 @@ export class DebtorsListComponent implements OnInit {
     this.saleService.markAsPaid(sale.id).subscribe({
       next: () => {
         console.info('[DebtorsList] Venda marcada como paga com sucesso:', sale.id);
+        const daysOpen = sale.timestamp
+          ? Math.max(0, Math.floor((Date.now() - new Date(sale.timestamp).getTime()) / 86_400_000))
+          : 0;
+        this.analytics.track('debt_paid', { value: sale.totalAmount ?? 0, currency: 'BRL', days_open: daysOpen });
         this.loadDebtors();
       },
       error: () => {

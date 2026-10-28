@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { AnalyticsService } from '../../core/analytics.service';
 
 export interface ThemeColors {
   primary?: string;
@@ -14,6 +15,7 @@ export class ThemeService {
   
   public isDarkMode = signal<boolean>(false);
   public customColors = signal<ThemeColors>({});
+  private analytics = inject(AnalyticsService);
 
   constructor() {
     this.loadTheme();
@@ -25,7 +27,8 @@ export class ThemeService {
     this.isDarkMode.set(isDark);
     this.applyTheme(isDark);
     localStorage.setItem(this.THEME_KEY, isDark ? 'dark' : 'light');
-    
+    this.analytics.track('settings_changed', { setting: 'theme', value: isDark ? 'dark' : 'light' });
+
     setTimeout(() => this.applyCustomColors(this.customColors()), 0);
   }
 

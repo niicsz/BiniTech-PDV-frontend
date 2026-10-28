@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -122,7 +123,12 @@ export class ResetPasswordComponent implements OnInit {
   hideNew = true;
   hideConfirm = true;
 
-  constructor(private authService: AuthService, private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private analytics: AnalyticsService
+  ) {}
 
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token');
@@ -146,6 +152,7 @@ export class ResetPasswordComponent implements OnInit {
       next: () => {
         this.loading = false;
         this.done = true;
+        this.analytics.track('password_reset_completed');
       },
       error: (err: { error?: { message?: string } }) => {
         this.loading = false;

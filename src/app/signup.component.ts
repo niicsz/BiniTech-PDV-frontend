@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { AnalyticsService } from './core/analytics.service';
 import { TenantPublicService } from './tenant-public.service';
 
 @Component({
@@ -111,6 +112,7 @@ export class SignupComponent {
   private fb = inject(FormBuilder);
   private tenantService = inject(TenantPublicService);
   private router = inject(Router);
+  private analytics = inject(AnalyticsService);
 
   loading = false;
   errorMessage = '';
@@ -124,6 +126,8 @@ export class SignupComponent {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const field = Object.keys(this.form.controls).find(key => this.form.get(key)?.invalid) ?? 'unknown';
+      this.analytics.track('signup_form_error', { field });
       return;
     }
     this.loading = true;
@@ -132,9 +136,13 @@ export class SignupComponent {
     this.tenantService
       .createTenant({ name: name!, billingEmail: billingEmail!, planId: planId! })
       .subscribe({
-        next: () => this.router.navigate(['/signup/success']),
+        next: () => {
+          this.analytics.track('sign_up', { method: 'form', plan: planId! });
+          this.router.navigate(['/signup/success']);
+        },
         error: (err: HttpErrorResponse) => {
           this.loading = false;
+          this.analytics.track('signup_form_error', { field: 'api', status: err?.status ?? 0 });
           this.errorMessage = err?.error?.message || 'Não foi possível concluir o cadastro. Tente novamente.';
         }
       });
