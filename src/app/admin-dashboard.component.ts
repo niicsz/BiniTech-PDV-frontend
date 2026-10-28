@@ -120,7 +120,7 @@ export class PaymentMethodDialogComponent {
         <div class="stat"><span class="num">{{ countByStatus('ACTIVE') }}</span><span class="lbl">Ativos</span></div>
         <div class="stat"><span class="num">{{ countByStatus('PENDING_APPROVAL') }}</span><span class="lbl">Aguardando</span></div>
         <div class="stat"><span class="num">{{ countByStatus('REJECTED') }}</span><span class="lbl">Reprovados</span></div>
-        <div class="stat highlight"><span class="num">R$ {{ mrr() }}</span><span class="lbl">MRR estimado</span></div>
+        <div class="stat highlight"><span class="num">R$ {{ mrr() | number:'1.2-2' }}</span><span class="lbl">MRR estimado</span></div>
       </section>
 
       <div *ngIf="loading()" class="loading"><mat-spinner diameter="32"></mat-spinner></div>

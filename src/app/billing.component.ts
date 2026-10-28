@@ -73,7 +73,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
           <div class="sub-main">
             <div>
               <span class="plan-name">Plano {{ planLabel() }}</span>
-              <span class="plan-price" *ngIf="!isFree()">R$ {{ planPrice() }}<small>/mês</small></span>
+              <span class="plan-price" *ngIf="!isFree()">R$ {{ planPrice() | number:'1.2-2' }}<small>/mês</small></span>
               <span class="plan-price" *ngIf="isFree()">Grátis<small>vitalício</small></span>
             </div>
             <span class="badge" [class]="'st-' + (subscription()?.status || 'NONE')">
@@ -127,7 +127,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
               <tr *ngFor="let inv of invoices()">
                 <td>{{ inv.description }}</td>
                 <td>{{ formatDate(inv.dueDate) }}</td>
-                <td>R$ {{ inv.amount.toFixed(2) }}</td>
+                <td>R$ {{ inv.amount | number:'1.2-2' }}</td>
                 <td><span class="badge inv-{{ inv.status }}">{{ invoiceStatusLabel(inv.status) }}</span></td>
               </tr>
             </tbody>
