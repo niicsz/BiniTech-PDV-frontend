@@ -90,6 +90,22 @@ export class AuthService {
     return localStorage.getItem('username');
   }
 
+  getUserId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(payload)).sub ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  canManageAllProducts(): boolean {
+    const role = this.getRole();
+    return role === 'ADMIN' || role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN';
+  }
+
   isLoggedIn(): boolean {
     return this.hasToken();
   }
