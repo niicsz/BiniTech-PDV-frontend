@@ -15,6 +15,7 @@ import { SettingsModalComponent } from './shared/components/settings-modal.compo
 import { SaleService } from './pos/services/sale.service';
 import { SeoService } from './core/seo.service';
 import { AnalyticsService } from './core/analytics.service';
+import { localIsoDate } from './core/local-date';
 
 @Component({
   selector: 'app-root',
@@ -496,6 +497,7 @@ export class AppComponent implements OnInit {
     this.seoService.init();
     this.analytics.init();
     this.loadDebtorsCount();
+    this.saleService.debtsChanged.subscribe(() => this.loadDebtorsCount());
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -519,7 +521,7 @@ export class AppComponent implements OnInit {
   private checkDailyReminder(count: number): void {
     if (count === 0) return;
     const storageKey = 'pdv_debtor_reminder_date';
-    const today = new Date().toISOString().split('T')[0];
+    const today = localIsoDate();
     const lastReminder = localStorage.getItem(storageKey);
 
     if (lastReminder !== today) {
