@@ -52,6 +52,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   statusMessage = '';
   statusType: 'success' | 'error' | 'info' = 'info';
   private statusTimeout: any;
+  private hideDropdownTimeout: ReturnType<typeof setTimeout> | null = null;
 
   loggedInUsername = '';
 
@@ -86,7 +87,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.productService.listAllPages().subscribe({
       next: (products) => {
-        this.allProducts = products;
+        this.allProducts = products.filter(p => p.active !== false);
         console.info('[PosScreen] Produtos carregados para busca offline:', products.length);
       },
       error: () => {
@@ -99,6 +100,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     if (this.statusTimeout) {
       clearTimeout(this.statusTimeout);
     }
+    this.cancelHideDropdown();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -184,14 +186,24 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   hideDropdown(): void {
-    setTimeout(() => {
+    this.cancelHideDropdown();
+    this.hideDropdownTimeout = setTimeout(() => {
+      this.hideDropdownTimeout = null;
       this.showDropdown = false;
       this.filteredProducts = [];
       this.dropdownSelectedIndex = -1;
     }, 150);
   }
 
+  private cancelHideDropdown(): void {
+    if (this.hideDropdownTimeout) {
+      clearTimeout(this.hideDropdownTimeout);
+      this.hideDropdownTimeout = null;
+    }
+  }
+
   onSearchChange(): void {
+    this.cancelHideDropdown();
     const val = this.barcodeValue.trim().toLowerCase();
     
     if (val.length < 2) {
@@ -236,6 +248,13 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     this.productService.getByBarcode(barcode).subscribe({
       next: (product: ProductDTO) => {
         console.info('[PosScreen] Produto encontrado por barcode da API:', product.description);
+        if (product.active === false) {
+          this.showStatus(`Produto inativo: ${product.description}. Reative em Produtos para vender.`, 'error');
+          this.barcodeValue = '';
+          this.hideDropdown();
+          this.focusBarcode();
+          return;
+        }
         this.addToCart(product);
         this.barcodeValue = '';
         this.hideDropdown();
@@ -376,6 +395,10 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   cancelSale(): void {
+    if (this.cart.length > 0 && !window.confirm('Limpar o carrinho e cancelar esta venda?')) {
+      this.focusBarcode();
+      return;
+    }
     if (this.cart.length > 0) {
       this.analytics.track('sale_canceled', { value: this.total, currency: 'BRL', items_count: this.getTotalQty() });
     }
