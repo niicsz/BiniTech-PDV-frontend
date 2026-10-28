@@ -489,6 +489,9 @@ export class DebtorsListComponent implements OnInit {
 
   markAsPaid(sale: SaleDTO): void {
     if (!sale.id) return;
+    const value = (sale.totalAmount ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const who = sale.customerName ? ` de ${sale.customerName}` : '';
+    if (!confirm(`Confirmar o recebimento de ${value}${who}? A venda sai da lista de devedores.`)) return;
     console.info('[DebtorsList] Marcando venda como paga:', sale.id);
     this.saleService.markAsPaid(sale.id).subscribe({
       next: () => {
