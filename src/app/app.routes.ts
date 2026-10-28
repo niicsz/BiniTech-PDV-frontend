@@ -202,5 +202,11 @@ export const routes: Routes = [
     data: seo({ title: 'Assinatura | BiniTech PDV', noindex: true }),
     loadComponent: () => import('./billing.component').then(m => m.BillingComponent),
     canActivate: [authGuard]
+  },
+  {
+    path: '**',
+    title: 'Página não encontrada | BiniTech PDV',
+    data: seo({ title: 'Página não encontrada | BiniTech PDV', noindex: true }),
+    loadComponent: () => import('./not-found.component').then(m => m.NotFoundComponent)
   }
 ];

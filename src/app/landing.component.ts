@@ -506,8 +506,9 @@ import { AnalyticsService } from './core/analytics.service';
     }
     @media (max-width:640px){
       .nav-links{ display:none; }
-      .nav-cta .ghost{ display:none; }
-      .nav-cta{ gap:12px; }
+      .nav-inner{ padding:14px 16px; gap:12px; }
+      .nav-cta .btn-solid{ display:none; }
+      .nav-cta{ gap:14px; }
       .hero h1{ letter-spacing:-1px; }
       .hero-stats{ gap:22px; }
       .feature-grid{ grid-template-columns:1fr; }
