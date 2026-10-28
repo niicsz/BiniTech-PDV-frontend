@@ -18,6 +18,7 @@ import {
   UserManagementService,
   UserRole,
 } from './user-management.service';
+import { AnalyticsService } from '../core/analytics.service';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -89,6 +90,7 @@ export class UserManagementComponent implements OnInit {
   readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
+  private readonly analytics = inject(AnalyticsService);
 
   readonly users = signal<ManagedUser[]>([]);
   readonly loading = signal(true);
@@ -162,6 +164,7 @@ export class UserManagementComponent implements OnInit {
         this.showCreateForm.set(false);
         this.form = this.emptyForm();
         this.upsertUser(user);
+        this.analytics.track('user_invited', { role: user.role });
         this.snackBar.open(`Usuário “${user.name}” criado com sucesso.`, 'OK', {
           duration: 4000,
           panelClass: ['snackbar-success'],

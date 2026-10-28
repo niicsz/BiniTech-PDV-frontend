@@ -10,6 +10,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { Subscription, timer, switchMap, takeWhile } from 'rxjs';
 import { ColumnMapping, ImportField, ImportJob, ImportRow, ProductImportService } from '../../services/product-import.service';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 @Component({
   selector: 'app-product-import',
@@ -40,7 +41,7 @@ export class ProductImportComponent implements OnDestroy {
   get totalPages(): number { return Math.max(1, Math.ceil((this.job?.summary.totalRecords ?? 0) / this.pageSize)); }
   get firstVisible(): number { return this.rows.length ? this.pageIndex * this.pageSize + 1 : 0; }
   get lastVisible(): number { return this.rows.length ? this.pageIndex * this.pageSize + this.rows.length : 0; }
-  constructor(private imports: ProductImportService) {}
+  constructor(private imports: ProductImportService, private analytics: AnalyticsService) {}
   ngOnDestroy(): void { this.polling?.unsubscribe(); this.rowsRequest?.unsubscribe(); }
   chooseFile(event: Event): void { this.selectedFile = (event.target as HTMLInputElement).files?.[0]; this.error = ''; }
   upload(): void {
@@ -115,8 +116,18 @@ export class ProductImportComponent implements OnDestroy {
     this.polling = timer(0, 1200).pipe(switchMap(() => this.imports.get(this.job!.id)),
       takeWhile(job => ['PENDING', 'PROCESSING'].includes(job.status), true)).subscribe(job => {
         this.job = job;
-        if (!['PENDING', 'PROCESSING'].includes(job.status)) this.step = 5;
+        if (!['PENDING', 'PROCESSING'].includes(job.status)) {
+          this.step = 5;
+          this.trackImportFinished(job);
+        }
       });
+  }
+  private trackImportFinished(job: ImportJob): void {
+    const s = job.summary;
+    this.analytics.track('product_import', {
+      status: job.status.toLowerCase(), mode: this.mode.toLowerCase(), rows: s?.totalRecords ?? 0,
+      created: s?.createdRecords ?? 0, updated: s?.updatedRecords ?? 0, errors: s?.errorRecords ?? 0
+    });
   }
   private run(request: import('rxjs').Observable<ImportJob>, done: (job: ImportJob) => void): void {
     this.busy = true; this.error = '';

@@ -1,12 +1,13 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BillingService, InvoiceDTO, SubscriptionDTO } from './billing.service';
+import { AnalyticsService } from './core/analytics.service';
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
@@ -185,6 +186,10 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
 export class BillingComponent implements OnInit {
   private billingService = inject(BillingService);
   private snackBar = inject(MatSnackBar);
+  private analytics = inject(AnalyticsService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private checkoutReturned = false;
 
   subscription = signal<SubscriptionDTO | null>(null);
   invoices = signal<InvoiceDTO[]>([]);
@@ -215,6 +220,17 @@ export class BillingComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // O Stripe volta para /billing?status=success (pago) ou /billing (cancelado).
+    this.checkoutReturned = this.route.snapshot.queryParamMap.get('status') === 'success';
+    if (this.checkoutReturned) {
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    } else {
+      const pendingPlan = this.analytics.getSession('checkout_pending');
+      if (pendingPlan !== null) {
+        this.analytics.track('checkout_abandoned', { plan: pendingPlan || 'unknown' });
+        this.analytics.setSession('checkout_pending', null);
+      }
+    }
     this.load();
   }
 
@@ -224,6 +240,7 @@ export class BillingComponent implements OnInit {
       next: (sub) => {
         this.subscription.set(sub);
         this.loading.set(false);
+        this.trackSubscription(sub);
       },
       error: (err: HttpErrorResponse) => {
         this.subscription.set(null);
@@ -234,19 +251,81 @@ export class BillingComponent implements OnInit {
       },
     });
     this.billingService.getInvoices().subscribe({
-      next: (data) => this.invoices.set(data),
+      next: (data) => {
+        this.invoices.set(data);
+        this.trackPlanExcess(data);
+      },
       error: () => this.invoices.set([]),
     });
   }
 
+  private trackSubscription(sub: SubscriptionDTO): void {
+    const plan = sub.planTier?.toLowerCase() || 'unknown';
+    const status = sub.status?.toLowerCase() || 'unknown';
+    this.analytics.setUserProperties({ plan, subscription_status: status, tenant_age: this.ageBucket(sub.createdAt) });
+
+    const previous = this.parseSnapshot(this.analytics.getState('billing_snapshot'));
+    if (previous && previous.plan !== plan) {
+      this.analytics.track('plan_changed', { from: previous.plan, to: plan });
+    }
+    if (previous && status === 'cancelled' && previous.status !== 'cancelled') {
+      this.analytics.track('subscription_canceled', { plan });
+    }
+    this.analytics.setState('billing_snapshot', JSON.stringify({ plan, status }));
+
+    if (this.checkoutReturned) {
+      this.checkoutReturned = false;
+      this.analytics.setSession('checkout_pending', null);
+      const price = PLAN_PRICE[plan] ?? 0;
+      this.analytics.track('purchase', {
+        transaction_id: `${sub.id}-${sub.currentPeriodStart ?? sub.updatedAt}`,
+        value: price,
+        currency: 'BRL',
+        items: [{ item_id: plan, item_name: PLAN_LABELS[plan] ?? plan, price, quantity: 1 }],
+      });
+    }
+  }
+
+  private trackPlanExcess(invoices: InvoiceDTO[]): void {
+    for (const invoice of invoices) {
+      if (invoice.excessAmount > 0) {
+        this.analytics.trackOnce(`excess_${invoice.id}`, 'plan_limit_exceeded', {
+          value: invoice.excessAmount,
+          currency: 'BRL',
+          plan: this.planTier() || 'unknown',
+        });
+      }
+    }
+  }
+
+  private parseSnapshot(raw: string | null): { plan: string; status: string } | null {
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private ageBucket(createdAt: string | null): string {
+    const days = createdAt ? (Date.now() - new Date(createdAt).getTime()) / 86_400_000 : NaN;
+    if (!Number.isFinite(days)) return 'unknown';
+    if (days <= 7) return '0-7d';
+    if (days <= 30) return '8-30d';
+    if (days <= 90) return '31-90d';
+    return '90d+';
+  }
+
   pay(): void {
     this.paying.set(true);
+    this.analytics.track('begin_checkout', { plan: this.planTier() || 'unknown' });
+    this.analytics.setSession('checkout_pending', this.planTier());
     this.billingService.getCheckoutUrl().subscribe({
       next: ({ url }) => {
         window.location.href = url;
       },
       error: (error: HttpErrorResponse) => {
         this.paying.set(false);
+        this.analytics.setSession('checkout_pending', null);
         this.snackBar.open(
           this.billingErrorMessage(error, 'Não foi possível gerar o link de pagamento.'),
           'OK',
@@ -258,6 +337,7 @@ export class BillingComponent implements OnInit {
 
   managePortal(): void {
     this.managing.set(true);
+    this.analytics.track('manage_subscription_opened', { plan: this.planTier() || 'unknown' });
     this.billingService.getPortalUrl().subscribe({
       next: ({ url }) => {
         window.location.href = url;

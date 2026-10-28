@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
 import { SaleDTO, SaleItemDTO } from '../../../shared/models/api.models';
+import { AnalyticsService } from '../../../core/analytics.service';
 
 interface ProductRanking {
   name: string;
@@ -38,7 +39,7 @@ export class SalesReportComponent implements OnInit {
   topProducts: ProductRanking[] = [];
   bottomProducts: ProductRanking[] = [];
 
-  constructor(private saleService: SaleService) {}
+  constructor(private saleService: SaleService, private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
     this.loadToday();
@@ -46,6 +47,7 @@ export class SalesReportComponent implements OnInit {
 
   loadToday(): void {
     this.filterMode = 'today';
+    this.analytics.track('report_viewed', { period: 'day' });
     const today = new Date().toISOString().split('T')[0];
     console.info('[SalesReport] Carregando vendas do dia:', today);
     this.saleService.listByDay(today).subscribe({
@@ -64,6 +66,8 @@ export class SalesReportComponent implements OnInit {
   loadByPeriod(): void {
     if (!this.startDate || !this.endDate) return;
     this.filterMode = 'period';
+    const days = Math.round((new Date(this.endDate).getTime() - new Date(this.startDate).getTime()) / 86_400_000) + 1;
+    this.analytics.track('report_viewed', { period: 'custom', days: Number.isFinite(days) ? days : 0 });
     console.info('[SalesReport] Carregando vendas por período:', this.startDate, 'a', this.endDate);
     this.saleService.listByPeriod(this.startDate, this.endDate).subscribe({
       next: (sales) => {

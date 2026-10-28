@@ -63,7 +63,34 @@ a cada mudança de URL, a base da API é lida em **runtime** de `window.__env.ap
 - No container, o `env.js` é regenerado no start a partir da variável **`API_BASE`**.
 - As chamadas de importação usam `window.__env.importApiBase`, gerado a partir de
   **`IMPORT_API_BASE`**. A política CSP `connect-src` permite somente o próprio frontend
-  e as URLs configuradas em `API_BASE` e `IMPORT_API_BASE`.
+  e as URLs configuradas em `API_BASE` e `IMPORT_API_BASE` (além dos domínios do Google Analytics).
+
+## Analytics (Google Analytics 4)
+
+O `AnalyticsService` (`src/app/core/analytics.service.ts`) carrega o `gtag.js` em runtime quando
+`window.__env.gaMeasurementId` está preenchido (gerado a partir de **`GA_MEASUREMENT_ID`**). Ele equivale
+ao snippet oficial do Google, mas não usa `<script>` inline, que a CSP bloqueia.
+
+- Em dev (`public/env.js`) o ID fica vazio, então nada é enviado. Na imagem Docker o padrão é `G-YD372YEZ1H`.
+- `page_view` é enviado a cada troca de rota, **sem query string/hash** (não vaza o token de `/reset-password`).
+  No GA, desative *Admin → Fluxos de dados → Medição otimizada → Visualizações de página → "Mudanças
+  de página com base em eventos do histórico do navegador"* para não duplicar pageviews nem enviar URLs com token.
+- Eventos:
+  - Landing/aquisição: `landing_cta` (`position`, `plan`), `pricing_viewed`, `faq_opened` (`question_index`),
+    `sign_up` (`plan`), `signup_form_error` (`field`, `status`).
+  - Acesso: `login` (`role`), `login_failed` (`status`), `password_reset_requested`, `password_reset_completed`.
+  - Ativação: `first_product_created`, `first_sale_completed`, `user_invited` (`role`). Os "first_" são enviados uma
+    vez por loja/navegador (marcador no `localStorage`; a primeira venda é confirmada com uma consulta à API).
+  - Uso: `sale_completed` (`value`, `payment_method`, `items_count`, `on_credit`…), `payment_failed` (`reason`),
+    `sale_canceled`, `item_removed_from_cart`, `search` (`search_term`, só texto digitado), `product_not_found`,
+    `product_created`, `product_import` (`status`, `rows`, `created`…), `report_viewed` (`period`), `debt_paid`,
+    `settings_changed` (`setting`).
+  - Assinatura: `begin_checkout`, `purchase` (volta do Stripe em `/billing?status=success`), `checkout_abandoned`,
+    `manage_subscription_opened`, `plan_changed` (`from`, `to`), `subscription_canceled`, `plan_limit_exceeded`
+    (fatura com excedente). Troca/cancelamento são detectados comparando com o último estado visto neste navegador.
+- Propriedades do usuário: `role`, `plan`, `subscription_status`, `tenant_age`.
+- No GA, marque como eventos principais: `sign_up`, `first_sale_completed` e `purchase`.
+- Nunca envie dados pessoais em `analytics.track(...)`.
 
 ## Deploy (Railway)
 
@@ -73,6 +100,7 @@ O `Dockerfile` builda o Angular e serve os estáticos via Nginx. Variáveis do s
 | ---------- | ------------------------------------------------------ | ---------------------------------------- |
 | `API_BASE` | URL pública do backend (sem barra final)               | `https://www.binitechpdv.com.br`    |
 | `IMPORT_API_BASE` | URL pública do microsserviço importador (sem barra final) | `https://binitech-product-import-production.up.railway.app` |
+| `GA_MEASUREMENT_ID` | ID do Google Analytics 4 (opcional; padrão da imagem `G-YD372YEZ1H`, vazio desabilita) | `G-YD372YEZ1H` |
 | `PORT`     | Porta de escuta do Nginx (injetada pelo Railway)       | `8080`                                   |
 
 > O domínio público deste serviço precisa estar liberado no CORS do backend
