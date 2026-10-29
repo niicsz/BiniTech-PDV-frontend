@@ -217,6 +217,7 @@ import { AnalyticsService } from './core/analytics.service';
             <h4>Legal</h4>
             <a routerLink="/termos">Termos de uso</a>
             <a routerLink="/privacidade">Privacidade</a>
+            <button type="button" class="footer-link" (click)="analytics.reopenConsent()">Preferências de cookies</button>
           </div>
         </div>
         <div class="footer-bottom">
@@ -486,6 +487,9 @@ import { AnalyticsService } from './core/analytics.service';
       text-transform:uppercase; letter-spacing:1px; margin:0 0 18px; }
     .footer-col a{ display:block; color:#b3a795; font-size:14.5px; margin-bottom:11px; transition:color .18s; }
     .footer-col a:hover{ color:var(--vermillion); }
+    .footer-link{ display:block; background:none; border:0; padding:0; font:inherit; color:#b3a795; font-size:14.5px;
+      margin-bottom:11px; cursor:pointer; text-align:left; transition:color .18s; }
+    .footer-link:hover{ color:var(--vermillion); }
     .footer-bottom{ max-width:1200px; margin:46px auto 0; padding-top:24px; display:flex; justify-content:space-between;
       gap:12px; flex-wrap:wrap; border-top:2px solid rgba(243,237,225,.12);
       font-family:'Spline Sans Mono',monospace; font-size:12.5px; color:#8a7d6e; }
@@ -532,7 +536,7 @@ import { AnalyticsService } from './core/analytics.service';
 })
 export class LandingComponent {
   readonly themeService = inject(ThemeService);
-  private readonly analytics = inject(AnalyticsService);
+  readonly analytics = inject(AnalyticsService);
 
   constructor() {
     const destroyRef = inject(DestroyRef);

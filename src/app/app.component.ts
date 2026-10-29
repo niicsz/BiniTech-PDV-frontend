@@ -12,6 +12,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from './auth/services/auth.service';
 import { ThemeService } from './shared/services/theme.service';
 import { SettingsModalComponent } from './shared/components/settings-modal.component';
+import { CookieConsentComponent } from './shared/components/cookie-consent.component';
 import { SaleService } from './pos/services/sale.service';
 import { SeoService } from './core/seo.service';
 import { AnalyticsService } from './core/analytics.service';
@@ -24,7 +25,7 @@ import { localIsoDate } from './core/local-date';
     CommonModule, RouterOutlet, RouterLink, RouterLinkActive,
     MatToolbarModule, MatButtonModule, MatIconModule, MatTooltipModule, MatChipsModule,
     MatBadgeModule, MatSnackBarModule,
-    SettingsModalComponent
+    SettingsModalComponent, CookieConsentComponent
   ],
   template: `
     @if (authService.isLoggedIn() && !isPublicRoute()) {
@@ -114,6 +115,8 @@ import { localIsoDate } from './core/local-date';
     <main [class.app-main]="authService.isLoggedIn() && !isPublicRoute()">
       <router-outlet></router-outlet>
     </main>
+
+    <app-cookie-consent />
 
     <a
       class="help-chat"
