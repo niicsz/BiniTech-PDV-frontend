@@ -18,6 +18,7 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/binitech-pdv-frontend",
+            "allowedCommonJsDependencies": ["qrcode"],
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],

@@ -2,7 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, BehaviorSubject } from 'rxjs';
-import { AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest } from '../../shared/models/api.models';
+import {
+  AuthResponse,
+  LoginRequest,
+  RefreshTokenRequest,
+  RegisterRequest,
+  TwoFactorSetup,
+  TwoFactorStatus
+} from '../../shared/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -17,10 +24,39 @@ export class AuthService {
     const body: LoginRequest = { username, password, ...(tenantId ? { tenantId } : {}) };
     return this.http.post<AuthResponse>(`${this.authUrl}/login`, body).pipe(
       tap(res => {
+        if (res.twoFactorRequired) {
+          console.info('[AuthService] Login aguardando código de verificação');
+          return;
+        }
         this.storeAuth(res);
         console.info('[AuthService] Login realizado com sucesso:', res.username, 'role:', res.role);
       })
     );
+  }
+
+  completeTwoFactorLogin(challengeToken: string, code: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.authUrl}/login/two-factor`, { challengeToken, code }).pipe(
+      tap(res => {
+        this.storeAuth(res);
+        console.info('[AuthService] Login com verificação em duas etapas concluído:', res.username);
+      })
+    );
+  }
+
+  twoFactorStatus(): Observable<TwoFactorStatus> {
+    return this.http.get<TwoFactorStatus>(`${this.authUrl}/two-factor`);
+  }
+
+  setupTwoFactor(): Observable<TwoFactorSetup> {
+    return this.http.post<TwoFactorSetup>(`${this.authUrl}/two-factor/setup`, {});
+  }
+
+  enableTwoFactor(code: string): Observable<void> {
+    return this.http.post<void>(`${this.authUrl}/two-factor/enable`, { code });
+  }
+
+  disableTwoFactor(code: string): Observable<void> {
+    return this.http.post<void>(`${this.authUrl}/two-factor/disable`, { code });
   }
 
   register(username: string, password: string, role: 'ADMIN' | 'OPERATOR'): Observable<AuthResponse> {
