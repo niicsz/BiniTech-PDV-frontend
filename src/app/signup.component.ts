@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { AnalyticsService } from './core/analytics.service';
+import { TERMS_VERSION } from './core/legal';
 import { TenantPublicService } from './tenant-public.service';
 
 @Component({
@@ -148,7 +149,13 @@ export class SignupComponent {
     this.errorMessage = '';
     const { name, billingEmail, planId } = this.form.getRawValue();
     this.tenantService
-      .createTenant({ name: name!, billingEmail: billingEmail!, planId: planId! })
+      .createTenant({
+        name: name!,
+        billingEmail: billingEmail!,
+        planId: planId!,
+        acceptedTerms: true,
+        termsVersion: TERMS_VERSION
+      })
       .subscribe({
         next: () => {
           this.analytics.track('sign_up', { method: 'form', plan: planId! });

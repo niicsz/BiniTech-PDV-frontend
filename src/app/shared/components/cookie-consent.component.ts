@@ -23,7 +23,7 @@ import { AnalyticsService } from '../../core/analytics.service';
     }
   `,
   styles: [`
-    .cookie-consent { position:fixed; left:16px; bottom:16px; z-index:1000; max-width:420px;
+    .cookie-consent { position:fixed; left:16px; bottom:16px; z-index:1001; max-width:420px;
       width:calc(100% - 32px); background:var(--surface); color:var(--text); border:2px solid var(--text);
       border-radius:var(--radius-md); box-shadow:6px 6px 0 var(--text); padding:18px 20px; }
     h2 { font-family:var(--font-display); font-size:17px; font-weight:700; margin:0 0 6px; }
