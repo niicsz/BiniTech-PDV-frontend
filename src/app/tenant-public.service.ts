@@ -6,6 +6,8 @@ export interface CreateTenantRequest {
   name: string;
   planId: string;
   billingEmail: string;
+  acceptedTerms: boolean;
+  termsVersion: string;
 }
 
 export interface TenantDTO {
