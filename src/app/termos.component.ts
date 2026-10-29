@@ -21,6 +21,17 @@ import { MatIconModule } from '@angular/material/icon';
         <p>O cliente é responsável pela veracidade dos dados cadastrados e pelo uso adequado das credenciais de acesso.</p>
         <h2>4. Cancelamento</h2>
         <p>A assinatura pode ser cancelada a qualquer momento, com efeito ao fim do período vigente.</p>
+        <h2>5. Proteção de dados pessoais</h2>
+        <p>Em relação aos dados que a loja cadastra no PDV, como produtos, vendas e dados de clientes do crediário, a loja é a controladora e o BiniTech PDV é o operador, nos termos da LGPD (Lei 13.709/2018). Nessa condição, o BiniTech PDV se compromete a:</p>
+        <ul>
+          <li>tratar esses dados apenas para prestar o serviço e conforme as instruções da loja dadas pela própria plataforma;</li>
+          <li>manter medidas de segurança adequadas e restringir o acesso a pessoas que precisem dele para operar o serviço;</li>
+          <li>usar apenas os suboperadores indicados na <a routerLink="/privacidade">Política de privacidade</a>, que seguem obrigações equivalentes;</li>
+          <li>avisar a loja, sem demora injustificada, sobre incidentes de segurança que envolvam esses dados;</li>
+          <li>apoiar a loja no atendimento a pedidos dos titulares e às solicitações da ANPD;</li>
+          <li>eliminar esses dados em até 90 dias após o fim da assinatura, salvo obrigação legal de guarda.</li>
+        </ul>
+        <p>A loja é responsável por ter base legal para cadastrar os dados dos seus clientes e por informar os seus funcionários de que o uso da plataforma pode ser medido de forma estatística, sem identificação pessoal, conforme a Política de privacidade.</p>
       </article>
     </div>
   `,
@@ -39,6 +50,8 @@ import { MatIconModule } from '@angular/material/icon';
     h2 { font-family:var(--font-display); font-size:21px; font-weight:700; letter-spacing:-.3px;
       margin:30px 0 8px; color:var(--text); }
     p { color:var(--text-secondary); line-height:1.75; font-size:15.5px; margin:0; }
+    p a, li a { color:var(--primary-dark); font-weight:600; }
+    ul { margin:8px 0 12px; padding-left:20px; color:var(--text-secondary); line-height:1.75; font-size:15.5px; }
   `]
 })
 export class TermosComponent {}
