@@ -82,13 +82,25 @@ type Mode = 'loading' | 'disabled' | 'setup' | 'enabled' | 'unavailable';
             @case ('setup') {
               <ol class="steps">
                 <li>
-                  <span>Escaneie o QR code com um aplicativo autenticador compatível com {{ setup?.algorithm }}
-                    (por exemplo Aegis, 2FAS ou 1Password).</span>
+                  @if (setup?.algorithm === 'SHA1') {
+                    <span>Escaneie o QR code com um aplicativo autenticador, como Google Authenticator,
+                      Microsoft Authenticator ou Aegis.</span>
+                  } @else {
+                    <span>Escaneie o QR code com um aplicativo autenticador compatível com {{ setup?.algorithm }}
+                      (por exemplo Aegis, 2FAS ou 1Password).</span>
+                  }
                   @if (qrCode) {
                     <img [src]="qrCode" alt="QR code para o aplicativo autenticador" class="qr" width="208" height="208" />
                   }
                   <span class="hint">Não consegue escanear? Digite a chave manualmente:</span>
-                  <code class="manual-key">{{ manualKey }}</code>
+                  <div class="manual-key-row">
+                    <code class="manual-key" [class.masked]="!keyVisible" [attr.aria-hidden]="!keyVisible">{{ manualKey }}</code>
+                    <button mat-icon-button type="button" (click)="keyVisible = !keyVisible"
+                            [attr.aria-label]="keyVisible ? 'Ocultar chave' : 'Mostrar chave'"
+                            [attr.aria-pressed]="keyVisible">
+                      <mat-icon>{{ keyVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                  </div>
                   <span class="hint">Tipo: baseado em tempo · Algoritmo: {{ setup?.algorithm }} · {{ setup?.digits }} dígitos · {{ setup?.period }} segundos</span>
                 </li>
                 <li>
@@ -160,7 +172,10 @@ type Mode = 'loading' | 'disabled' | 'setup' | 'enabled' | 'unavailable';
     .qr { align-self:center; background:#fff; padding:8px; border-radius:var(--radius); border:1.5px solid var(--border); }
     .hint { color:var(--text-secondary); font-size:12.5px; }
     .manual-key { font-family:var(--font-mono); font-size:13px; word-break:break-all; background:var(--bg);
-      border:1px dashed var(--border); border-radius:var(--radius); padding:10px 12px; user-select:all; }
+      border:1px dashed var(--border); border-radius:var(--radius); padding:10px 12px; user-select:all;
+      flex:1; min-width:0; transition:filter .15s ease; }
+    .manual-key.masked { filter:blur(6px); user-select:none; }
+    .manual-key-row { display:flex; align-items:center; gap:4px; }
     .tf-form { display:flex; flex-direction:column; gap:4px; }
     .full-width { width:100%; }
     .code-input { font-family:var(--font-mono); font-size:20px; letter-spacing:6px; text-align:center; }
@@ -185,6 +200,7 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
   setup: TwoFactorSetup | null = null;
   qrCode = '';
   manualKey = '';
+  keyVisible = false;
   code = '';
   busy = false;
   errorMessage = '';
@@ -327,6 +343,7 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
     this.setup = null;
     this.qrCode = '';
     this.manualKey = '';
+    this.keyVisible = false;
     this.code = '';
   }
 
