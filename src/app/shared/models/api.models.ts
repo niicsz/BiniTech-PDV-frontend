@@ -103,7 +103,7 @@ export interface TwoFactorStatus {
 }
 
 export interface TwoFactorSetup {
-  secret: string;
+  secret?: string;
   otpauthUri: string;
   algorithm: string;
   digits: number;
