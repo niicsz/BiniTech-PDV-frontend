@@ -90,6 +90,9 @@ import { localIsoDate } from './core/local-date';
                 <mat-icon>vpn_key</mat-icon>
               </button>
             }
+            <button mat-icon-button matTooltip="Verificação em duas etapas" routerLink="/security" class="action-btn">
+              <mat-icon>shield</mat-icon>
+            </button>
             <button mat-icon-button matTooltip="Configurações" (click)="showSettings = true" class="action-btn">
               <mat-icon>settings</mat-icon>
             </button>
