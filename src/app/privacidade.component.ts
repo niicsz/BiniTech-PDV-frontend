@@ -24,7 +24,8 @@ import { AnalyticsService } from './core/analytics.service';
           <li><strong>Cadastro da empresa</strong> (nome da empresa, e-mail de cobrança e plano): criar a conta, aprovar o cadastro, cobrar e enviar avisos do serviço. Base legal: execução de contrato (art. 7º, V).</li>
           <li><strong>Usuários da loja</strong> (nome de usuário, senha protegida por hash e perfil de acesso): autenticação e controle de permissões. Base legal: execução de contrato (art. 7º, V).</li>
           <li><strong>Pagamentos da assinatura</strong>: processados pela Stripe; não armazenamos dados de cartão. Base legal: execução de contrato (art. 7º, V) e cumprimento de obrigação legal (art. 7º, II).</li>
-          <li><strong>Registros de acesso</strong> (endereço IP, data e hora): segurança e prevenção a fraudes, guardados por 6 meses conforme o Marco Civil da Internet (art. 15 da Lei 12.965/2014). Base legal: obrigação legal (art. 7º, II) e legítimo interesse (art. 7º, IX).</li>
+          <li><strong>Aceite dos Termos</strong> (data, hora, versão aceita e endereço IP): comprovar a contratação. Base legal: execução de contrato (art. 7º, V) e exercício regular de direitos (art. 7º, VI).</li>
+          <li><strong>Registros de acesso</strong> (nome de usuário, loja, endereço IP, data e hora de cada login e renovação de sessão): segurança e prevenção a fraudes, guardados por 6 meses conforme o Marco Civil da Internet (art. 15 da Lei 12.965/2014) e apagados automaticamente depois disso. Base legal: obrigação legal (art. 7º, II) e legítimo interesse (art. 7º, IX).</li>
           <li><strong>Estatísticas de uso</strong> (Google Analytics, item 4): somente com o seu consentimento (art. 7º, I).</li>
         </ul>
 
@@ -40,7 +41,7 @@ import { AnalyticsService } from './core/analytics.service';
         <p>Compartilhamos dados apenas com fornecedores necessários ao serviço: Railway (hospedagem), Stripe (pagamentos), provedor de e-mail transacional e, com o seu consentimento, Google (estatísticas). Se você usar o atendimento por WhatsApp, a conversa é tratada pela Meta. Alguns desses fornecedores processam dados fora do Brasil, especialmente nos Estados Unidos; essas transferências seguem o art. 33 da LGPD, com cláusulas contratuais dos fornecedores que garantem proteção equivalente. Não vendemos dados pessoais.</p>
 
         <h2>6. Por quanto tempo guardamos</h2>
-        <p>Os dados da conta são mantidos enquanto a assinatura estiver ativa. Após o cancelamento, são eliminados em até 90 dias, exceto o que precisarmos guardar para cumprir obrigações legais, como registros fiscais e de acesso.</p>
+        <p>Os dados da conta são mantidos enquanto a assinatura estiver ativa. Depois do cancelamento da assinatura ou da reprovação do cadastro, eliminamos automaticamente, em até 90 dias, os usuários, produtos, vendas e dados de clientes da loja, e anonimizamos o cadastro da empresa. Guardamos apenas o necessário para cumprir obrigações legais: faturas e dados de cobrança, pelos prazos fiscais, e registros de acesso, por 6 meses.</p>
 
         <h2>7. Segurança</h2>
         <p>Usamos conexão criptografada (HTTPS), senhas protegidas por hash, controle de acesso por perfil e separação dos dados de cada loja. Se houver um incidente de segurança que possa trazer risco relevante, avisaremos os titulares afetados e a ANPD (art. 48).</p>
