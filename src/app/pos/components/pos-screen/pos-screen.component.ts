@@ -537,7 +537,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   private trackSearch(): void {
     const term = this.barcodeValue.trim();
     if (term && !/^\d+$/.test(term)) {
-      this.analytics.track('search', { search_term: term.slice(0, 100) });
+      this.analytics.track('search', { term_length: term.length });
     }
   }
 
