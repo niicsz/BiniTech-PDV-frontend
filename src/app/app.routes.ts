@@ -197,6 +197,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'security',
+    title: 'Segurança | BiniTech PDV',
+    data: seo({ title: 'Segurança | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./auth/components/two-factor-settings/two-factor-settings.component').then(
+        m => m.TwoFactorSettingsComponent
+      ),
+    canActivate: [authGuard]
+  },
+  {
     path: 'billing',
     title: 'Assinatura | BiniTech PDV',
     data: seo({ title: 'Assinatura | BiniTech PDV', noindex: true }),

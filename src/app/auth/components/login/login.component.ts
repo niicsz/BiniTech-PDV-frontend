@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { AnalyticsService } from '../../../core/analytics.service';
+import { twoFactorFeedback } from '../../two-factor-errors';
 
 @Component({
   selector: 'app-login',
@@ -48,6 +49,43 @@ import { AnalyticsService } from '../../../core/analytics.service';
             <span class="brand-name">BiniTech <strong>PDV</strong></span>
           </div>
 
+          @if (lockedUntil) {
+            <div class="lock-banner" role="alert">
+              <mat-icon>lock_clock</mat-icon>
+              <div>
+                <strong>Acesso bloqueado</strong>
+                <span>{{ errorMessage }}</span>
+              </div>
+            </div>
+          }
+
+          @if (challengeToken) {
+          <h2>Verificação em duas etapas</h2>
+          <p class="form-sub">Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
+
+          <form (ngSubmit)="onVerifyCode()" class="login-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Código de verificação</mat-label>
+              <mat-icon matPrefix>pin</mat-icon>
+              <input matInput [(ngModel)]="code" name="code" inputmode="numeric" autocomplete="one-time-code"
+                     maxlength="8" placeholder="000000" required autofocus [disabled]="!!lockedUntil"
+                     (input)="sanitizeCode()" class="code-input" />
+            </mat-form-field>
+
+            <div *ngIf="errorMessage && !lockedUntil" class="error-message">
+              <mat-icon>error</mat-icon>{{ errorMessage }}
+            </div>
+
+            <button mat-flat-button color="primary" type="submit" [disabled]="loading || !!lockedUntil" class="login-btn">
+              <mat-icon *ngIf="!loading">verified_user</mat-icon>
+              <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+              {{ loading ? 'Verificando...' : 'Verificar' }}
+            </button>
+            <button mat-button type="button" class="back-btn" (click)="backToPassword()">
+              <mat-icon>arrow_back</mat-icon> Voltar para usuário e senha
+            </button>
+          </form>
+          } @else {
           <h2>Entrar na sua conta</h2>
           <p class="form-sub">Use suas credenciais para acessar o painel.</p>
 
@@ -72,7 +110,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
               <a routerLink="/forgot-password">Esqueci minha senha</a>
             </div>
 
-            <div *ngIf="errorMessage" class="error-message">
+            <div *ngIf="errorMessage && !lockedUntil" class="error-message">
               <mat-icon>error</mat-icon>{{ errorMessage }}
             </div>
 
@@ -82,6 +120,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
               {{ loading ? 'Entrando...' : 'Entrar' }}
             </button>
           </form>
+          }
 
           <div class="divider"><span>ou</span></div>
 
@@ -143,6 +182,13 @@ import { AnalyticsService } from '../../../core/analytics.service';
     .row-forgot a:hover { text-decoration:underline; }
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg); color:var(--danger);
       padding:12px 16px; border-radius:var(--radius); border:1.5px solid var(--danger); font-size:13px; margin-bottom:8px; }
+    .lock-banner { display:flex; align-items:flex-start; gap:12px; background:var(--danger-bg); color:var(--danger);
+      border:2px solid var(--danger); border-radius:var(--radius); padding:14px 16px; margin-bottom:20px; font-size:13.5px; line-height:1.45; }
+    .lock-banner mat-icon { flex-shrink:0; }
+    .lock-banner div { display:flex; flex-direction:column; gap:2px; }
+    .lock-banner strong { font-size:14.5px; }
+    .code-input { font-family:var(--font-mono); font-size:22px; letter-spacing:8px; text-align:center; }
+    .back-btn { margin-top:6px; display:flex; align-items:center; justify-content:center; gap:6px; }
     .login-btn { width:100%; height:50px; font-size:15px; font-weight:700; border-radius:var(--radius) !important;
       display:flex; align-items:center; justify-content:center; gap:8px; }
     .divider { display:flex; align-items:center; gap:14px; margin:24px 0; color:var(--text-tertiary);
@@ -159,13 +205,17 @@ import { AnalyticsService } from '../../../core/analytics.service';
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   username = '';
   password = '';
   errorMessage = '';
   loading = false;
   hidePassword = true;
   year = new Date().getFullYear();
+  challengeToken: string | null = null;
+  code = '';
+  lockedUntil: Date | null = null;
+  private lockTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     private authService: AuthService,
@@ -182,19 +232,86 @@ export class LoginComponent {
     this.errorMessage = '';
 
     this.authService.login(this.username, this.password).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading = false;
-        const target = this.authService.isSuperAdmin() ? '/admin' : '/pdv';
-        const role = this.authService.getRole() ?? 'unknown';
-        this.analytics.setUserProperties({ role });
-        this.analytics.track('login', { method: 'password', role });
-        this.router.navigate([target]);
+        if (res.twoFactorRequired && res.challengeToken) {
+          this.challengeToken = res.challengeToken;
+          this.code = '';
+          this.analytics.track('login_two_factor_required', { method: 'password' });
+          return;
+        }
+        this.finishLogin('password');
       },
       error: (err) => {
         this.loading = false;
         this.analytics.track('login_failed', { method: 'password', status: err?.status ?? 0 });
-        this.errorMessage = err?.error?.message || 'Erro ao fazer login. Verifique suas credenciais.';
+        this.showError(err, 'Erro ao fazer login. Verifique suas credenciais.');
       }
     });
+  }
+
+  onVerifyCode(): void {
+    if (!this.challengeToken || this.lockedUntil) {
+      return;
+    }
+    if (!/^\d{6,8}$/.test(this.code)) {
+      this.errorMessage = 'Informe o código de 6 dígitos do aplicativo autenticador.';
+      return;
+    }
+    this.loading = true;
+    this.errorMessage = '';
+    this.authService.completeTwoFactorLogin(this.challengeToken, this.code).subscribe({
+      next: () => {
+        this.loading = false;
+        this.finishLogin('totp');
+      },
+      error: (err) => {
+        this.loading = false;
+        this.code = '';
+        this.analytics.track('login_failed', { method: 'totp', status: err?.status ?? 0 });
+        if (err?.status === 400 && !err?.error?.code?.startsWith('TWO_FACTOR')) {
+          this.backToPassword();
+          this.errorMessage = 'A verificação expirou. Entre novamente com usuário e senha.';
+          return;
+        }
+        this.showError(err, 'Código de verificação inválido.');
+      }
+    });
+  }
+
+  sanitizeCode(): void {
+    this.code = this.code.replace(/\D/g, '');
+  }
+
+  backToPassword(): void {
+    this.challengeToken = null;
+    this.code = '';
+    this.errorMessage = '';
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.lockTimer);
+  }
+
+  private finishLogin(method: string): void {
+    const target = this.authService.isSuperAdmin() ? '/admin' : '/pdv';
+    const role = this.authService.getRole() ?? 'unknown';
+    this.analytics.setUserProperties({ role });
+    this.analytics.track('login', { method, role });
+    this.router.navigate([target]);
+  }
+
+  private showError(err: any, fallback: string): void {
+    const feedback = twoFactorFeedback(err, fallback);
+    this.errorMessage = feedback.message;
+    this.lockedUntil = feedback.lockedUntil;
+    clearTimeout(this.lockTimer);
+    if (this.lockedUntil) {
+      const wait = Math.max(0, this.lockedUntil.getTime() - Date.now());
+      this.lockTimer = setTimeout(() => {
+        this.lockedUntil = null;
+        this.errorMessage = '';
+      }, Math.min(wait, 2_147_000_000));
+    }
   }
 }
