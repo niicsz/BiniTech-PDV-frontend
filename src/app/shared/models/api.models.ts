@@ -92,4 +92,27 @@ export interface AuthResponse {
   username: string;
   role: string;
   tenantId?: string;
+  twoFactorRequired?: boolean;
+  challengeToken?: string;
+  challengeExpiresAt?: string;
+}
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  lockedUntil?: string | null;
+}
+
+export interface TwoFactorSetup {
+  secret: string;
+  otpauthUri: string;
+  algorithm: string;
+  digits: number;
+  period: number;
+}
+
+export interface TwoFactorError {
+  code?: string;
+  message?: string;
+  remainingAttempts?: number | null;
+  lockedUntil?: string | null;
 }
