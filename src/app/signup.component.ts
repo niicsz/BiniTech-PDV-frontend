@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,6 +22,7 @@ import { TenantPublicService } from './tenant-public.service';
     RouterLink,
     ReactiveFormsModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -61,6 +63,14 @@ import { TenantPublicService } from './tenant-public.service';
               <mat-option value="enterprise">Enterprise — R$ 349/mês</mat-option>
             </mat-select>
           </mat-form-field>
+
+          <mat-checkbox formControlName="acceptTerms" class="accept-terms">
+            Li e aceito os <a routerLink="/termos" target="_blank">Termos de uso</a> e estou ciente da
+            <a routerLink="/privacidade" target="_blank">Política de privacidade</a>.
+          </mat-checkbox>
+          <mat-error *ngIf="form.get('acceptTerms')?.touched && form.get('acceptTerms')?.invalid" class="accept-error">
+            Aceite os Termos de uso para continuar.
+          </mat-error>
 
           <div *ngIf="errorMessage" class="error-message">
             <mat-icon>error</mat-icon>{{ errorMessage }}
@@ -103,6 +113,9 @@ import { TenantPublicService } from './tenant-public.service';
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg);
       color:var(--danger); padding:11px 14px; border-radius:var(--radius); border:1.5px solid var(--danger);
       font-size:13px; margin-bottom:10px; }
+    .accept-terms { margin:2px 0 6px; font-size:13.5px; line-height:1.45; color:var(--text-secondary); }
+    .accept-terms a { color:var(--primary-dark); font-weight:600; }
+    .accept-error { font-size:12.5px; margin:-4px 0 8px; }
     .login-hint { text-align:center; font-size:13.5px; color:var(--text-secondary); margin-top:18px; }
     .login-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }
     .login-hint a:hover { text-decoration:underline; }
@@ -120,7 +133,8 @@ export class SignupComponent {
   form = this.fb.group({
     name: ['', Validators.required],
     billingEmail: ['', [Validators.required, Validators.email]],
-    planId: ['starter', Validators.required]
+    planId: ['starter', Validators.required],
+    acceptTerms: [false, Validators.requiredTrue]
   });
 
   onSubmit(): void {
