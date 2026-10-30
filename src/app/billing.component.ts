@@ -103,13 +103,13 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
               {{ payButtonLabel() }}
             </button>
             <p class="pay-hint">
-              Você será redirecionado ao Stripe para concluir o pagamento com segurança.<br>
+              Você será redirecionado ao Asaas para concluir o pagamento com cartão de crédito em segurança.<br>
               Se não conseguir pagar, entre em contato com o suporte.
             </p>
             <button mat-stroked-button class="manage-btn" *ngIf="canManage()" (click)="managePortal()" [disabled]="managing()">
               <mat-spinner *ngIf="managing()" diameter="20"></mat-spinner>
-              <mat-icon *ngIf="!managing()">settings</mat-icon>
-              Gerenciar assinatura
+              <mat-icon *ngIf="!managing()">receipt_long</mat-icon>
+              Pagar fatura em aberto
             </button>
           </ng-container>
           <p class="free-note" *ngIf="isFree()">
@@ -216,11 +216,11 @@ export class BillingComponent implements OnInit {
 
   canManage = computed(() => {
     const sub = this.subscription();
-    return sub?.status === 'ACTIVE' && !!sub?.stripeCustomerId;
+    return (sub?.status === 'ACTIVE' || sub?.status === 'PAST_DUE') && !!sub?.asaasSubscriptionId;
   });
 
   ngOnInit(): void {
-    // O Stripe volta para /billing?status=success (pago) ou /billing (cancelado).
+    // O Asaas volta para /billing?status=success (pago) ou /billing (cancelado).
     this.checkoutReturned = this.route.snapshot.queryParamMap.get('status') === 'success';
     if (this.checkoutReturned) {
       this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -345,7 +345,7 @@ export class BillingComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.managing.set(false);
         this.snackBar.open(
-          this.billingErrorMessage(error, 'Não foi possível abrir a gestão de assinatura.'),
+          this.billingErrorMessage(error, 'Não foi possível abrir a fatura em aberto.'),
           'OK',
           { duration: 7000 },
         );
