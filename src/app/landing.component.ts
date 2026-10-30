@@ -222,7 +222,15 @@ import { AnalyticsService } from './core/analytics.service';
         </div>
         <div class="footer-bottom">
           <span>© {{ year }} BiniTech PDV</span>
-          <span>Feito para o balcão brasileiro 🇧🇷</span>
+          <span>Feito para o balcão brasileiro
+            <svg viewBox="0 0 20 14" width="20" height="14" role="img" aria-label="Bandeira do Brasil"
+                 style="vertical-align:-2px; margin-left:4px; border-radius:2px">
+              <rect width="20" height="14" fill="#009C3B" />
+              <polygon points="10,1.6 18.4,7 10,12.4 1.6,7" fill="#FFDF00" />
+              <circle cx="10" cy="7" r="3.5" fill="#002776" />
+              <path d="M6.6 6.4 Q10 5.3 13.45 7.5" fill="none" stroke="#fff" stroke-width=".7" />
+            </svg>
+          </span>
         </div>
       </footer>
     </div>
