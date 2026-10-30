@@ -120,6 +120,7 @@ export class PaymentMethodDialogComponent {
         <div class="stat"><span class="num">{{ countByStatus('ACTIVE') }}</span><span class="lbl">Ativos</span></div>
         <div class="stat"><span class="num">{{ countByStatus('PENDING_APPROVAL') }}</span><span class="lbl">Aguardando</span></div>
         <div class="stat"><span class="num">{{ countByStatus('REJECTED') }}</span><span class="lbl">Reprovados</span></div>
+        <div class="stat"><span class="num">{{ blockedTenants().length }}</span><span class="lbl">Bloqueados</span></div>
         <div class="stat highlight"><span class="num">R$ {{ mrr() | number:'1.2-2' }}</span><span class="lbl">MRR estimado</span></div>
       </section>
 
@@ -130,7 +131,7 @@ export class PaymentMethodDialogComponent {
           <tr><th>Empresa</th><th>Slug</th><th>Plano</th><th>Status</th><th>E-mail</th><th>Ações</th></tr>
         </thead>
         <tbody>
-          <ng-container *ngFor="let t of tenants()">
+          <ng-container *ngFor="let t of mainTenants()">
             <tr>
               <td>{{ t.name }}</td>
               <td><code>{{ t.slug }}</code></td>
@@ -151,40 +152,73 @@ export class PaymentMethodDialogComponent {
                         (click)="approve(t)">Aprovar</button>
                 <button mat-stroked-button color="warn" *ngIf="t.status === 'PENDING_APPROVAL'"
                         (click)="reject(t)">Reprovar</button>
-                <button mat-flat-button color="primary" *ngIf="t.status === 'BLOCKED' || t.status === 'CANCELLED'"
+                <button mat-flat-button color="primary" *ngIf="t.status === 'CANCELLED'"
                         (click)="activate(t)">Ativar pagamento</button>
                 <button mat-stroked-button color="warn" *ngIf="t.status === 'ACTIVE'"
                         (click)="block(t)">Bloquear</button>
               </td>
             </tr>
             <tr *ngIf="expandedTenantId() === t.id" class="users-row">
-              <td colspan="6">
-                <div class="users-panel">
-                  <div class="users-head">
-                    <strong>Usuários do tenant</strong>
-                    <span class="limit-chip" [class.over]="isOverLimit(t.planId)">
-                      {{ operatorCount() }} / {{ operatorLimit(t.planId) }} operadores do plano
-                    </span>
-                  </div>
-                  <div *ngIf="usersLoading()" class="users-loading"><mat-spinner diameter="22"></mat-spinner></div>
-                  <table *ngIf="!usersLoading()" class="users-table">
-                    <thead><tr><th>Usuário</th><th>Perfil</th></tr></thead>
-                    <tbody>
-                      <tr *ngFor="let u of tenantUsers()">
-                        <td>{{ u.username }}</td>
-                        <td><span class="role-badge">{{ roleLabel(u.role) }}</span></td>
-                      </tr>
-                      <tr *ngIf="tenantUsers().length === 0"><td colspan="2" class="empty">Nenhum usuário.</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </td>
+              <td colspan="6"><ng-container *ngTemplateOutlet="usersPanel; context: { $implicit: t }"></ng-container></td>
             </tr>
           </ng-container>
-          <tr *ngIf="tenants().length === 0"><td colspan="6" class="empty">Nenhum tenant cadastrado.</td></tr>
+          <tr *ngIf="mainTenants().length === 0"><td colspan="6" class="empty">Nenhum tenant cadastrado.</td></tr>
         </tbody>
       </table>
+
+      <section *ngIf="!loading() && blockedTenants().length > 0" class="blocked-section">
+        <h2><mat-icon>block</mat-icon> Tenants bloqueados</h2>
+        <table class="tenant-table blocked-table">
+          <thead>
+            <tr><th>Empresa</th><th>Slug</th><th>Plano</th><th>Motivo</th><th>Bloqueado em</th><th>E-mail</th><th>Ações</th></tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let t of blockedTenants()">
+              <tr>
+                <td>{{ t.name }}</td>
+                <td><code>{{ t.slug }}</code></td>
+                <td>{{ planLabel(t.planId) }}</td>
+                <td class="block-reason">{{ t.blockReason || '—' }}</td>
+                <td>{{ t.blockedAt ? (t.blockedAt | date:'dd/MM/yyyy') : '—' }}</td>
+                <td>{{ t.billingEmail }}</td>
+                <td class="actions">
+                  <button mat-button (click)="toggleUsers(t)">
+                    <mat-icon>{{ expandedTenantId() === t.id ? 'expand_less' : 'group' }}</mat-icon>
+                    Usuários
+                  </button>
+                  <button mat-flat-button color="primary" (click)="activate(t)">Ativar pagamento</button>
+                </td>
+              </tr>
+              <tr *ngIf="expandedTenantId() === t.id" class="users-row">
+                <td colspan="7"><ng-container *ngTemplateOutlet="usersPanel; context: { $implicit: t }"></ng-container></td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </section>
     </div>
+
+    <ng-template #usersPanel let-t>
+      <div class="users-panel">
+        <div class="users-head">
+          <strong>Usuários do tenant</strong>
+          <span class="limit-chip" [class.over]="isOverLimit(t.planId)">
+            {{ operatorCount() }} / {{ operatorLimit(t.planId) }} operadores do plano
+          </span>
+        </div>
+        <div *ngIf="usersLoading()" class="users-loading"><mat-spinner diameter="22"></mat-spinner></div>
+        <table *ngIf="!usersLoading()" class="users-table">
+          <thead><tr><th>Usuário</th><th>Perfil</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let u of tenantUsers()">
+              <td>{{ u.username }}</td>
+              <td><span class="role-badge">{{ roleLabel(u.role) }}</span></td>
+            </tr>
+            <tr *ngIf="tenantUsers().length === 0"><td colspan="2" class="empty">Nenhum usuário.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-template>
   `,
   styles: [`
     .admin { max-width:1100px; margin:0 auto; padding:40px 24px; }
@@ -214,6 +248,7 @@ export class PaymentMethodDialogComponent {
     .st-BLOCKED { background:var(--danger-bg); color:var(--danger); }
     .st-CANCELLED { background:var(--surface-alt); color:var(--text-secondary); }
     .actions { display:flex; gap:8px; align-items:center; }
+    .actions button { white-space:nowrap; }
     .status-reason { display:block; max-width:180px; margin-top:6px; color:var(--text-secondary); line-height:1.3; }
     .empty { text-align:center; color:var(--text-tertiary); padding:32px; }
     .users-row td { background:var(--surface-alt); padding:0; }
@@ -228,6 +263,11 @@ export class PaymentMethodDialogComponent {
       border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; }
     .users-table th, .users-table td { text-align:left; padding:8px 14px; border-bottom:1.5px solid var(--border); font-size:13px; }
     .users-table th { background:var(--table-header-bg); color:var(--table-header-text); font-weight:700; }
+    .blocked-section { margin-top:40px; }
+    .blocked-section h2 { display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-size:22px;
+      font-weight:800; letter-spacing:-.5px; color:var(--danger); margin:0 0 16px; }
+    .blocked-table { border-color:var(--danger); }
+    .block-reason { max-width:220px; color:var(--text-secondary); line-height:1.3; }
     .role-badge { background:var(--surface-alt); color:var(--text); padding:2px 10px; border-radius:100px;
       font-family:var(--font-mono); font-size:11.5px; font-weight:600; }
   `]
@@ -242,6 +282,9 @@ export class AdminDashboardComponent implements OnInit {
   expandedTenantId = signal<string | null>(null);
   tenantUsers = signal<TenantUserDTO[]>([]);
   usersLoading = signal(false);
+
+  mainTenants = computed(() => this.tenants().filter(t => t.status !== 'BLOCKED'));
+  blockedTenants = computed(() => this.tenants().filter(t => t.status === 'BLOCKED'));
 
   mrr = computed(() =>
     this.tenants()
