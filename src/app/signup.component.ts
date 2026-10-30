@@ -95,15 +95,15 @@ import { TenantPublicService } from './tenant-public.service';
         radial-gradient(circle at 90% 100%, rgba(28,107,70,0.05), transparent 34%); }
     .signup-card { width:100%; max-width:460px; padding:36px 34px !important;
       background:var(--surface) !important; border:2px solid var(--text) !important;
-      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--text) !important; }
+      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--shadow-hard-color) !important; }
     .brand { display:inline-flex; align-items:center; gap:11px; margin-bottom:24px; color:var(--text); }
     .brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:var(--radius);
-      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--text); }
+      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--shadow-hard-color); }
     .brand-mark mat-icon { color:#fff; font-size:21px; width:21px; height:21px; }
     .brand-name { font-family:var(--font-display); font-weight:800; font-size:21px; letter-spacing:-.4px; }
-    .brand-name em { font-style:normal; color:var(--primary-dark); }
+    .brand-name em { font-style:normal; color:var(--primary-text); }
     .kicker { font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:1px;
-      text-transform:uppercase; color:var(--primary-dark); }
+      text-transform:uppercase; color:var(--primary-text); }
     h1 { font-family:var(--font-display); font-size:30px; font-weight:800; letter-spacing:-1px;
       margin:8px 0 6px; color:var(--text); line-height:1.05; }
     .subtitle { color:var(--text-secondary); font-size:14.5px; line-height:1.55; margin:0 0 26px; }
@@ -115,10 +115,10 @@ import { TenantPublicService } from './tenant-public.service';
       color:var(--danger); padding:11px 14px; border-radius:var(--radius); border:1.5px solid var(--danger);
       font-size:13px; margin-bottom:10px; }
     .accept-terms { margin:2px 0 6px; font-size:13.5px; line-height:1.45; color:var(--text-secondary); }
-    .accept-terms a { color:var(--primary-dark); font-weight:600; }
+    .accept-terms a { color:var(--primary-text); font-weight:600; }
     .accept-error { font-size:12.5px; margin:-4px 0 8px; }
     .login-hint { text-align:center; font-size:13.5px; color:var(--text-secondary); margin-top:18px; }
-    .login-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }
+    .login-hint a { color:var(--primary-text); font-weight:700; text-decoration:none; }
     .login-hint a:hover { text-decoration:underline; }
   `]
 })

@@ -366,7 +366,7 @@
 
   &.badge-debit_card {
     background: var(--primary-bg);
-    color: var(--primary-dark);
+    color: var(--primary-text);
   }
 
   &.badge-pix {
@@ -377,6 +377,11 @@
   &.badge-crediario {
     background: #efe2d6;
     color: #8a4f2a;
+
+    :host-context(body.dark-theme) & {
+      background: rgba(201, 132, 86, 0.16);
+      color: #d9a27a;
+    }
   }
 }
 
