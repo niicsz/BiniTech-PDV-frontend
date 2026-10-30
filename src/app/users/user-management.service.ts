@@ -48,4 +48,8 @@ export class UserManagementService {
   updateRole(id: string, role: UserRole): Observable<ManagedUser> {
     return this.http.patch<ManagedUser>(`${this.baseUrl}/${id}/role`, { role });
   }
+
+  resetTwoFactor(id: string): Observable<{ reset: boolean }> {
+    return this.http.post<{ reset: boolean }>(`${this.baseUrl}/${id}/two-factor/reset`, {});
+  }
 }

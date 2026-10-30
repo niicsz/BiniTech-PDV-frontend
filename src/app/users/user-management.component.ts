@@ -216,6 +216,35 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  resetTwoFactor(user: ManagedUser): void {
+    if (!user.manageable) return;
+    if (!window.confirm(`Redefinir a verificação em duas etapas de ${user.name}? A chave do aplicativo autenticador e os códigos de recuperação serão removidos, e o próximo login pedirá só a senha até que o 2FA seja ativado de novo.`)) {
+      return;
+    }
+
+    this.actionUserId.set(user.id);
+    this.userService.resetTwoFactor(user.id).subscribe({
+      next: result => {
+        this.actionUserId.set(null);
+        this.analytics.track('two_factor_reset_by_admin');
+        this.snackBar.open(
+          result.reset
+            ? `Verificação em duas etapas de ${user.name} redefinida.`
+            : `${user.name} não tinha verificação em duas etapas ativa.`,
+          'OK',
+          { duration: 4000, panelClass: ['snackbar-success'] },
+        );
+      },
+      error: error => {
+        this.actionUserId.set(null);
+        this.snackBar.open(this.apiError(error, 'Não foi possível redefinir a verificação em duas etapas.'), 'OK', {
+          duration: 5000,
+          panelClass: ['snackbar-error'],
+        });
+      },
+    });
+  }
+
   setRoleDraft(userId: string, role: UserRole): void {
     this.roleDrafts.update(drafts => ({ ...drafts, [userId]: role }));
   }
