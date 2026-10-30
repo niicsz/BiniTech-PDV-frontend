@@ -5,9 +5,8 @@ import { Observable } from 'rxjs';
 export interface SubscriptionDTO {
   id: string;
   tenantId: string;
-  stripeSubscriptionId: string | null;
-  stripeCustomerId: string | null;
-  stripePriceId: string | null;
+  asaasSubscriptionId: string | null;
+  asaasCustomerId: string | null;
   planTier: string;
   status: string;
   currentPeriodStart: string | null;
@@ -24,7 +23,7 @@ export interface InvoiceDTO {
   id: string;
   tenantId: string;
   subscriptionId: string;
-  stripeInvoiceId: string | null;
+  asaasPaymentId: string | null;
   amount: number;
   status: string;
   dueDate: string | null;
