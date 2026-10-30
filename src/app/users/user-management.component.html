@@ -141,12 +141,19 @@
                 <td><span class="status-badge" [class.status-active]="user.active" [class.status-inactive]="!user.active"><i></i>{{ user.active ? 'Ativo' : 'Inativo' }}</span></td>
                 <td class="actions-cell">
                   @if (user.manageable) {
-                    <button mat-stroked-button [class.activate-button]="!user.active" [class.deactivate-button]="user.active"
-                            (click)="confirmStatusChange(user)" [disabled]="actionUserId() === user.id">
-                      @if (actionUserId() === user.id) { <mat-spinner diameter="18"></mat-spinner> }
-                      @else { <mat-icon>{{ user.active ? 'person_off' : 'person_check' }}</mat-icon> }
-                      {{ user.active ? 'Desativar' : 'Ativar' }}
-                    </button>
+                    <div class="row-actions">
+                      <button mat-stroked-button [class.activate-button]="!user.active" [class.deactivate-button]="user.active"
+                              (click)="confirmStatusChange(user)" [disabled]="actionUserId() === user.id">
+                        @if (actionUserId() === user.id) { <mat-spinner diameter="18"></mat-spinner> }
+                        @else { <mat-icon>{{ user.active ? 'person_off' : 'person_check' }}</mat-icon> }
+                        {{ user.active ? 'Desativar' : 'Ativar' }}
+                      </button>
+                      <button mat-icon-button class="reset-2fa-button" matTooltip="Redefinir verificação em duas etapas"
+                              aria-label="Redefinir verificação em duas etapas"
+                              (click)="resetTwoFactor(user)" [disabled]="actionUserId() === user.id">
+                        <mat-icon>lock_reset</mat-icon>
+                      </button>
+                    </div>
                   } @else {
                     <span class="no-actions">Sem ações disponíveis</span>
                   }
