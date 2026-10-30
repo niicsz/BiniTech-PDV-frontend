@@ -12,8 +12,9 @@ import { AuthService } from '../../services/auth.service';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { TwoFactorSetup } from '../../../shared/models/api.models';
 import { lockMessage, twoFactorFeedback } from '../../two-factor-errors';
+import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../../two-factor-code';
 
-type Mode = 'loading' | 'disabled' | 'setup' | 'enabled' | 'unavailable';
+type Mode = 'loading' | 'disabled' | 'setup' | 'codes' | 'enabled' | 'unavailable';
 
 @Component({
   selector: 'app-two-factor-settings',
@@ -127,28 +128,76 @@ type Mode = 'loading' | 'disabled' | 'setup' | 'enabled' | 'unavailable';
               </ol>
             }
 
+            @case ('codes') {
+              <div class="codes-warning" role="note">
+                <mat-icon>key</mat-icon>
+                <div>
+                  <strong>Guarde seus códigos de recuperação</strong>
+                  <span>Se perder o celular, cada código substitui o código do aplicativo uma única vez.
+                    Eles não serão mostrados de novo; guarde em um gerenciador de senhas ou impresso em local seguro.</span>
+                </div>
+              </div>
+              <ul class="codes-grid" aria-label="Códigos de recuperação">
+                @for (item of recoveryCodes; track item) {
+                  <li><code>{{ item }}</code></li>
+                }
+              </ul>
+              <div class="tf-actions">
+                <button mat-stroked-button type="button" (click)="copyCodes()" class="tf-btn">
+                  <mat-icon>{{ copied ? 'check' : 'content_copy' }}</mat-icon> {{ copied ? 'Copiados' : 'Copiar' }}
+                </button>
+                <button mat-stroked-button type="button" (click)="downloadCodes()" class="tf-btn">
+                  <mat-icon>download</mat-icon> Baixar .txt
+                </button>
+                <button mat-flat-button color="primary" type="button" (click)="finishCodes()" class="tf-btn">
+                  <mat-icon>done</mat-icon> Já guardei os códigos
+                </button>
+              </div>
+            }
+
             @case ('enabled') {
               <div class="status-pill on"><mat-icon>verified_user</mat-icon> Ativada</div>
-              <p class="text">Para desativar, confirme com um código atual do seu aplicativo autenticador.</p>
-              <form (ngSubmit)="confirmDisable()" class="tf-form">
+              <p class="text" [class.low-codes]="recoveryCodesRemaining <= 2">
+                <mat-icon class="inline-icon">key</mat-icon>
+                @if (recoveryCodesRemaining === 0) {
+                  Nenhum código de recuperação disponível. Gere novos códigos para não perder o acesso se trocar de celular.
+                } @else {
+                  {{ recoveryCodesRemaining }} {{ recoveryCodesRemaining === 1 ? 'código de recuperação disponível' : 'códigos de recuperação disponíveis' }}.
+                }
+              </p>
+              <p class="text">Para gerar novos códigos de recuperação ou desativar, confirme com um código do aplicativo
+                autenticador ou com um código de recuperação.</p>
+              <div class="tf-form">
                 <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Código de verificação</mat-label>
-                  <mat-icon matPrefix>pin</mat-icon>
-                  <input matInput [(ngModel)]="code" name="code" inputmode="numeric" autocomplete="one-time-code"
-                         maxlength="8" placeholder="000000" (input)="sanitizeCode()" class="code-input"
+                  <mat-label>{{ useRecoveryCode ? 'Código de recuperação' : 'Código de verificação' }}</mat-label>
+                  <mat-icon matPrefix>{{ useRecoveryCode ? 'key' : 'pin' }}</mat-icon>
+                  <input matInput [(ngModel)]="code" name="code" (input)="sanitizeCode()" class="code-input"
+                         [class.recovery]="useRecoveryCode"
+                         [attr.inputmode]="useRecoveryCode ? 'text' : 'numeric'"
+                         [attr.autocomplete]="useRecoveryCode ? 'off' : 'one-time-code'"
+                         [attr.maxlength]="useRecoveryCode ? 11 : 8"
+                         [placeholder]="useRecoveryCode ? 'XXXXX-XXXXX' : '000000'"
                          [disabled]="!!lockedUntil" required />
                 </mat-form-field>
+                <button mat-button type="button" class="switch-btn" (click)="toggleRecoveryCode()" [disabled]="!!lockedUntil">
+                  <mat-icon>{{ useRecoveryCode ? 'smartphone' : 'key' }}</mat-icon>
+                  {{ useRecoveryCode ? 'Usar o aplicativo autenticador' : 'Usar um código de recuperação' }}
+                </button>
                 @if (errorMessage && !lockedUntil) {
                   <div class="error-message"><mat-icon>error</mat-icon>{{ errorMessage }}</div>
                 }
                 <div class="tf-actions">
-                  <button mat-stroked-button color="warn" type="submit" [disabled]="busy || !!lockedUntil" class="tf-btn">
+                  <button mat-stroked-button type="button" (click)="regenerateCodes()" [disabled]="busy || !!lockedUntil" class="tf-btn">
+                    <mat-icon>autorenew</mat-icon>
+                    Gerar novos códigos
+                  </button>
+                  <button mat-stroked-button color="warn" type="button" (click)="confirmDisable()" [disabled]="busy || !!lockedUntil" class="tf-btn">
                     <mat-spinner *ngIf="busy" diameter="20"></mat-spinner>
                     <mat-icon *ngIf="!busy">remove_moderator</mat-icon>
                     Desativar
                   </button>
                 </div>
-              </form>
+              </div>
             }
           }
         </mat-card-content>
@@ -189,6 +238,17 @@ type Mode = 'loading' | 'disabled' | 'setup' | 'enabled' | 'unavailable';
     .lock-banner div { display:flex; flex-direction:column; gap:2px; }
     .tf-actions { display:flex; gap:12px; justify-content:flex-end; flex-wrap:wrap; margin-top:8px; }
     .tf-btn { display:flex; align-items:center; gap:8px; }
+    .code-input.recovery { font-size:16px; letter-spacing:3px; }
+    .switch-btn { align-self:flex-start; margin:-4px 0 8px; }
+    .inline-icon { font-size:18px; width:18px; height:18px; vertical-align:-4px; margin-right:4px; }
+    .low-codes { color:var(--danger); }
+    .codes-warning { display:flex; align-items:flex-start; gap:12px; background:var(--bg); border:1.5px solid var(--border);
+      border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; font-size:13.5px; line-height:1.45; }
+    .codes-warning mat-icon { flex-shrink:0; color:var(--primary-dark); }
+    .codes-warning div { display:flex; flex-direction:column; gap:4px; }
+    .codes-grid { list-style:none; margin:0 0 8px; padding:0; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+    .codes-grid code { display:block; text-align:center; font-family:var(--font-mono); font-size:15px; letter-spacing:1px;
+      background:var(--bg); border:1px dashed var(--border); border-radius:var(--radius); padding:8px 6px; user-select:all; }
     @media (max-width:600px) { .tf-card { padding:20px; } }
   `]
 })
@@ -202,6 +262,10 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
   manualKey = '';
   keyVisible = false;
   code = '';
+  useRecoveryCode = false;
+  recoveryCodes: string[] = [];
+  recoveryCodesRemaining = 0;
+  copied = false;
   busy = false;
   errorMessage = '';
   successMessage = '';
@@ -226,6 +290,7 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
     this.authService.twoFactorStatus().subscribe({
       next: status => {
         this.mode = status.enabled ? 'enabled' : 'disabled';
+        this.recoveryCodesRemaining = status.recoveryCodesRemaining ?? 0;
         this.setLock(status.lockedUntil ? new Date(status.lockedUntil) : null);
       },
       error: err => {
@@ -269,10 +334,10 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
     this.busy = true;
     this.errorMessage = '';
     this.authService.enableTwoFactor(this.code).subscribe({
-      next: () => {
+      next: result => {
         this.busy = false;
         this.clearSetup();
-        this.mode = 'enabled';
+        this.showCodes(result.recoveryCodes);
         this.successMessage = 'Verificação em duas etapas ativada. Ela será pedida no próximo login.';
         this.analytics.track('two_factor_enabled');
       },
@@ -290,6 +355,68 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
     this.mode = 'disabled';
   }
 
+  regenerateCodes(): void {
+    if (this.lockedUntil || !this.validCode()) {
+      return;
+    }
+    this.busy = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.authService.regenerateRecoveryCodes(this.code).subscribe({
+      next: result => {
+        this.busy = false;
+        this.code = '';
+        this.useRecoveryCode = false;
+        this.showCodes(result.recoveryCodes);
+        this.successMessage = 'Novos códigos de recuperação gerados. Os anteriores deixaram de funcionar.';
+        this.analytics.track('two_factor_recovery_codes_regenerated');
+      },
+      error: err => {
+        this.busy = false;
+        this.code = '';
+        const feedback = twoFactorFeedback(err, 'Código de verificação inválido.');
+        this.errorMessage = feedback.message;
+        this.setLock(feedback.lockedUntil);
+      }
+    });
+  }
+
+  copyCodes(): void {
+    navigator.clipboard?.writeText(this.recoveryCodes.join('\n')).then(() => {
+      this.copied = true;
+    }).catch(() => {
+      this.copied = false;
+    });
+  }
+
+  downloadCodes(): void {
+    const content = [
+      'BiniTech PDV - códigos de recuperação da verificação em duas etapas',
+      'Cada código funciona uma única vez.',
+      '',
+      ...this.recoveryCodes
+    ].join('\n');
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'binitech-codigos-de-recuperacao.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  finishCodes(): void {
+    this.recoveryCodes = [];
+    this.copied = false;
+    this.successMessage = '';
+    this.loadStatus();
+  }
+
+  toggleRecoveryCode(): void {
+    this.useRecoveryCode = !this.useRecoveryCode;
+    this.code = '';
+    this.errorMessage = '';
+  }
+
   confirmDisable(): void {
     if (this.lockedUntil || !this.validCode()) {
       return;
@@ -301,6 +428,8 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
       next: () => {
         this.busy = false;
         this.code = '';
+        this.useRecoveryCode = false;
+        this.recoveryCodesRemaining = 0;
         this.mode = 'disabled';
         this.successMessage = 'Verificação em duas etapas desativada.';
         this.analytics.track('two_factor_disabled');
@@ -316,15 +445,22 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
   }
 
   sanitizeCode(): void {
-    this.code = this.code.replace(/\D/g, '');
+    this.code = sanitizeTwoFactorCode(this.code, this.useRecoveryCode);
   }
 
   private validCode(): boolean {
-    if (!/^\d{6,8}$/.test(this.code)) {
-      this.errorMessage = 'Informe o código de 6 dígitos do aplicativo autenticador.';
+    if (!isTwoFactorCode(this.code, this.useRecoveryCode)) {
+      this.errorMessage = twoFactorCodeHint(this.useRecoveryCode);
       return false;
     }
     return true;
+  }
+
+  private showCodes(codes: string[]): void {
+    this.recoveryCodes = codes;
+    this.recoveryCodesRemaining = codes.length;
+    this.copied = false;
+    this.mode = 'codes';
   }
 
   private setLock(lockedUntil: Date | null): void {
@@ -340,6 +476,7 @@ export class TwoFactorSettingsComponent implements OnInit, OnDestroy {
   }
 
   private clearSetup(): void {
+    this.useRecoveryCode = false;
     this.setup = null;
     this.qrCode = '';
     this.manualKey = '';

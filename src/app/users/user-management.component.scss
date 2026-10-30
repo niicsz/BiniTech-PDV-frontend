@@ -61,6 +61,8 @@
 .role-editor mat-select { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:12px; }
 .role-editor button { color:var(--success); }
 .actions-cell button { min-width:124px; gap:6px; }
+.row-actions { display:inline-flex; align-items:center; gap:6px; }
+.actions-cell .reset-2fa-button { min-width:0; color:var(--text-secondary); }
 .deactivate-button { color:var(--danger) !important; }.activate-button { color:var(--success) !important; }
 .loading-state, .empty-state { min-height:250px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text-secondary); }
 .empty-state > mat-icon { width:52px; height:52px; font-size:52px; color:var(--text-tertiary); opacity:.55; }
