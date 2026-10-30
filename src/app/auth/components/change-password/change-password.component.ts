@@ -84,7 +84,7 @@ import { AuthService } from '../../services/auth.service';
     .cp-container { display:flex; justify-content:center; padding-top:24px; }
     .cp-card { width:100%; max-width:460px; padding:32px; }
     .cp-header { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px; }
-    .logo-icon { font-size:48px; height:48px; width:48px; color:var(--primary-dark); margin-bottom:8px; }
+    .logo-icon { font-size:48px; height:48px; width:48px; color:var(--primary-text); margin-bottom:8px; }
     .cp-form { display:flex; flex-direction:column; gap:4px; }
     .full-width { width:100%; }
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg); color:var(--danger); padding:12px 16px; border-radius:8px; font-size:13px; margin-bottom:8px; }

@@ -113,7 +113,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
       font-size: 48px;
       height: 48px;
       width: 48px;
-      color: var(--primary-dark);
+      color: var(--primary-text);
       margin-bottom: 8px;
     }
     .register-form {
@@ -156,7 +156,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
       margin: 0 0 12px;
     }
     .plan-note mat-icon {
-      color: var(--primary-dark);
+      color: var(--primary-text);
       flex: 0 0 auto;
     }
     .register-btn {

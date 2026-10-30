@@ -140,13 +140,13 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
   styles: [`
     .billing { max-width:860px; margin:0 auto; padding:40px 24px; }
     .billing-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; }
-    .back { color:var(--primary-dark); text-decoration:none; font-size:13px; font-weight:600; }
+    .back { color:var(--primary-text); text-decoration:none; font-size:13px; font-weight:600; }
     .back:hover { text-decoration:underline; }
     h1 { font-family:var(--font-display); margin:8px 0 0; font-size:34px; font-weight:800; letter-spacing:-1px; color:var(--text); }
     h2 { font-family:var(--font-display); font-size:20px; font-weight:700; margin:0 0 16px; color:var(--text); }
     .loading { display:flex; justify-content:center; padding:60px; }
     .card { background:var(--surface); border:2px solid var(--text); border-radius:var(--radius-md); padding:26px;
-      box-shadow:6px 6px 0 var(--text); margin-bottom:22px; }
+      box-shadow:6px 6px 0 var(--shadow-hard-color); margin-bottom:22px; }
     .alert { display:flex; gap:12px; align-items:flex-start; background:var(--info-bg); color:var(--text);
       border:1.5px solid var(--accent); border-radius:var(--radius-md); padding:16px 20px; margin-bottom:22px; }
     .alert p { margin:4px 0 0; font-size:13.5px; color:var(--text-secondary); }
@@ -166,7 +166,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
       white-space:nowrap; border:1.5px solid currentColor; }
     .st-ACTIVE { background:var(--success-bg); color:var(--success); }
     .st-PENDING { background:var(--warning-bg); color:var(--accent); }
-    .st-PAST_DUE { background:var(--danger-bg); color:var(--primary-dark); }
+    .st-PAST_DUE { background:var(--danger-bg); color:var(--primary-text); }
     .st-CANCELLED, .st-NONE { background:var(--surface-alt); color:var(--text-secondary); }
     .pay-btn { width:100%; height:50px; font-weight:700; margin-top:22px; display:flex; align-items:center; justify-content:center; gap:8px; }
     .pay-hint { text-align:center; font-size:12px; color:var(--text-tertiary); margin:10px 0 0; }

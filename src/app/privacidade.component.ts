@@ -58,18 +58,18 @@ import { AnalyticsService } from './core/analytics.service';
     .page { min-height:100vh; background:var(--bg); padding:64px 24px;
       background-image:radial-gradient(circle at 85% 0%, rgba(212,57,26,0.05), transparent 40%); }
     article { max-width:720px; margin:0 auto; background:var(--surface); border:2px solid var(--text);
-      border-radius:var(--radius-md); padding:48px 44px; box-shadow:10px 10px 0 var(--text); }
-    .back { display:inline-flex; align-items:center; gap:5px; color:var(--primary-dark); font-weight:600; font-size:14px; }
+      border-radius:var(--radius-md); padding:48px 44px; box-shadow:10px 10px 0 var(--shadow-hard-color); }
+    .back { display:inline-flex; align-items:center; gap:5px; color:var(--primary-text); font-weight:600; font-size:14px; }
     .back mat-icon { font-size:18px; width:18px; height:18px; }
     .back:hover { text-decoration:underline; }
     .kicker { display:block; margin-top:20px; font-family:var(--font-mono); font-size:12px; font-weight:600;
-      letter-spacing:1px; text-transform:uppercase; color:var(--primary-dark); }
+      letter-spacing:1px; text-transform:uppercase; color:var(--primary-text); }
     h1 { font-family:var(--font-display); font-size:42px; font-weight:800; letter-spacing:-1.5px;
       margin:8px 0 22px; color:var(--text); line-height:1; }
     h2 { font-family:var(--font-display); font-size:21px; font-weight:700; letter-spacing:-.3px;
       margin:30px 0 8px; color:var(--text); }
     p { color:var(--text-secondary); line-height:1.75; font-size:15.5px; margin:0; }
-    p a, li a { color:var(--primary-dark); font-weight:600; }
+    p a, li a { color:var(--primary-text); font-weight:600; }
     .updated { font-size:13.5px; margin-bottom:14px; }
     ul { margin:0; padding-left:20px; color:var(--text-secondary); line-height:1.75; font-size:15.5px; }
     li { margin-bottom:8px; }
@@ -77,7 +77,7 @@ import { AnalyticsService } from './core/analytics.service';
     code { font-family:var(--font-mono); font-size:13.5px; }
     .cookie-btn { margin:12px 0 14px; padding:9px 16px; background:var(--surface); color:var(--text);
       border:2px solid var(--text); border-radius:var(--radius); font:inherit; font-weight:700; font-size:14px;
-      cursor:pointer; box-shadow:3px 3px 0 var(--text); }
+      cursor:pointer; box-shadow:3px 3px 0 var(--shadow-hard-color); }
   `]
 })
 export class PrivacidadeComponent {
