@@ -53,6 +53,7 @@ body.dark-theme {
   --primary-dark: #a82d12;
   --primary-light: #e8624a;
   --primary-bg: rgba(212, 57, 26, 0.08);
+  --primary-text: var(--primary-dark);
 
   --accent: #c8881f;
   --success: #1c6b46;
@@ -78,6 +79,7 @@ body.dark-theme {
   --shadow-md: 0 6px 20px rgba(36, 26, 18, 0.14);
   --shadow-lg: 0 14px 40px rgba(36, 26, 18, 0.20);
   --shadow-hard: 4px 4px 0 var(--text);
+  --shadow-hard-color: var(--text);
 
   --radius-sm: 3px;
   --radius: 4px;
@@ -117,6 +119,7 @@ body.dark-theme {
   --primary-dark: #d4391a;
   --primary-light: #f59175;
   --primary-bg: rgba(240, 101, 63, 0.12);
+  --primary-text: #f59175;
 
   --accent: #e0a82e;
   --success: #4caa7b;
@@ -141,6 +144,13 @@ body.dark-theme {
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.7);
   --shadow-hard: 4px 4px 0 #0d0a07;
+  --shadow-hard-color: #0d0a07;
+
+  --mat-button-filled-container-color: var(--primary);
+  --mat-button-filled-label-text-color: #fff;
+  --mat-snack-bar-container-color: var(--surface-alt);
+  --mat-snack-bar-supporting-text-color: var(--text);
+  --mat-snack-bar-button-color: var(--primary);
 
   --header-bg: #120d09;
   --header-text: #f3ece0;
@@ -367,16 +377,19 @@ body.dark-theme {
 .mb-2 { margin-bottom: 16px; }
 
 .snackbar-success {
-  --mdc-snackbar-container-color: var(--success);
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: var(--success);
+  --mat-snack-bar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
 }
 .snackbar-error {
-  --mdc-snackbar-container-color: var(--danger);
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: var(--danger);
+  --mat-snack-bar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
 }
 .snackbar-info {
-  --mdc-snackbar-container-color: var(--primary);
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: var(--primary);
+  --mat-snack-bar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
 }
 
 ::-webkit-scrollbar {
