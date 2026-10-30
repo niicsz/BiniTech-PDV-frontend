@@ -13,7 +13,7 @@ import { AnalyticsService } from './core/analytics.service';
         <a routerLink="/" class="back"><mat-icon>west</mat-icon> Voltar</a>
         <span class="kicker">[ legal · lgpd ]</span>
         <h1>Política de Privacidade</h1>
-        <p class="updated">Última atualização: 29 de outubro de 2026</p>
+        <p class="updated">Última atualização: 30 de outubro de 2026</p>
         <p>Esta política explica como o BiniTech PDV trata dados pessoais, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, LGPD).</p>
 
         <h2>1. Quem é o controlador</h2>
@@ -23,7 +23,7 @@ import { AnalyticsService } from './core/analytics.service';
         <ul>
           <li><strong>Cadastro da empresa</strong> (nome da empresa, e-mail de cobrança e plano): criar a conta, aprovar o cadastro, cobrar e enviar avisos do serviço. Base legal: execução de contrato (art. 7º, V).</li>
           <li><strong>Usuários da loja</strong> (nome de usuário, senha protegida por hash e perfil de acesso): autenticação e controle de permissões. Base legal: execução de contrato (art. 7º, V).</li>
-          <li><strong>Pagamentos da assinatura</strong>: processados pela Stripe; não armazenamos dados de cartão. Base legal: execução de contrato (art. 7º, V) e cumprimento de obrigação legal (art. 7º, II).</li>
+          <li><strong>Pagamentos da assinatura</strong>: processados pelo Asaas; não armazenamos dados de cartão. Base legal: execução de contrato (art. 7º, V) e cumprimento de obrigação legal (art. 7º, II).</li>
           <li><strong>Aceite dos Termos</strong> (data, hora, versão aceita e endereço IP): comprovar a contratação. Base legal: execução de contrato (art. 7º, V) e exercício regular de direitos (art. 7º, VI).</li>
           <li><strong>Registros de acesso</strong> (nome de usuário, loja, endereço IP, data e hora de cada login e renovação de sessão): segurança e prevenção a fraudes, guardados por 6 meses conforme o Marco Civil da Internet (art. 15 da Lei 12.965/2014) e apagados automaticamente depois disso. Base legal: obrigação legal (art. 7º, II) e legítimo interesse (art. 7º, IX).</li>
           <li><strong>Estatísticas de uso</strong> (Google Analytics, item 4): somente com o seu consentimento (art. 7º, I).</li>
@@ -38,7 +38,7 @@ import { AnalyticsService } from './core/analytics.service';
         <p>Também usamos o armazenamento local do navegador para itens necessários ao funcionamento (sessão de login, tema e cores, lembretes), que não dependem de consentimento.</p>
 
         <h2>5. Compartilhamento e transferência internacional</h2>
-        <p>Compartilhamos dados apenas com fornecedores necessários ao serviço: Railway (hospedagem), Stripe (pagamentos), provedor de e-mail transacional e, com o seu consentimento, Google (estatísticas). Se você usar o atendimento por WhatsApp, a conversa é tratada pela Meta. Alguns desses fornecedores processam dados fora do Brasil, especialmente nos Estados Unidos; essas transferências seguem o art. 33 da LGPD, com cláusulas contratuais dos fornecedores que garantem proteção equivalente. Não vendemos dados pessoais.</p>
+        <p>Compartilhamos dados apenas com fornecedores necessários ao serviço: Railway (hospedagem), Asaas (pagamentos), provedor de e-mail transacional e, com o seu consentimento, Google (estatísticas). Se você usar o atendimento por WhatsApp, a conversa é tratada pela Meta. Alguns desses fornecedores processam dados fora do Brasil, especialmente nos Estados Unidos; essas transferências seguem o art. 33 da LGPD, com cláusulas contratuais dos fornecedores que garantem proteção equivalente. Não vendemos dados pessoais.</p>
 
         <h2>6. Por quanto tempo guardamos</h2>
         <p>Os dados da conta são mantidos enquanto a assinatura estiver ativa. Depois do cancelamento da assinatura ou da reprovação do cadastro, eliminamos automaticamente, em até 90 dias, os usuários, produtos, vendas e dados de clientes da loja, e anonimizamos o cadastro da empresa. Guardamos apenas o necessário para cumprir obrigações legais: faturas e dados de cobrança, pelos prazos fiscais, e registros de acesso, por 6 meses.</p>
