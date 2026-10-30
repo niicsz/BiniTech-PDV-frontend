@@ -7,6 +7,7 @@ import {
   LoginRequest,
   RefreshTokenRequest,
   RegisterRequest,
+  TwoFactorRecoveryCodes,
   TwoFactorSetup,
   TwoFactorStatus
 } from '../../shared/models/api.models';
@@ -51,8 +52,12 @@ export class AuthService {
     return this.http.post<TwoFactorSetup>(`${this.authUrl}/two-factor/setup`, {});
   }
 
-  enableTwoFactor(code: string): Observable<void> {
-    return this.http.post<void>(`${this.authUrl}/two-factor/enable`, { code });
+  enableTwoFactor(code: string): Observable<TwoFactorRecoveryCodes> {
+    return this.http.post<TwoFactorRecoveryCodes>(`${this.authUrl}/two-factor/enable`, { code });
+  }
+
+  regenerateRecoveryCodes(code: string): Observable<TwoFactorRecoveryCodes> {
+    return this.http.post<TwoFactorRecoveryCodes>(`${this.authUrl}/two-factor/recovery-codes`, { code });
   }
 
   disableTwoFactor(code: string): Observable<void> {

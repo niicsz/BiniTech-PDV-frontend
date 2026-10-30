@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { twoFactorFeedback } from '../../two-factor-errors';
+import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../../two-factor-code';
 
 @Component({
   selector: 'app-login',
@@ -61,15 +62,20 @@ import { twoFactorFeedback } from '../../two-factor-errors';
 
           @if (challengeToken) {
           <h2>Verificação em duas etapas</h2>
-          <p class="form-sub">Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
+          <p class="form-sub">
+            {{ useRecoveryCode ? 'Digite um dos códigos de recuperação que você guardou ao ativar a verificação.' : 'Digite o código de 6 dígitos do seu aplicativo autenticador.' }}
+          </p>
 
           <form (ngSubmit)="onVerifyCode()" class="login-form">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Código de verificação</mat-label>
-              <mat-icon matPrefix>pin</mat-icon>
-              <input matInput [(ngModel)]="code" name="code" inputmode="numeric" autocomplete="one-time-code"
-                     maxlength="8" placeholder="000000" required autofocus [disabled]="!!lockedUntil"
-                     (input)="sanitizeCode()" class="code-input" />
+              <mat-label>{{ useRecoveryCode ? 'Código de recuperação' : 'Código de verificação' }}</mat-label>
+              <mat-icon matPrefix>{{ useRecoveryCode ? 'key' : 'pin' }}</mat-icon>
+              <input matInput [(ngModel)]="code" name="code" required autofocus [disabled]="!!lockedUntil"
+                     [attr.inputmode]="useRecoveryCode ? 'text' : 'numeric'"
+                     [attr.autocomplete]="useRecoveryCode ? 'off' : 'one-time-code'"
+                     [attr.maxlength]="useRecoveryCode ? 11 : 8"
+                     [placeholder]="useRecoveryCode ? 'XXXXX-XXXXX' : '000000'"
+                     (input)="sanitizeCode()" class="code-input" [class.recovery]="useRecoveryCode" />
             </mat-form-field>
 
             <div *ngIf="errorMessage && !lockedUntil" class="error-message">
@@ -80,6 +86,10 @@ import { twoFactorFeedback } from '../../two-factor-errors';
               <mat-icon *ngIf="!loading">verified_user</mat-icon>
               <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
               {{ loading ? 'Verificando...' : 'Verificar' }}
+            </button>
+            <button mat-button type="button" class="back-btn" (click)="toggleRecoveryCode()" [disabled]="!!lockedUntil">
+              <mat-icon>{{ useRecoveryCode ? 'smartphone' : 'key' }}</mat-icon>
+              {{ useRecoveryCode ? 'Usar o aplicativo autenticador' : 'Perdeu o celular? Usar código de recuperação' }}
             </button>
             <button mat-button type="button" class="back-btn" (click)="backToPassword()">
               <mat-icon>arrow_back</mat-icon> Voltar para usuário e senha
@@ -188,6 +198,7 @@ import { twoFactorFeedback } from '../../two-factor-errors';
     .lock-banner div { display:flex; flex-direction:column; gap:2px; }
     .lock-banner strong { font-size:14.5px; }
     .code-input { font-family:var(--font-mono); font-size:22px; letter-spacing:8px; text-align:center; }
+    .code-input.recovery { font-size:18px; letter-spacing:3px; }
     .back-btn { margin-top:6px; display:flex; align-items:center; justify-content:center; gap:6px; }
     .login-btn { width:100%; height:50px; font-size:15px; font-weight:700; border-radius:var(--radius) !important;
       display:flex; align-items:center; justify-content:center; gap:8px; }
@@ -214,6 +225,7 @@ export class LoginComponent implements OnDestroy {
   year = new Date().getFullYear();
   challengeToken: string | null = null;
   code = '';
+  useRecoveryCode = false;
   lockedUntil: Date | null = null;
   private lockTimer?: ReturnType<typeof setTimeout>;
 
@@ -254,8 +266,8 @@ export class LoginComponent implements OnDestroy {
     if (!this.challengeToken || this.lockedUntil) {
       return;
     }
-    if (!/^\d{6,8}$/.test(this.code)) {
-      this.errorMessage = 'Informe o código de 6 dígitos do aplicativo autenticador.';
+    if (!isTwoFactorCode(this.code, this.useRecoveryCode)) {
+      this.errorMessage = twoFactorCodeHint(this.useRecoveryCode);
       return;
     }
     this.loading = true;
@@ -263,12 +275,12 @@ export class LoginComponent implements OnDestroy {
     this.authService.completeTwoFactorLogin(this.challengeToken, this.code).subscribe({
       next: () => {
         this.loading = false;
-        this.finishLogin('totp');
+        this.finishLogin(this.useRecoveryCode ? 'recovery_code' : 'totp');
       },
       error: (err) => {
         this.loading = false;
         this.code = '';
-        this.analytics.track('login_failed', { method: 'totp', status: err?.status ?? 0 });
+        this.analytics.track('login_failed', { method: this.useRecoveryCode ? 'recovery_code' : 'totp', status: err?.status ?? 0 });
         if (err?.status === 400 && !err?.error?.code?.startsWith('TWO_FACTOR')) {
           this.backToPassword();
           this.errorMessage = 'A verificação expirou. Entre novamente com usuário e senha.';
@@ -280,11 +292,18 @@ export class LoginComponent implements OnDestroy {
   }
 
   sanitizeCode(): void {
-    this.code = this.code.replace(/\D/g, '');
+    this.code = sanitizeTwoFactorCode(this.code, this.useRecoveryCode);
+  }
+
+  toggleRecoveryCode(): void {
+    this.useRecoveryCode = !this.useRecoveryCode;
+    this.code = '';
+    this.errorMessage = '';
   }
 
   backToPassword(): void {
     this.challengeToken = null;
+    this.useRecoveryCode = false;
     this.code = '';
     this.errorMessage = '';
   }

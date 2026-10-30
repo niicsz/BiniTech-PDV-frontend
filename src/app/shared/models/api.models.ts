@@ -100,6 +100,11 @@ export interface AuthResponse {
 export interface TwoFactorStatus {
   enabled: boolean;
   lockedUntil?: string | null;
+  recoveryCodesRemaining?: number;
+}
+
+export interface TwoFactorRecoveryCodes {
+  recoveryCodes: string[];
 }
 
 export interface TwoFactorSetup {
