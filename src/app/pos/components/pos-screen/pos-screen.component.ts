@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -23,7 +24,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
 @Component({
   selector: 'app-pos-screen',
   imports: [
-    CommonModule, FormsModule, CartTableComponent, PaymentModalComponent,
+    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent,
     MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatChipsModule
   ],
   templateUrl: './pos-screen.component.html',
@@ -56,6 +57,8 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   loggedInUsername = '';
 
+  showTwoFactorBanner = false;
+
   showLowStockAlert = false;
   lowStockProducts: { description: string; stockQuantity: number }[] = [];
   private pendingLowStockProducts: { description: string; stockQuantity: number }[] = [];
@@ -82,6 +85,31 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     console.info('[PosScreen] Tela PDV inicializada para:', this.loggedInUsername);
     this.focusBarcode();
     this.loadProducts();
+    this.checkTwoFactor();
+  }
+
+  dismissTwoFactorBanner(): void {
+    this.showTwoFactorBanner = false;
+    localStorage.setItem(this.twoFactorBannerKey(), '1');
+    this.analytics.track('two_factor_banner_dismissed');
+  }
+
+  private checkTwoFactor(): void {
+    if (localStorage.getItem(this.twoFactorBannerKey())) {
+      return;
+    }
+    this.authService.twoFactorStatus().subscribe({
+      next: status => {
+        this.showTwoFactorBanner = !status.enabled;
+      },
+      error: () => {
+        this.showTwoFactorBanner = false;
+      }
+    });
+  }
+
+  private twoFactorBannerKey(): string {
+    return `binitech-2fa-banner-dismissed:${this.loggedInUsername}`;
   }
 
   loadProducts(): void {

@@ -1,5 +1,14 @@
 <div class="pos-container">
 
+  <div *ngIf="showTwoFactorBanner" class="two-factor-banner" role="status">
+    <mat-icon class="tfb-icon">gpp_maybe</mat-icon>
+    <span class="tfb-text">Proteja sua conta: ative a verificação em duas etapas.</span>
+    <a routerLink="/security" class="tfb-link">Ativar agora</a>
+    <button type="button" class="tfb-close" aria-label="Fechar aviso" (click)="dismissTwoFactorBanner()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
   <div class="shortcuts-bar">
     <div class="shortcut-item" *ngFor="let s of [
       {key: 'F2', label: 'Alterar Qtd'},
