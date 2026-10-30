@@ -180,15 +180,15 @@ import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../..
     .form-wrap { width:100%; max-width:400px; }
     .brand-mobile { display:none; justify-content:center; margin-bottom:24px; }
     .brand-mobile .brand-name { color:var(--text); }
-    .brand-mobile .brand-name strong { color:var(--primary-dark); }
-    .brand-mobile .brand-logo { border-color:var(--text); box-shadow:3px 3px 0 var(--text); }
+    .brand-mobile .brand-name strong { color:var(--primary-text); }
+    .brand-mobile .brand-logo { border-color:var(--text); box-shadow:3px 3px 0 var(--shadow-hard-color); }
     .form-side h2 { font-family:var(--font-display); font-size:30px; font-weight:800; letter-spacing:-1px;
       margin:0 0 6px; color:var(--text); }
     .form-sub { color:var(--text-secondary); font-size:14.5px; margin:0 0 26px; }
     .login-form { display:flex; flex-direction:column; gap:8px; }
     .full-width { width:100%; }
     .row-forgot { display:flex; justify-content:flex-end; margin:-2px 2px 6px; }
-    .row-forgot a { font-size:13px; color:var(--primary-dark); font-weight:600; text-decoration:none; }
+    .row-forgot a { font-size:13px; color:var(--primary-text); font-weight:600; text-decoration:none; }
     .row-forgot a:hover { text-decoration:underline; }
     .error-message { display:flex; align-items:center; gap:8px; background:var(--danger-bg); color:var(--danger);
       padding:12px 16px; border-radius:var(--radius); border:1.5px solid var(--danger); font-size:13px; margin-bottom:8px; }
@@ -206,7 +206,7 @@ import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../..
       font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:1px; }
     .divider::before, .divider::after { content:''; flex:1; height:2px; background:var(--border); }
     .signup-hint { text-align:center; font-size:13.5px; color:var(--text-secondary); margin:0; }
-    .signup-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }
+    .signup-hint a { color:var(--primary-text); font-weight:700; text-decoration:none; }
     .signup-hint a:hover { text-decoration:underline; }
 
     @media (max-width:900px) {

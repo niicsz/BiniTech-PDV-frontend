@@ -76,13 +76,13 @@ import { AnalyticsService } from '../../../core/analytics.service';
     .glow-2 { width:320px; height:320px; background:#1c6b46; bottom:-140px; left:-80px; opacity:.35; }
     .auth-card { position:relative; width:100%; max-width:440px; padding:38px !important;
       background:var(--surface) !important; border:2px solid var(--text) !important;
-      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--text) !important; }
+      border-radius:var(--radius-md) !important; box-shadow:10px 10px 0 var(--shadow-hard-color) !important; }
     .brand { display:flex; align-items:center; gap:11px; margin-bottom:22px; }
     .brand-logo { display:grid; place-items:center; width:40px; height:40px; border-radius:var(--radius);
-      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--text); }
+      background:var(--primary); border:2px solid var(--text); box-shadow:3px 3px 0 var(--shadow-hard-color); }
     .brand-logo mat-icon { color:#fff; }
     .brand-name { font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:-.4px; color:var(--text); }
-    .brand-name strong { color:var(--primary-dark); }
+    .brand-name strong { color:var(--primary-text); }
     h1 { font-family:var(--font-display); font-size:28px; font-weight:800; letter-spacing:-.8px; margin:0 0 6px; color:var(--text); }
     .subtitle { color:var(--text-secondary); font-size:14px; margin:0 0 22px; line-height:1.55; }
     .auth-form { display:flex; flex-direction:column; gap:6px; }
@@ -91,7 +91,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
       padding:12px 16px; border-radius:var(--radius); border:1.5px solid var(--danger); font-size:13px; margin-bottom:8px; }
     .submit-btn { width:100%; height:48px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:var(--radius) !important; }
     .back-hint { text-align:center; margin:16px 0 0; font-size:13px; }
-    .back-hint a { color:var(--primary-dark); font-weight:700; text-decoration:none; }
+    .back-hint a { color:var(--primary-text); font-weight:700; text-decoration:none; }
     .back-hint a:hover { text-decoration:underline; }
     .done { text-align:center; padding:8px 0; }
     .done-ico { font-size:56px; height:56px; width:56px; color:var(--success); margin-bottom:8px; }
