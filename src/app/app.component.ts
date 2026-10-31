@@ -64,6 +64,10 @@ import { localIsoDate } from './core/local-date';
                 <mat-icon>manage_accounts</mat-icon>
                 <span>Usuários</span>
               </a>
+              <a routerLink="/fiscal" routerLinkActive="active-link" class="nav-item">
+                <mat-icon>receipt_long</mat-icon>
+                <span>Nota Fiscal</span>
+              </a>
             }
             @if (!authService.isSuperAdmin()) {
               <a routerLink="/billing" routerLinkActive="active-link" class="nav-item">

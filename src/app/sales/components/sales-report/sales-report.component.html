@@ -136,6 +136,7 @@
             <th class="text-right">Lucro</th>
             <th class="text-right">Pago</th>
             <th class="text-right">Troco</th>
+            <th class="text-center" *ngIf="fiscalEnabled">NFC-e</th>
           </tr>
         </thead>
         <tbody>
@@ -167,9 +168,15 @@
             <td class="text-right" [class.text-success]="(sale.change || 0) > 0">
               R$ {{ sale.change | number:'1.2-2' }}
             </td>
+            <td class="text-center" *ngIf="fiscalEnabled">
+              <button mat-stroked-button class="nfce-btn" (click)="nfceAction(sale)" [disabled]="nfceBusySale === sale.id">
+                <mat-icon>receipt_long</mat-icon>
+                {{ nfceLabel(sale.id) }}
+              </button>
+            </td>
           </tr>
           <tr *ngIf="sales.length === 0">
-            <td colspan="10" class="empty-state">
+            <td [attr.colspan]="fiscalEnabled ? 11 : 10" class="empty-state">
               <mat-icon class="empty-icon">search_off</mat-icon>
               <p>Nenhuma venda encontrada para o período selecionado</p>
             </td>
