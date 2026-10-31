@@ -8,6 +8,7 @@ export interface SubscriptionDTO {
   asaasSubscriptionId: string | null;
   asaasCustomerId: string | null;
   planTier: string;
+  billingType: string | null;
   status: string;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
@@ -54,6 +55,10 @@ export class BillingService {
 
   getCheckoutUrl(): Observable<UrlDTO> {
     return this.http.get<UrlDTO>(`${this.base}/checkout`);
+  }
+
+  getPixCheckoutUrl(): Observable<UrlDTO> {
+    return this.http.get<UrlDTO>(`${this.base}/checkout/pix`);
   }
 
   getPortalUrl(): Observable<UrlDTO> {
