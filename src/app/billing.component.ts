@@ -83,8 +83,12 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
 
           <div class="sub-meta" *ngIf="subscription() as s">
             <div class="meta-item">
-              <span class="meta-lbl">Próxima cobrança</span>
+              <span class="meta-lbl">{{ isPixPlan() ? 'Pago até' : 'Próxima cobrança' }}</span>
               <span class="meta-val">{{ formatDate(s.nextBillingDate) }}</span>
+            </div>
+            <div class="meta-item" *ngIf="s.billingType">
+              <span class="meta-lbl">Forma de pagamento</span>
+              <span class="meta-val">{{ s.billingType === 'PIX' ? 'Pix (mensal)' : 'Cartão de crédito' }}</span>
             </div>
             <div class="meta-item">
               <span class="meta-lbl">Último pagamento</span>
@@ -102,8 +106,14 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
               <mat-icon *ngIf="!paying()">credit_card</mat-icon>
               {{ payButtonLabel() }}
             </button>
+            <button mat-stroked-button class="pix-btn" *ngIf="canPayWithPix()" (click)="payWithPix()" [disabled]="payingPix()">
+              <mat-spinner *ngIf="payingPix()" diameter="20"></mat-spinner>
+              <mat-icon *ngIf="!payingPix()">qr_code_2</mat-icon>
+              {{ pixButtonLabel() }}
+            </button>
             <p class="pay-hint">
-              Você será redirecionado ao Asaas para concluir o pagamento com cartão de crédito em segurança.<br>
+              O pagamento é feito no Asaas, em ambiente seguro. No cartão de crédito, a assinatura renova sozinha todo mês.
+              No Pix, você paga 30 dias por vez e o acesso é liberado assim que o Pix é confirmado.<br>
               Se não conseguir pagar, entre em contato com o suporte.
             </p>
             <button mat-stroked-button class="manage-btn" *ngIf="canManage()" (click)="managePortal()" [disabled]="managing()">
@@ -169,6 +179,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
     .st-PAST_DUE { background:var(--danger-bg); color:var(--primary-text); }
     .st-CANCELLED, .st-NONE { background:var(--surface-alt); color:var(--text-secondary); }
     .pay-btn { width:100%; height:50px; font-weight:700; margin-top:22px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .pix-btn { width:100%; height:46px; font-weight:700; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
     .pay-hint { text-align:center; font-size:12px; color:var(--text-tertiary); margin:10px 0 0; }
     .manage-btn { width:100%; height:46px; font-weight:600; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
     .free-note { display:flex; align-items:center; justify-content:center; gap:8px; margin:20px 0 0; padding:14px;
@@ -196,6 +207,7 @@ export class BillingComponent implements OnInit {
   loading = signal(false);
   paying = signal(false);
   managing = signal(false);
+  payingPix = signal(false);
 
   planTier = computed(() => this.subscription()?.planTier?.toLowerCase() ?? '');
 
@@ -217,6 +229,13 @@ export class BillingComponent implements OnInit {
   canManage = computed(() => {
     const sub = this.subscription();
     return (sub?.status === 'ACTIVE' || sub?.status === 'PAST_DUE') && !!sub?.asaasSubscriptionId;
+  });
+
+  isPixPlan = computed(() => this.subscription()?.billingType === 'PIX');
+
+  canPayWithPix = computed(() => {
+    const sub = this.subscription();
+    return !this.isFree() && !(sub?.billingType === 'CREDIT_CARD' && sub.status === 'ACTIVE');
   });
 
   ngOnInit(): void {
@@ -335,6 +354,32 @@ export class BillingComponent implements OnInit {
     });
   }
 
+  payWithPix(): void {
+    this.payingPix.set(true);
+    this.analytics.track('begin_checkout', { plan: this.planTier() || 'unknown', payment_type: 'pix' });
+    this.analytics.setSession('checkout_pending', this.planTier());
+    this.billingService.getPixCheckoutUrl().subscribe({
+      next: ({ url }) => {
+        window.location.href = url;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.payingPix.set(false);
+        this.analytics.setSession('checkout_pending', null);
+        this.snackBar.open(
+          this.billingErrorMessage(error, 'Não foi possível gerar o Pix.'),
+          'OK',
+          { duration: 7000 },
+        );
+      },
+    });
+  }
+
+  pixButtonLabel(): string {
+    return this.isPixPlan() && this.subscription()?.status === 'ACTIVE'
+      ? 'Pagar o próximo mês com Pix'
+      : 'Pagar com Pix';
+  }
+
   managePortal(): void {
     this.managing.set(true);
     this.analytics.track('manage_subscription_opened', { plan: this.planTier() || 'unknown' });
@@ -371,7 +416,7 @@ export class BillingComponent implements OnInit {
   }
 
   payButtonLabel(): string {
-    return this.isBlocked() ? 'Regularizar pagamento' : 'Assinar / Pagar agora';
+    return this.isBlocked() ? 'Regularizar com cartão' : 'Assinar com cartão de crédito';
   }
 
   alertMessage(): string {
@@ -393,7 +438,10 @@ export class BillingComponent implements OnInit {
     if (!value) {
       return '—';
     }
-    const date = new Date(value);
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    const date = dateOnly
+      ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+      : new Date(value);
     return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
   }
 }
