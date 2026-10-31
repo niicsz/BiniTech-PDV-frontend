@@ -1313,3 +1313,28 @@
     padding: 8px 12px;
   }
 }
+
+.nfce-panel {
+  margin: 12px 0 4px;
+  padding: 14px 16px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+.nfce-issue-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.nfce-cpf { flex: 1; min-width: 180px; }
+.nfce-status {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.nfce-status div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nfce-status.ok mat-icon { color: var(--success); }
+.nfce-env { font-size: 12px; color: var(--accent); font-weight: 600; }
+.nfce-key { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); word-break: break-all; }
+.nfce-error { color: var(--danger); font-size: 13px; margin: 6px 0 0; }
+@media print { .nfce-panel { display: none; } }

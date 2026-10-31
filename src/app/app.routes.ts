@@ -185,6 +185,14 @@ export const routes: Routes = [
       import('./users/user-management.component').then(m => m.UserManagementComponent),
     canActivate: [adminGuard]
   },
+  {
+    path: 'fiscal',
+    title: 'Nota Fiscal | BiniTech PDV',
+    data: seo({ title: 'Nota Fiscal | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./fiscal/fiscal-settings.component').then(m => m.FiscalSettingsComponent),
+    canActivate: [adminGuard]
+  },
   { path: 'register', redirectTo: 'users', pathMatch: 'full' },
   {
     path: 'change-password',

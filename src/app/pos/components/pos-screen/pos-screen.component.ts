@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +20,7 @@ import {
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
 import { AnalyticsService } from '../../../core/analytics.service';
+import { FiscalProfile, FiscalService, NfceDocument } from '../../../fiscal/fiscal.service';
 
 @Component({
   selector: 'app-pos-screen',
@@ -49,6 +50,15 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   showReceiptModal = false;
   lastSale: SaleDTO | null = null;
+
+  private fiscalService = inject(FiscalService);
+  fiscalProfile: FiscalProfile | null = null;
+  nfce: NfceDocument | null = null;
+  nfceBusy = false;
+  nfceError = '';
+  nfceCpf = '';
+  private nfcePollTimer: ReturnType<typeof setTimeout> | null = null;
+  private nfcePollAttempts = 0;
 
   statusMessage = '';
   statusType: 'success' | 'error' | 'info' = 'info';
@@ -86,6 +96,97 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     this.focusBarcode();
     this.loadProducts();
     this.checkTwoFactor();
+    this.loadFiscalProfile();
+  }
+
+  private loadFiscalProfile(): void {
+    this.fiscalService.getProfile().subscribe({
+      next: (profile) => (this.fiscalProfile = profile),
+      error: () => (this.fiscalProfile = null),
+    });
+  }
+
+  get canIssueNfce(): boolean {
+    return !!this.fiscalProfile?.readyToIssue;
+  }
+
+  issueNfce(): void {
+    const saleId = this.lastSale?.id;
+    if (!saleId || this.nfceBusy) return;
+    this.nfceBusy = true;
+    this.nfceError = '';
+    const cpf = this.nfceCpf.replace(/\D/g, '') || null;
+    this.fiscalService.issueNfce(saleId, cpf).subscribe({
+      next: (document) => {
+        this.nfceBusy = false;
+        this.nfce = document;
+        this.nfcePollAttempts = 0;
+        this.scheduleNfcePoll();
+      },
+      error: (err) => {
+        this.nfceBusy = false;
+        this.nfceError = err.error?.message || 'Não foi possível emitir a NFC-e.';
+      },
+    });
+  }
+
+  private scheduleNfcePoll(): void {
+    this.clearNfcePoll();
+    const status = this.nfce?.status;
+    if (status !== 'QUEUED' && status !== 'PROCESSING') return;
+    if (this.nfcePollAttempts >= 20) return;
+    this.nfcePollTimer = setTimeout(() => {
+      const saleId = this.nfce?.saleId;
+      if (!saleId) return;
+      this.nfcePollAttempts++;
+      this.fiscalService.getNfce(saleId).subscribe({
+        next: (document) => {
+          if (document && document.saleId === this.lastSale?.id) {
+            this.nfce = document;
+            this.scheduleNfcePoll();
+          }
+        },
+        error: () => this.scheduleNfcePoll(),
+      });
+    }, 2000);
+  }
+
+  private clearNfcePoll(): void {
+    if (this.nfcePollTimer) {
+      clearTimeout(this.nfcePollTimer);
+      this.nfcePollTimer = null;
+    }
+  }
+
+  printNfce(): void {
+    const saleId = this.nfce?.saleId;
+    if (!saleId) return;
+    const popup = window.open('', '_blank');
+    this.fiscalService.downloadDanfe(saleId).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        if (popup) {
+          popup.location.href = url;
+        } else {
+          window.open(url, '_blank');
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: (err) => {
+        popup?.close();
+        this.nfceError = err.error?.message || 'Não foi possível abrir a NFC-e.';
+      },
+    });
+  }
+
+  nfceStatusLabel(): string {
+    switch (this.nfce?.status) {
+      case 'ISSUED': return `NFC-e nº ${this.nfce.numero} autorizada`;
+      case 'ERROR': return 'NFC-e rejeitada';
+      case 'CANCELLING': return 'Cancelamento em andamento';
+      case 'CANCELLED': return 'NFC-e cancelada';
+      default: return 'Enviando NFC-e para a SEFAZ...';
+    }
   }
 
   dismissTwoFactorBanner(): void {
@@ -129,6 +230,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       clearTimeout(this.statusTimeout);
     }
     this.cancelHideDropdown();
+    this.clearNfcePoll();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -517,8 +619,14 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         this.paymentProcessing = false;
         this.trackSaleCompleted({ ...saleParams, value: result.totalAmount ?? this.total });
         this.lastSale = result;
+        this.nfce = null;
+        this.nfceError = '';
+        this.nfceCpf = '';
         this.showPaymentModal = false;
         this.showReceiptModal = true;
+        if (this.canIssueNfce && this.fiscalProfile?.autoIssue) {
+          this.issueNfce();
+        }
         this.clearCart();
         this.hasOutOfStockItems = false;
         console.info('[PosScreen] Venda finalizada com sucesso: id=', result.id, 'total=', result.totalAmount);
@@ -615,6 +723,9 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   closeReceiptModal(): void {
     this.showReceiptModal = false;
     this.lastSale = null;
+    this.nfce = null;
+    this.nfceError = '';
+    this.clearNfcePoll();
     this.showPendingLowStockAlert();
     if (!this.showLowStockAlert) {
       this.focusBarcode();
