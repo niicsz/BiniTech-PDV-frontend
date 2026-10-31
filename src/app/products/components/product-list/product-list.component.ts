@@ -45,6 +45,9 @@ export class ProductListComponent implements OnInit {
     costPrice: 0,
     stockQuantity: 0,
     category: '',
+    ncm: '',
+    cfop: '',
+    csosn: '',
     active: true
   };
 
@@ -72,7 +75,19 @@ export class ProductListComponent implements OnInit {
     if (!Number.isInteger(Number(f.stockQuantity)) || Number(f.stockQuantity) < 0) {
       return 'O estoque deve ser um número inteiro igual ou maior que zero.';
     }
+    if (f.ncm?.trim() && !/^\d{8}$/.test(f.ncm.trim())) return 'O NCM deve ter 8 dígitos.';
+    if (f.cfop?.trim() && !/^\d{4}$/.test(f.cfop.trim())) return 'O CFOP deve ter 4 dígitos.';
+    if (f.csosn?.trim() && !/^\d{3}$/.test(f.csosn.trim())) return 'O CSOSN deve ter 3 dígitos.';
     return null;
+  }
+
+  private payload(): CreateProductDTO {
+    return {
+      ...this.form,
+      ncm: this.form.ncm?.trim() || null,
+      cfop: this.form.cfop?.trim() || null,
+      csosn: this.form.csosn?.trim() || null,
+    };
   }
 
   ngOnInit(): void {
@@ -168,7 +183,7 @@ export class ProductListComponent implements OnInit {
 
   openCreateForm(): void {
     this.editingId = null;
-    this.form = { barcode: '', description: '', price: 0, costPrice: 0, stockQuantity: 0, category: '', active: true };
+    this.form = { barcode: '', description: '', price: 0, costPrice: 0, stockQuantity: 0, category: '', ncm: '', cfop: '', csosn: '', active: true };
     this.showForm = true;
   }
 
@@ -181,6 +196,9 @@ export class ProductListComponent implements OnInit {
       costPrice: product.costPrice || 0,
       stockQuantity: product.stockQuantity || 0,
       category: product.category || '',
+      ncm: product.ncm || '',
+      cfop: product.cfop || '',
+      csosn: product.csosn || '',
       active: product.active ?? true
     };
     this.showForm = true;
@@ -194,7 +212,7 @@ export class ProductListComponent implements OnInit {
     }
     if (this.editingId) {
       console.info('[ProductList] Atualizando produto:', this.editingId);
-      this.productService.update(this.editingId, this.form).subscribe({
+      this.productService.update(this.editingId, this.payload()).subscribe({
         next: () => {
           console.info('[ProductList] Produto atualizado com sucesso:', this.editingId);
           this.showStatus('Produto atualizado com sucesso!', 'success');
@@ -209,7 +227,7 @@ export class ProductListComponent implements OnInit {
     } else {
       console.info('[ProductList] Criando novo produto:', this.form.description);
       const firstProduct = this.products.length === 0;
-      this.productService.create(this.form).subscribe({
+      this.productService.create(this.payload()).subscribe({
         next: () => {
           console.info('[ProductList] Produto criado com sucesso:', this.form.description);
           this.analytics.track('product_created', { source: 'manual' });
@@ -251,6 +269,9 @@ export class ProductListComponent implements OnInit {
       costPrice: product.costPrice || 0,
       stockQuantity: product.stockQuantity || 0,
       category: product.category || '',
+      ncm: product.ncm || null,
+      cfop: product.cfop || null,
+      csosn: product.csosn || null,
       active: true
     };
     this.productService.update(product.id!, dto).subscribe({

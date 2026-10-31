@@ -7,6 +7,9 @@ export interface ProductDTO {
   stockQuantity?: number;
   active?: boolean;
   category?: string;
+  ncm?: string | null;
+  cfop?: string | null;
+  csosn?: string | null;
   userId?: string;
 }
 
@@ -17,6 +20,9 @@ export interface CreateProductDTO {
   costPrice: number;
   stockQuantity: number;
   category: string;
+  ncm?: string | null;
+  cfop?: string | null;
+  csosn?: string | null;
   active?: boolean;
 }
 
