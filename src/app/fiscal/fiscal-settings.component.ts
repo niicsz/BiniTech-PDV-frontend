@@ -33,6 +33,7 @@ function emptyForm(): FiscalIssuerRequest {
     telefone: '',
     email: '',
     serie: 1,
+    nfeSerie: 1,
     defaultNcm: '',
     defaultCfop: '5102',
     defaultCsosn: '102',
@@ -155,6 +156,11 @@ function emptyForm(): FiscalIssuerRequest {
             <mat-form-field appearance="outline">
               <mat-label>Série da NFC-e</mat-label>
               <input matInput type="number" min="1" max="889" [(ngModel)]="form.serie" name="serie" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Série da NF-e de devolução</mat-label>
+              <input matInput type="number" min="1" max="889" [(ngModel)]="form.nfeSerie" name="nfeSerie" />
+              <mat-hint>Modelo 55. Use uma série que a loja não usa em outro sistema.</mat-hint>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>NCM padrão</mat-label>
@@ -404,6 +410,7 @@ export class FiscalSettingsComponent implements OnInit {
       telefone: issuer.telefone ?? '',
       email: issuer.email ?? '',
       serie: issuer.serie,
+      nfeSerie: issuer.nfeSerie ?? 1,
       defaultNcm: issuer.defaultNcm ?? '',
       defaultCfop: issuer.defaultCfop ?? '',
       defaultCsosn: issuer.defaultCsosn ?? '102',
