@@ -14,7 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
         <h1>Sobre nós</h1>
         <p>
           A BiniTech PDV nasceu para simplificar a gestão de pequenos e médios comércios.
-          Nossa plataforma reúne controle de estoque, frente de caixa, crediário e relatórios
+          Nossa plataforma reúne controle de estoque, frente de caixa, crediário, relatórios e emissão de NFC-e
           em uma solução na nuvem, acessível de qualquer lugar.
         </p>
         <p>
