@@ -296,6 +296,16 @@
             <span *ngIf="!saleReturn.restocked"> · sem voltar ao estoque</span>
             <div class="return-items">{{ returnSummary(saleReturn) }}</div>
             <div class="return-items" *ngIf="saleReturn.reason">Motivo: {{ saleReturn.reason }}</div>
+            <div class="return-fiscal" *ngIf="fiscalEnabled && nfce"
+                 [class.return-fiscal-error]="fiscalReturnStatus(saleReturn) === 'REJECTED'">
+              <mat-icon>receipt_long</mat-icon>
+              <span>{{ fiscalReturnLabel(saleReturn) }}</span>
+              <button mat-button *ngIf="fiscalReturnStatus(saleReturn) === 'AUTHORIZED'"
+                      (click)="printReturnDanfe(saleReturn)">DANFE</button>
+              <button mat-button *ngIf="canRetryFiscalReturn(saleReturn)"
+                      [disabled]="fiscalReturnBusy === saleReturn.id"
+                      (click)="retryFiscalReturn(saleReturn)">Tentar de novo</button>
+            </div>
           </div>
           <button mat-icon-button (click)="printReturn(saleReturn)" aria-label="Imprimir comprovante desta devolução">
             <mat-icon>print</mat-icon>
@@ -325,9 +335,9 @@
           Cancelar NFC-e
         </button>
       </div>
-      <p class="return-hint" *ngIf="showCancel && selectedSale.status === 'RETURNED'">
-        A venda foi devolvida por completo. A SEFAZ só aceita cancelar a NFC-e logo após a emissão
-        (em geral até 30 minutos); depois disso, a devolução fiscal é feita com NF-e de entrada pelo seu contador.
+      <p class="return-hint" *ngIf="(selectedSale.returns?.length ?? 0) > 0">
+        A nota fiscal das devoluções é feita automaticamente: devolução total em até 30 minutos cancela
+        a NFC-e; nos demais casos é emitida uma NF-e de devolução (entrada) referenciando a NFC-e.
       </p>
       <div class="cancel-row" *ngIf="showCancel">
         <mat-form-field appearance="outline" class="cancel-field">
