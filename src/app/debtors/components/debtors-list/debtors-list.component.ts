@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
 import { SaleDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
+import { netAmount } from '../../../sales/sale-amounts';
 
 interface DebtorGroup {
   customerName: string;
@@ -112,7 +113,7 @@ interface DebtorGroup {
                 </span>
               </div>
               <div class="sale-actions">
-                <strong class="sale-amount">R$ {{ sale.totalAmount | number:'1.2-2' }}</strong>
+                <strong class="sale-amount">R$ {{ debtOf(sale) | number:'1.2-2' }}</strong>
                 <button mat-flat-button color="primary" class="btn-mark-paid"
                         (click)="markAsPaid(sale)" [disabled]="sale.paid">
                   <mat-icon>check_circle</mat-icon>
@@ -443,7 +444,7 @@ export class DebtorsListComponent implements OnInit {
       next: (sales) => {
         this.allDebtSales = sales;
         this.groupDebtors(sales);
-        this.totalDebt = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+        this.totalDebt = sales.reduce((sum, s) => sum + netAmount(s), 0);
         this.loading = false;
         console.info('[DebtorsList] Devedores carregados:', this.debtorGroups.length, 'grupos, total:', this.totalDebt);
       },
@@ -469,7 +470,7 @@ export class DebtorsListComponent implements OnInit {
 
     this.debtorGroups = Array.from(grouped.entries()).map(([key, groupSales]) => {
       const [name, phone] = key.split('|');
-      const totalDebt = groupSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+      const totalDebt = groupSales.reduce((sum, s) => sum + netAmount(s), 0);
       const timestamps = groupSales
         .map(s => s.timestamp ? new Date(s.timestamp).getTime() : Date.now())
         .sort((a, b) => a - b);
@@ -487,9 +488,13 @@ export class DebtorsListComponent implements OnInit {
     }).sort((a, b) => b.daysSinceOldest - a.daysSinceOldest);
   }
 
+  debtOf(sale: SaleDTO): number {
+    return netAmount(sale);
+  }
+
   markAsPaid(sale: SaleDTO): void {
     if (!sale.id) return;
-    const value = (sale.totalAmount ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const value = netAmount(sale).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const who = sale.customerName ? ` de ${sale.customerName}` : '';
     if (!confirm(`Confirmar o recebimento de ${value}${who}? A venda sai da lista de devedores.`)) return;
     console.info('[DebtorsList] Marcando venda como paga:', sale.id);
@@ -499,7 +504,7 @@ export class DebtorsListComponent implements OnInit {
         const daysOpen = sale.timestamp
           ? Math.max(0, Math.floor((Date.now() - new Date(sale.timestamp).getTime()) / 86_400_000))
           : 0;
-        this.analytics.track('debt_paid', { value: sale.totalAmount ?? 0, currency: 'BRL', days_open: daysOpen });
+        this.analytics.track('debt_paid', { value: netAmount(sale), currency: 'BRL', days_open: daysOpen });
         this.loadDebtors();
       },
       error: () => {

@@ -8,14 +8,27 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
-import { SaleDTO, SaleItemDTO } from '../../../shared/models/api.models';
+import { RefundMethod, SaleDTO, SaleReturnDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
 import { FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
-import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
+import { buildReturnReceipt, buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
+import {
+  REFUND_LABELS, hasOpenCrediario, netAmount, netCost, returnedQuantity, round2, saleStatus,
+} from '../../sale-amounts';
+
+interface ReturnableItem {
+  productId: string;
+  description: string;
+  sold: number;
+  available: number;
+  unitPrice: number;
+}
+
+const FULL_RETURN_CANCEL_REASON = 'Devolucao total da mercadoria pelo consumidor';
 
 interface ProductRanking {
   name: string;
@@ -47,6 +60,19 @@ export class SalesReportComponent implements OnInit {
   nfceMessage = '';
   cancelReason = '';
   showCancel = false;
+
+  returnMode = false;
+  returnableItems: ReturnableItem[] = [];
+  returnQuantities: Record<string, number> = {};
+  refundMethod: RefundMethod = 'CASH';
+  restock = true;
+  returnReason = '';
+  returnBusy = false;
+  returnMessage = '';
+  lastReturn: SaleReturnDTO | null = null;
+  readonly refundOptions: RefundMethod[] = ['CASH', 'PIX', 'CREDIT_CARD', 'DEBIT_CARD'];
+  readonly refundLabels = REFUND_LABELS;
+  totalReturned = 0;
 
   sales: SaleDTO[] = [];
   filterMode: 'today' | 'period' = 'today';
@@ -113,9 +139,10 @@ export class SalesReportComponent implements OnInit {
   }
 
   calculateTotal(): void {
-    this.totalRevenue = this.sales.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
-    this.totalCost = this.sales.reduce((sum, sale) => sum + (sale.totalCost || 0), 0);
-    this.totalProfit = this.totalRevenue - this.totalCost;
+    this.totalRevenue = round2(this.sales.reduce((sum, sale) => sum + netAmount(sale), 0));
+    this.totalCost = round2(this.sales.reduce((sum, sale) => sum + netCost(sale), 0));
+    this.totalReturned = round2(this.sales.reduce((sum, sale) => sum + (sale.returnedAmount || 0), 0));
+    this.totalProfit = round2(this.totalRevenue - this.totalCost);
     this.calculateProductRanking();
   }
 
@@ -129,8 +156,15 @@ export class SalesReportComponent implements OnInit {
         existing.revenue += item.subtotal || 0;
         map.set(name, existing);
       }
+      for (const item of (sale.returns || []).flatMap(r => r.items || [])) {
+        const existing = map.get(item.productDescription || 'Desconhecido');
+        if (existing) {
+          existing.quantity -= item.quantity || 0;
+          existing.revenue -= item.subtotal || 0;
+        }
+      }
     }
-    const sorted = Array.from(map.values()).sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue);
+    const sorted = Array.from(map.values()).filter(p => p.quantity > 0).sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue);
     this.topProducts = sorted.slice(0, 5);
     this.bottomProducts = sorted.slice(5).reverse().slice(0, 5);
   }
@@ -153,7 +187,144 @@ export class SalesReportComponent implements OnInit {
   }
 
   getSaleProfit(sale: SaleDTO): number {
-    return (sale.totalAmount || 0) - (sale.totalCost || 0);
+    return round2(netAmount(sale) - netCost(sale));
+  }
+
+  netAmount(sale: SaleDTO): number {
+    return netAmount(sale);
+  }
+
+  statusLabel(sale: SaleDTO): string {
+    switch (saleStatus(sale)) {
+      case 'RETURNED': return 'Devolvida';
+      case 'PARTIALLY_RETURNED': return 'Devolução parcial';
+      default: return '';
+    }
+  }
+
+  get canReturn(): boolean {
+    return !!this.selectedSale
+      && saleStatus(this.selectedSale) !== 'RETURNED'
+      && this.authService.canManageTenantUsers();
+  }
+
+  get openCrediario(): boolean {
+    return !!this.selectedSale && hasOpenCrediario(this.selectedSale);
+  }
+
+  get returnTotal(): number {
+    return round2(this.returnableItems.reduce(
+      (sum, item) => sum + item.unitPrice * this.quantityFor(item), 0));
+  }
+
+  private quantityFor(item: ReturnableItem): number {
+    const value = Math.floor(Number(this.returnQuantities[item.productId]) || 0);
+    return Math.min(Math.max(value, 0), item.available);
+  }
+
+  startReturn(): void {
+    const sale = this.selectedSale;
+    if (!sale) return;
+    const byProduct = new Map<string, ReturnableItem>();
+    for (const item of sale.items ?? []) {
+      if (!item.productId) continue;
+      const current = byProduct.get(item.productId);
+      if (current) {
+        current.sold += item.quantity ?? 0;
+      } else {
+        byProduct.set(item.productId, {
+          productId: item.productId,
+          description: item.productDescription ?? 'Produto',
+          sold: item.quantity ?? 0,
+          available: 0,
+          unitPrice: item.unitPrice ?? 0,
+        });
+      }
+    }
+    this.returnableItems = Array.from(byProduct.values())
+      .map(item => ({ ...item, available: item.sold - returnedQuantity(sale, item.productId) }))
+      .filter(item => item.available > 0);
+    this.returnQuantities = {};
+    this.refundMethod = this.openCrediario ? 'DEBT_DEDUCTION' : 'CASH';
+    this.restock = true;
+    this.returnReason = '';
+    this.returnMessage = '';
+    this.lastReturn = null;
+    this.returnMode = true;
+  }
+
+  returnEverything(): void {
+    for (const item of this.returnableItems) {
+      this.returnQuantities[item.productId] = item.available;
+    }
+  }
+
+  cancelReturn(): void {
+    this.returnMode = false;
+    this.returnMessage = '';
+  }
+
+  confirmReturn(): void {
+    const sale = this.selectedSale;
+    if (!sale?.id || this.returnBusy) return;
+    const items = this.returnableItems
+      .map(item => ({ productId: item.productId, quantity: this.quantityFor(item) }))
+      .filter(item => item.quantity > 0);
+    if (items.length === 0) {
+      this.returnMessage = 'Escolha a quantidade de ao menos um item.';
+      return;
+    }
+    this.returnBusy = true;
+    this.returnMessage = '';
+    this.saleService.registerReturn(sale.id, {
+      items,
+      refundMethod: this.openCrediario ? 'DEBT_DEDUCTION' : this.refundMethod,
+      reason: this.returnReason.trim() || undefined,
+      restock: this.restock,
+    }).subscribe({
+      next: (updated) => this.onReturnRegistered(updated),
+      error: (err) => {
+        this.returnBusy = false;
+        this.returnMessage = err.error?.message || 'Não foi possível registrar a devolução.';
+      },
+    });
+  }
+
+  private onReturnRegistered(updated: SaleDTO): void {
+    this.returnBusy = false;
+    this.returnMode = false;
+    this.sales = this.sales.map(s => (s.id === updated.id ? updated : s));
+    this.calculateTotal();
+    this.selectedSale = updated;
+    this.receiptLines = this.saleReceipt(updated);
+    this.lastReturn = (updated.returns ?? []).at(-1) ?? null;
+    const full = saleStatus(updated) === 'RETURNED';
+    this.analytics.track('sale_returned', {
+      value: this.lastReturn?.refundAmount ?? 0,
+      currency: 'BRL',
+      full,
+    });
+    if (full && this.canCancelNfce) {
+      this.showCancel = true;
+      this.cancelReason = FULL_RETURN_CANCEL_REASON;
+    }
+  }
+
+  printReturn(saleReturn: SaleReturnDTO | null): void {
+    const sale = this.selectedSale;
+    if (!sale || !saleReturn) return;
+    const operator = saleReturn.userId === this.authService.getUserId() ? this.authService.getUsername() : null;
+    printMatrix(buildReturnReceipt(sale, saleReturn, { operator }), `Devolucao ${sale.id?.slice(0, 8) ?? ''}`);
+  }
+
+  returnSummary(saleReturn: SaleReturnDTO): string {
+    return (saleReturn.items ?? [])
+      .map(item => `${item.quantity}x ${item.productDescription ?? 'Produto'}`)
+      .join(', ');
+  }
+
+  private saleReceipt(sale: SaleDTO): string[] {
+    return buildSaleReceipt(sale, { operator: sale.userId === this.authService.getUserId() ? this.authService.getUsername() : null });
   }
 
   get canCancelNfce(): boolean {
@@ -170,7 +341,10 @@ export class SalesReportComponent implements OnInit {
 
   openReceipt(sale: SaleDTO): void {
     this.selectedSale = sale;
-    this.receiptLines = buildSaleReceipt(sale, { operator: sale.userId === this.authService.getUserId() ? this.authService.getUsername() : null });
+    this.receiptLines = this.saleReceipt(sale);
+    this.returnMode = false;
+    this.returnMessage = '';
+    this.lastReturn = null;
     this.nfce = null;
     this.nfceMessage = '';
     this.showCancel = false;
