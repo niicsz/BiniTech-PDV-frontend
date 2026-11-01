@@ -40,6 +40,33 @@ export interface SaleDTO {
   customerPhone?: string;
   customerCpf?: string;
   paid?: boolean;
+  status?: SaleStatus;
+  returnedAmount?: number;
+  returnedCost?: number;
+  returns?: SaleReturnDTO[];
+}
+
+export type SaleStatus = 'COMPLETED' | 'PARTIALLY_RETURNED' | 'RETURNED';
+
+export type RefundMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'DEBT_DEDUCTION';
+
+export interface SaleReturnDTO {
+  id?: string;
+  timestamp?: string;
+  userId?: string;
+  items?: SaleItemDTO[];
+  refundAmount?: number;
+  refundCost?: number;
+  refundMethod?: RefundMethod;
+  reason?: string;
+  restocked?: boolean;
+}
+
+export interface CreateSaleReturnDTO {
+  items: CreateSaleItemDTO[];
+  refundMethod: RefundMethod;
+  reason?: string;
+  restock: boolean;
 }
 
 export interface SaleItemDTO {
