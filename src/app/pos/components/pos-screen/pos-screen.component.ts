@@ -20,7 +20,7 @@ import {
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
 import { AnalyticsService } from '../../../core/analytics.service';
-import { FiscalProfile, FiscalService, NfceDocument } from '../../../fiscal/fiscal.service';
+import { FiscalIssuer, FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
 
 @Component({
   selector: 'app-pos-screen',
@@ -52,7 +52,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   lastSale: SaleDTO | null = null;
 
   private fiscalService = inject(FiscalService);
-  fiscalProfile: FiscalProfile | null = null;
+  fiscalIssuer: FiscalIssuer | null = null;
   nfce: NfceDocument | null = null;
   nfceBusy = false;
   nfceError = '';
@@ -100,14 +100,29 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   private loadFiscalProfile(): void {
-    this.fiscalService.getProfile().subscribe({
-      next: (profile) => (this.fiscalProfile = profile),
-      error: () => (this.fiscalProfile = null),
+    this.fiscalService.getIssuer().subscribe({
+      next: (issuer) => (this.fiscalIssuer = issuer),
+      error: () => (this.fiscalIssuer = null),
     });
   }
 
   get canIssueNfce(): boolean {
-    return !!this.fiscalProfile?.readyToIssue;
+    return !!this.fiscalIssuer?.readyToIssue;
+  }
+
+  get canPrintNfce(): boolean {
+    return canPrintNfce(this.nfce);
+  }
+
+  get canRequestNfce(): boolean {
+    const status = this.nfce?.status;
+    return status === 'AWAITING_REQUEST' || status === 'REJECTED' || (!this.nfce && this.nfcePollAttempts >= 5);
+  }
+
+  private watchNfce(saleId: string): void {
+    this.nfce = null;
+    this.nfcePollAttempts = 0;
+    this.scheduleNfcePoll(saleId, 800);
   }
 
   issueNfce(): void {
@@ -121,7 +136,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         this.nfceBusy = false;
         this.nfce = document;
         this.nfcePollAttempts = 0;
-        this.scheduleNfcePoll();
+        this.scheduleNfcePoll(saleId, 1500);
       },
       error: (err) => {
         this.nfceBusy = false;
@@ -130,25 +145,25 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     });
   }
 
-  private scheduleNfcePoll(): void {
+  private scheduleNfcePoll(saleId: string, delay = 2000): void {
     this.clearNfcePoll();
     const status = this.nfce?.status;
-    if (status !== 'QUEUED' && status !== 'PROCESSING') return;
-    if (this.nfcePollAttempts >= 20) return;
+    if (this.nfce && status !== 'PENDING') return;
+    if (this.nfcePollAttempts >= 30) return;
     this.nfcePollTimer = setTimeout(() => {
-      const saleId = this.nfce?.saleId;
-      if (!saleId) return;
       this.nfcePollAttempts++;
       this.fiscalService.getNfce(saleId).subscribe({
         next: (document) => {
-          if (document && document.saleId === this.lastSale?.id) {
+          if (saleId !== this.lastSale?.id) return;
+          if (document) {
             this.nfce = document;
-            this.scheduleNfcePoll();
+            if (!this.nfceCpf && document.consumerCpf) this.nfceCpf = document.consumerCpf;
           }
+          this.scheduleNfcePoll(saleId);
         },
-        error: () => this.scheduleNfcePoll(),
+        error: () => this.scheduleNfcePoll(saleId),
       });
-    }, 2000);
+    }, delay);
   }
 
   private clearNfcePoll(): void {
@@ -181,13 +196,15 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   nfceStatusLabel(): string {
     switch (this.nfce?.status) {
-      case 'ISSUED': return `NFC-e nº ${this.nfce.numero} autorizada`;
-      case 'ERROR': return 'NFC-e rejeitada';
-      case 'CANCELLING': return 'Cancelamento em andamento';
+      case 'AUTHORIZED': return `NFC-e nº ${this.nfce.numero} autorizada`;
+      case 'CONTINGENCY': return `NFC-e nº ${this.nfce.numero} emitida em contingência`;
       case 'CANCELLED': return 'NFC-e cancelada';
+      case 'DENIED': return 'Uso denegado pela SEFAZ';
+      case 'VOIDED': return 'Numeração inutilizada';
       default: return 'Enviando NFC-e para a SEFAZ...';
     }
   }
+
 
   dismissTwoFactorBanner(): void {
     this.showTwoFactorBanner = false;
@@ -597,6 +614,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       payments: confirmation.payments,
       ...(confirmation.customerName ? { customerName: confirmation.customerName } : {}),
       ...(confirmation.customerPhone ? { customerPhone: confirmation.customerPhone } : {}),
+      ...(confirmation.customerCpf ? { customerCpf: confirmation.customerCpf } : {}),
       ...(this.hasOutOfStockItems ? { skipStockValidation: true } : {})
     };
 
@@ -624,8 +642,9 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         this.nfceCpf = '';
         this.showPaymentModal = false;
         this.showReceiptModal = true;
-        if (this.canIssueNfce && this.fiscalProfile?.autoIssue) {
-          this.issueNfce();
+        this.nfceCpf = result.customerCpf ?? '';
+        if (this.canIssueNfce && result.id) {
+          this.watchNfce(result.id);
         }
         this.clearCart();
         this.hasOutOfStockItems = false;
