@@ -21,11 +21,14 @@ import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { FiscalIssuer, FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
+import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
+import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
+import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
 
 @Component({
   selector: 'app-pos-screen',
   imports: [
-    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent,
+    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent, MatrixReceiptComponent,
     MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatChipsModule
   ],
   templateUrl: './pos-screen.component.html',
@@ -52,6 +55,8 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   lastSale: SaleDTO | null = null;
 
   private readonly fiscalService = inject(FiscalService);
+  private readonly fiscalFeature = inject(FiscalFeatureService);
+  receiptLines: string[] = [];
   fiscalIssuer: FiscalIssuer | null = null;
   nfce: NfceDocument | null = null;
   nfceBusy = false;
@@ -100,14 +105,20 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   private loadFiscalProfile(): void {
-    this.fiscalService.getIssuer().subscribe({
-      next: (issuer) => (this.fiscalIssuer = issuer),
-      error: () => (this.fiscalIssuer = null),
+    this.fiscalFeature.ensureLoaded().subscribe((enabled) => {
+      if (!enabled) {
+        this.fiscalIssuer = null;
+        return;
+      }
+      this.fiscalService.getIssuer().subscribe({
+        next: (issuer) => (this.fiscalIssuer = issuer),
+        error: () => (this.fiscalIssuer = null),
+      });
     });
   }
 
   get canIssueNfce(): boolean {
-    return !!this.fiscalIssuer?.readyToIssue;
+    return this.fiscalFeature.enabled() && !!this.fiscalIssuer?.readyToIssue;
   }
 
   get canPrintNfce(): boolean {
@@ -637,6 +648,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         this.paymentProcessing = false;
         this.trackSaleCompleted({ ...saleParams, value: result.totalAmount ?? this.total });
         this.lastSale = result;
+        this.receiptLines = buildSaleReceipt(result, { operator: this.loggedInUsername });
         this.nfce = null;
         this.nfceError = '';
         this.nfceCpf = '';
@@ -752,7 +764,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   printReceipt(): void {
-    window.print();
+    printMatrix(this.receiptLines, 'Comprovante de venda');
   }
 
   focusBarcode(): void {

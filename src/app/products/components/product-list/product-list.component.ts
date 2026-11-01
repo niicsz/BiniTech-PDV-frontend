@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -54,6 +55,8 @@ export class ProductListComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' = 'success';
   private statusTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  readonly fiscalEnabled = inject(FiscalFeatureService).enabled;
 
   constructor(
     private productService: ProductService,
