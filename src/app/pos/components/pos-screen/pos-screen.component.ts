@@ -51,7 +51,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   showReceiptModal = false;
   lastSale: SaleDTO | null = null;
 
-  private fiscalService = inject(FiscalService);
+  private readonly fiscalService = inject(FiscalService);
   fiscalIssuer: FiscalIssuer | null = null;
   nfce: NfceDocument | null = null;
   nfceBusy = false;

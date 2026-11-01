@@ -256,8 +256,8 @@ function emptyForm(): FiscalIssuerRequest {
   `]
 })
 export class FiscalSettingsComponent implements OnInit {
-  private fiscalService = inject(FiscalService);
-  private snackBar = inject(MatSnackBar);
+  private readonly fiscalService = inject(FiscalService);
+  private readonly snackBar = inject(MatSnackBar);
 
   issuer = signal<FiscalIssuer | null>(null);
   loading = signal(false);

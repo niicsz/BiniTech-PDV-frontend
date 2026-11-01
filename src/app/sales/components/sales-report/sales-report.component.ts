@@ -31,7 +31,7 @@ interface ProductRanking {
 })
 export class SalesReportComponent implements OnInit {
 
-  private fiscalService = inject(FiscalService);
+  private readonly fiscalService = inject(FiscalService);
   fiscalEnabled = false;
   nfceBySale: Record<string, NfceDocument | null | undefined> = {};
   nfceBusySale: string | null = null;
