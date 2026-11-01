@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject, tap } from 'rxjs';
-import { SaleDTO, CreateSaleDTO } from '../../shared/models/api.models';
+import { SaleDTO, CreateSaleDTO, CreateSaleReturnDTO } from '../../shared/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class SaleService {
@@ -56,6 +56,15 @@ export class SaleService {
     console.info('[SaleService] Listando devedores');
     return this.http.get<SaleDTO[]>(`${this.baseUrl}/debtors`).pipe(
       tap(debtors => console.info('[SaleService] Devedores carregados:', debtors.length))
+    );
+  }
+
+  registerReturn(id: string, request: CreateSaleReturnDTO): Observable<SaleDTO> {
+    console.info('[SaleService] Registrando devolução da venda:', id);
+    return this.http.post<SaleDTO>(`${this.baseUrl}/${id}/returns`, request).pipe(
+      tap(updated => {
+        if (updated.payments?.some(p => p.method === 'CREDIARIO')) this.debtsChanged.next();
+      })
     );
   }
 
