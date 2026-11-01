@@ -38,6 +38,7 @@ export interface SaleDTO {
   userId?: string;
   customerName?: string;
   customerPhone?: string;
+  customerCpf?: string;
   paid?: boolean;
 }
 
@@ -55,6 +56,7 @@ export interface CreateSaleDTO {
   payments: PaymentDTO[];
   customerName?: string;
   customerPhone?: string;
+  customerCpf?: string;
   skipStockValidation?: boolean;
 }
 

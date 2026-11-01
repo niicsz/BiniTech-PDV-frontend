@@ -273,7 +273,7 @@
     </div>
 
     <div class="nfce-panel" *ngIf="lastSale && canIssueNfce">
-      <ng-container *ngIf="!nfce || nfce.status === 'ERROR'">
+      <ng-container *ngIf="canRequestNfce">
         <div class="nfce-issue-row">
           <mat-form-field appearance="outline" class="nfce-cpf">
             <mat-label>CPF na nota (opcional)</mat-label>
@@ -281,21 +281,23 @@
           </mat-form-field>
           <button mat-flat-button color="primary" (click)="issueNfce()" [disabled]="nfceBusy">
             <mat-icon>receipt_long</mat-icon>
-            {{ nfce?.status === 'ERROR' ? 'Tentar emitir de novo' : 'Emitir NFC-e' }}
+            {{ nfce?.status === 'REJECTED' ? 'Tentar emitir de novo' : 'Emitir NFC-e' }}
           </button>
         </div>
-        <p class="nfce-error" *ngIf="nfce?.status === 'ERROR'">
-          Rejeitada pela SEFAZ<span *ngIf="nfce?.codigoStatus"> ({{ nfce?.codigoStatus }})</span>: {{ nfce?.motivo }}
+        <p class="nfce-error" *ngIf="nfce?.status === 'REJECTED'">
+          Rejeitada pela SEFAZ<span *ngIf="nfce?.cStat"> ({{ nfce?.cStat }})</span>: {{ nfce?.xMotivo }}
         </p>
       </ng-container>
-      <div class="nfce-status" *ngIf="nfce && nfce.status !== 'ERROR'" [class.ok]="nfce.status === 'ISSUED'">
-        <mat-icon>{{ nfce.status === 'ISSUED' ? 'verified' : 'hourglass_top' }}</mat-icon>
+      <div class="nfce-status" *ngIf="!canRequestNfce" [class.ok]="canPrintNfce">
+        <mat-icon>{{ canPrintNfce ? 'verified' : 'hourglass_top' }}</mat-icon>
         <div>
           <strong>{{ nfceStatusLabel() }}</strong>
-          <span class="nfce-env" *ngIf="nfce.environment !== 1">Homologação: sem valor fiscal</span>
-          <span class="nfce-key" *ngIf="nfce.chaveAcesso">{{ nfce.chaveAcesso }}</span>
+          <span class="nfce-env" *ngIf="nfce && nfce.environment !== 1">Homologação: sem valor fiscal</span>
+          <span class="nfce-env" *ngIf="nfce?.status === 'CONTINGENCY'">SEFAZ fora do ar: a nota será transmitida automaticamente.</span>
+          <span class="nfce-env" *ngIf="nfce?.status === 'PENDING' && nfce?.lastError">{{ nfce?.lastError }}</span>
+          <span class="nfce-key" *ngIf="nfce?.chave && canPrintNfce">{{ nfce?.chave }}</span>
         </div>
-        <button mat-stroked-button *ngIf="nfce.status === 'ISSUED'" (click)="printNfce()">
+        <button mat-stroked-button *ngIf="canPrintNfce" (click)="printNfce()">
           <mat-icon>print</mat-icon>
           Imprimir NFC-e
         </button>

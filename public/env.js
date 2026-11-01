@@ -1,1 +1,1 @@
-window.__env = { apiBase: '', importApiBase: '', gaMeasurementId: '' };
+window.__env = { apiBase: '', importApiBase: '', fiscalApiBase: '', gaMeasurementId: '' };

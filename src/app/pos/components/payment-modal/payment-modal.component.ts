@@ -13,6 +13,7 @@ export interface PaymentConfirmation {
   payments: PaymentDTO[];
   customerName?: string;
   customerPhone?: string;
+  customerCpf?: string;
 }
 
 @Component({
@@ -144,6 +145,14 @@ export interface PaymentConfirmation {
           </div>
         </mat-card-content>
 
+        <mat-form-field appearance="outline" class="full-width cpf-field">
+          <mat-label>CPF na nota (opcional)</mat-label>
+          <input matInput type="text" inputmode="numeric" maxlength="14"
+                 [(ngModel)]="customerCpf" (ngModelChange)="onCpfChange($event)"
+                 placeholder="000.000.000-00" autocomplete="off" />
+          <mat-hint *ngIf="customerCpf && !isCpfValid()" class="phone-error">CPF inválido.</mat-hint>
+        </mat-form-field>
+
         <div class="error-banner" *ngIf="errorMessage">
           <mat-icon class="error-icon">error</mat-icon>
           <span>{{ errorMessage }}</span>
@@ -155,7 +164,7 @@ export interface PaymentConfirmation {
           </button>
           <button mat-flat-button class="confirm-btn"
             (click)="confirmAll()"
-            [disabled]="payments.length === 0 || getRemaining() > 0.001 || processing">
+            [disabled]="payments.length === 0 || getRemaining() > 0.001 || processing || (!!customerCpf && !isCpfValid())">
             <mat-icon>{{ processing ? 'hourglass_empty' : 'check' }}</mat-icon>
             {{ processing ? 'Processando...' : 'Confirmar Pagamento' }}
           </button>
@@ -303,6 +312,7 @@ export interface PaymentConfirmation {
       gap: 12px;
     }
     .full-width { width: 100%; }
+    .cpf-field { padding: 0 16px; box-sizing: border-box; }
     .amount-input {
       font-size: 24px !important;
       font-weight: 700;
@@ -487,6 +497,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   customerName = '';
   crediarioError = '';
   customerPhone = '';
+  customerCpf = '';
   showSuggestions = false;
 
   existingDebtors: { name: string; phone: string; totalDebt: number }[] = [];
@@ -638,6 +649,26 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
     this.currentAmount = 0;
   }
 
+  onCpfChange(value: string): void {
+    const digits = (value || '').replace(/\D/g, '').substring(0, 11);
+    let formatted = digits;
+    if (digits.length > 9) formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+    else if (digits.length > 6) formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    else if (digits.length > 3) formatted = `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    this.customerCpf = formatted;
+  }
+
+  isCpfValid(): boolean {
+    const cpf = this.customerCpf.replace(/\D/g, '');
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+    for (let length = 9; length <= 10; length++) {
+      let sum = 0;
+      for (let i = 0; i < length; i++) sum += Number(cpf[i]) * (length + 1 - i);
+      if (((sum * 10) % 11) % 10 !== Number(cpf[length])) return false;
+    }
+    return true;
+  }
+
   removePayment(index: number): void {
     this.payments.splice(index, 1);
   }
@@ -656,11 +687,14 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
 
   confirmAll(): void {
     if (this.payments.length === 0 || this.getRemaining() > 0.001) return;
+    if (this.customerCpf && !this.isCpfValid()) return;
+    const cpfDigits = this.customerCpf.replace(/\D/g, '');
     const hasCrediario = this.payments.some(p => p.method === 'CREDIARIO');
     const confirmation: PaymentConfirmation = {
       payments: [...this.payments],
       ...(hasCrediario && this.customerName.trim() ? { customerName: this.customerName.trim() } : {}),
-      ...(hasCrediario && this.customerPhone.trim() ? { customerPhone: this.customerPhone.trim() } : {})
+      ...(hasCrediario && this.customerPhone.trim() ? { customerPhone: this.customerPhone.trim() } : {}),
+      ...(cpfDigits ? { customerCpf: cpfDigits } : {})
     };
     this.paymentsConfirmed.emit(confirmation);
   }
