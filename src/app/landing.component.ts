@@ -63,8 +63,8 @@ import { AnalyticsService } from './core/analytics.service';
             </h1>
             <p class="lede">
               Ponto de venda na nuvem para mercadinhos, padarias e lojas de bairro:
-              frente de caixa, estoque, crediário e relatórios numa plataforma simples
-              e segura. Comece em minutos — sem instalar nada no balcão.
+              frente de caixa, estoque, crediário, relatórios de lucro e NFC-e opcional
+              direto na SEFAZ. Comece em minutos — sem instalar nada no balcão.
             </p>
             <div class="hero-actions">
               <a class="btn btn-solid btn-lg" routerLink="/signup" (click)="trackCta('hero')">
@@ -90,6 +90,7 @@ import { AnalyticsService } from './core/analytics.service';
               <div class="r-line"><span>Arroz tipo 1 · 5kg</span><b>27,90</b></div>
               <div class="r-line"><span>Refrigerante · 2L</span><b>8,50</b></div>
               <div class="r-line"><span>Café torrado · 500g</span><b>19,90</b></div>
+              <div class="r-line r-cpf"><span>CPF na nota</span><b>***.***.***-25</b></div>
               <div class="r-rule dashed"></div>
               <div class="r-total"><span>TOTAL</span><b>R$ 56,30</b></div>
               <div class="r-pay"><span>Pix · aprovado</span><b>56,30</b></div>
@@ -98,7 +99,7 @@ import { AnalyticsService } from './core/analytics.service';
                 <mat-icon>check_circle</mat-icon> Venda finalizada
               </button>
               <div class="r-barcode" aria-hidden="true"></div>
-              <div class="r-foot">OBRIGADO · VOLTE SEMPRE</div>
+              <div class="r-foot">OBRIGADO · NFC-e AUTORIZADA</div>
             </div>
             <div class="stamp">
               <div class="stamp-num">+ R$ 4.280</div>
@@ -111,10 +112,10 @@ import { AnalyticsService } from './core/analytics.service';
 
       <section class="strip">
         <div class="strip-inner">
-          <div class="strip-item"><b>R$ 27,90</b><span>código de barras</span></div>
-          <div class="strip-item"><b>Pix · Cartão · Fiado</b><span>todas as formas</span></div>
-          <div class="strip-item"><b>Baixa automática</b><span>estoque sempre certo</span></div>
-          <div class="strip-item"><b>Relatório do dia</b><span>em um toque</span></div>
+          <div class="strip-item"><b>Pix · Cartão · Fiado</b><span>todas as formas de pagamento</span></div>
+          <div class="strip-item"><b>NFC-e opcional</b><span>direto na SEFAZ</span></div>
+          <div class="strip-item"><b>Planilha → estoque</b><span>importe CSV ou Excel</span></div>
+          <div class="strip-item"><b>Lucro por período</b><span>faturamento, custo e margem</span></div>
         </div>
       </section>
 
@@ -123,7 +124,7 @@ import { AnalyticsService } from './core/analytics.service';
         <div class="section-head">
           <span class="kicker">[ tudo em um só lugar ]</span>
           <h2>Recursos feitos para<br /> o seu balcão</h2>
-          <p>Do caixa ao relatório, sem planilha e sem dor de cabeça.</p>
+          <p>Do caixa à nota fiscal, do estoque ao relatório de lucro — sem dor de cabeça.</p>
         </div>
         <div class="feature-grid">
           <article class="feature reveal" *ngFor="let f of features; let i = index"
@@ -141,7 +142,8 @@ import { AnalyticsService } from './core/analytics.service';
         <div class="section-head">
           <span class="kicker">[ planos ]</span>
           <h2>Preço justo,<br /> sem surpresa</h2>
-          <p>Escolha o tamanho da sua operação. Excedentes só se você crescer.</p>
+          <p>Escolha o tamanho da sua operação. Todos os planos têm caixa, estoque, NFC-e opcional
+            e segurança em dois fatores. Pague a mensalidade no cartão ou no Pix.</p>
         </div>
         <div class="plan-grid">
           <article class="plan reveal" *ngFor="let p of plans; let i = index"
@@ -367,6 +369,8 @@ import { AnalyticsService } from './core/analytics.service';
     .r-total{ font-size:15px; font-weight:700; }
     .r-total b{ font-family:'Fraunces',serif; font-size:26px; font-weight:800; }
     .r-pay{ font-size:12px; color:var(--money); padding-top:2px; }
+    .r-cpf{ font-size:12px; padding:3px 0; }
+    .r-cpf span, .r-cpf b{ color:var(--ink-3); font-weight:400; }
     .r-pay b{ color:var(--money); }
     .r-finish{ width:100%; border:2px solid var(--ink); background:var(--money); color:#fff;
       font-family:'Hanken Grotesk',sans-serif; font-weight:700; font-size:14.5px; padding:13px;
@@ -581,12 +585,15 @@ export class LandingComponent {
   faqs = FAQ_ITEMS;
 
   features = [
-    { icon: 'storefront', title: 'Frente de caixa ágil', desc: 'Venda por código de barras, múltiplos pagamentos e troco automático.' },
-    { icon: 'inventory_2', title: 'Controle de estoque', desc: 'Baixa automática a cada venda e alerta de produtos em falta.' },
+    { icon: 'storefront', title: 'Frente de caixa ágil', desc: 'Venda por código de barras ou busca, divida o pagamento entre dinheiro, Pix, cartão e fiado, com troco automático.' },
+    { icon: 'receipt_long', title: 'NFC-e direto na SEFAZ', desc: 'Emita cupom fiscal com o seu certificado A1, CPF na nota e contingência offline. Só liga quem precisa: pessoa física vende sem nota.' },
+    { icon: 'print', title: 'Comprovante para impressora', desc: 'Cupom no estilo matricial de 48 colunas, pronto para impressoras matriciais e térmicas, com reimpressão a qualquer hora.' },
+    { icon: 'inventory_2', title: 'Controle de estoque', desc: 'Baixa automática a cada venda, alerta de produtos em falta e dados fiscais (NCM, CFOP) por produto.' },
+    { icon: 'upload_file', title: 'Importação por planilha', desc: 'Traga seu catálogo de um arquivo CSV ou Excel, revise e corrija antes de salvar. Até 50 mil produtos de uma vez.' },
     { icon: 'account_balance_wallet', title: 'Crediário e devedores', desc: 'Registre fiados e acompanhe quem precisa pagar, sem caderninho.' },
-    { icon: 'bar_chart', title: 'Relatórios de vendas', desc: 'Veja faturamento por dia e período e tome decisões com dados.' },
-    { icon: 'groups', title: 'Vários operadores', desc: 'Cada vendedor com seu acesso; o admin gerencia toda a equipe.' },
-    { icon: 'cloud_done', title: '100% na nuvem', desc: 'Acesse de qualquer lugar, com segurança e backup automático.' },
+    { icon: 'bar_chart', title: 'Relatórios com lucro', desc: 'Faturamento, custo e lucro por período. Abra qualquer venda para ver o comprovante e a nota fiscal.' },
+    { icon: 'groups', title: 'Equipe com permissões', desc: 'Cada operador com seu acesso; o administrador cadastra, desativa e gerencia toda a equipe.' },
+    { icon: 'verified_user', title: 'Segurança em dois fatores', desc: 'Login com app autenticador e códigos de recuperação. Tudo na nuvem, com backup automático.' },
   ];
 
   plans = [
