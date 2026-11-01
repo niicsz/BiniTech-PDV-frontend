@@ -215,7 +215,7 @@
       </button>
     </div>
 
-    <div class="return-success" *ngIf="lastReturn" role="status">
+    <output class="return-success" *ngIf="lastReturn">
       <mat-icon>check_circle</mat-icon>
       <span>Devolução de R$ {{ lastReturn.refundAmount | number:'1.2-2' }} registrada
         ({{ lastReturn.refundMethod ? refundLabels[lastReturn.refundMethod] : '' }}).</span>
@@ -223,7 +223,7 @@
         <mat-icon>print</mat-icon>
         Imprimir comprovante de devolução
       </button>
-    </div>
+    </output>
 
     <form class="nfce-box return-form" *ngIf="returnMode" (ngSubmit)="confirmReturn()">
       <div class="nfce-box-title">
