@@ -1,4 +1,4 @@
-import { SaleDTO } from '../models/api.models';
+import { RefundMethod, SaleDTO, SaleReturnDTO } from '../models/api.models';
 
 export const MATRIX_COLUMNS = 48;
 
@@ -8,6 +8,14 @@ const PAYMENT_LABELS: Record<string, string> = {
   DEBIT_CARD: 'Cartao de Debito',
   PIX: 'PIX',
   CREDIARIO: 'Crediario / Fiado',
+};
+
+const REFUND_LABELS: Record<RefundMethod, string> = {
+  CASH: 'Dinheiro',
+  PIX: 'PIX',
+  CREDIT_CARD: 'Estorno cartao credito',
+  DEBIT_CARD: 'Estorno cartao debito',
+  DEBT_DEDUCTION: 'Abatido do fiado',
 };
 
 export interface ReceiptOptions {
@@ -127,10 +135,81 @@ export function buildSaleReceipt(sale: SaleDTO, options: ReceiptOptions = {}): s
   if ((sale.change ?? 0) > 0) {
     lines.push(columns('Troco', money(sale.change), width));
   }
+  const returns = sale.returns ?? [];
+  if (returns.length > 0) {
+    lines.push(rule, center('DEVOLUCOES', width));
+    for (const saleReturn of returns) {
+      lines.push(
+        columns(formatDate(saleReturn.timestamp), `- ${money(saleReturn.refundAmount)}`, width),
+        ...returnItemLines(saleReturn, width),
+      );
+    }
+    lines.push(
+      rule,
+      columns('VALOR LIQUIDO R$', money((sale.totalAmount ?? 0) - (sale.returnedAmount ?? 0)), width),
+    );
+  }
   lines.push(
     doubleRule,
     center('Obrigado pela preferencia!', width),
     center('BiniTech PDV', width),
+    '',
+  );
+  return lines;
+}
+
+function returnItemLines(saleReturn: SaleReturnDTO, width: number): string[] {
+  return (saleReturn.items ?? []).map((item) =>
+    columns(
+      `  ${item.quantity ?? 0} x ${plain(item.productDescription).toUpperCase() || 'PRODUTO'}`,
+      money(item.subtotal),
+      width,
+    ),
+  );
+}
+
+export function buildReturnReceipt(
+  sale: SaleDTO,
+  saleReturn: SaleReturnDTO,
+  options: ReceiptOptions = {},
+): string[] {
+  const width = options.columns ?? MATRIX_COLUMNS;
+  const rule = '-'.repeat(width);
+  const doubleRule = '='.repeat(width);
+  const lines: string[] = [
+    doubleRule,
+    center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width),
+    center('COMPROVANTE DE DEVOLUCAO', width),
+    center('*** NAO E DOCUMENTO FISCAL ***', width),
+    doubleRule,
+    columns(`Venda: #${(sale.id ?? '').slice(0, 8)}`, formatDate(sale.timestamp), width),
+    columns('Devolucao:', formatDate(saleReturn.timestamp), width),
+  ];
+  if (options.operator) {
+    lines.push(`Responsavel: ${plain(options.operator)}`.slice(0, width));
+  }
+  if (sale.customerName) {
+    lines.push(`Cliente: ${plain(sale.customerName)}`.slice(0, width));
+  }
+  lines.push(rule, ...returnItemLines(saleReturn, width), rule);
+  lines.push(
+    columns('TOTAL DEVOLVIDO R$', money(saleReturn.refundAmount), width),
+    columns(
+      'Reembolso',
+      saleReturn.refundMethod ? REFUND_LABELS[saleReturn.refundMethod] : '',
+      width,
+    ),
+    columns('Estoque', saleReturn.restocked ? 'Itens voltaram' : 'Nao voltou', width),
+  );
+  if (saleReturn.reason) {
+    lines.push(rule, ...wrap(`Motivo: ${plain(saleReturn.reason)}`, width));
+  }
+  lines.push(
+    doubleRule,
+    '',
+    '',
+    center('_'.repeat(Math.min(36, width)), width),
+    center('Assinatura do cliente', width),
     '',
   );
   return lines;

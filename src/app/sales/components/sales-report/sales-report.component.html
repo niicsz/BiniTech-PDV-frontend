@@ -53,6 +53,7 @@
       <div class="card-content">
         <p class="card-label">Faturamento</p>
         <p class="card-value">R$ {{ totalRevenue | number:'1.2-2' }}</p>
+        <p class="card-note" *ngIf="totalReturned > 0">já sem R$ {{ totalReturned | number:'1.2-2' }} em devoluções</p>
       </div>
     </div>
 
@@ -141,7 +142,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let sale of sales; let odd = odd" [class.row-stripe]="odd">
-            <td class="col-id">{{ sale.id?.substring(0, 8) }}</td>
+            <td class="col-id">
+              {{ sale.id?.substring(0, 8) }}
+              <span class="status-badge" *ngIf="statusLabel(sale)"
+                    [class.status-returned]="sale.status === 'RETURNED'">{{ statusLabel(sale) }}</span>
+            </td>
             <td class="col-date">{{ formatTimestamp(sale.timestamp) }}</td>
             <td class="col-products">
               <span class="product-tag" *ngFor="let item of sale.items">
@@ -159,8 +164,11 @@
                 {{ sale.customerName }}
               </span>
             </td>
-            <td class="text-right col-amount">R$ {{ sale.totalAmount | number:'1.2-2' }}</td>
-            <td class="text-right col-cost">R$ {{ sale.totalCost | number:'1.2-2' }}</td>
+            <td class="text-right col-amount">
+              R$ {{ netAmount(sale) | number:'1.2-2' }}
+              <s class="returned-note" *ngIf="(sale.returnedAmount || 0) > 0">R$ {{ sale.totalAmount | number:'1.2-2' }}</s>
+            </td>
+            <td class="text-right col-cost">R$ {{ (sale.totalCost || 0) - (sale.returnedCost || 0) | number:'1.2-2' }}</td>
             <td class="text-right col-profit" [ngClass]="getSaleProfit(sale) >= 0 ? 'text-success' : 'text-danger'">
               R$ {{ getSaleProfit(sale) | number:'1.2-2' }}
             </td>
@@ -201,6 +209,99 @@
         <mat-icon>print</mat-icon>
         Imprimir comprovante
       </button>
+      <button mat-stroked-button color="warn" *ngIf="canReturn && !returnMode" (click)="startReturn()">
+        <mat-icon>undo</mat-icon>
+        Devolver itens
+      </button>
+    </div>
+
+    <div class="return-success" *ngIf="lastReturn" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>Devolução de R$ {{ lastReturn.refundAmount | number:'1.2-2' }} registrada
+        ({{ lastReturn.refundMethod ? refundLabels[lastReturn.refundMethod] : '' }}).</span>
+      <button mat-stroked-button (click)="printReturn(lastReturn)">
+        <mat-icon>print</mat-icon>
+        Imprimir comprovante de devolução
+      </button>
+    </div>
+
+    <form class="nfce-box return-form" *ngIf="returnMode" (ngSubmit)="confirmReturn()">
+      <div class="nfce-box-title">
+        <mat-icon>undo</mat-icon>
+        <strong>Devolução</strong>
+        <button mat-button type="button" class="return-all" (click)="returnEverything()">Devolver tudo</button>
+      </div>
+      <table class="return-table">
+        <thead>
+          <tr><th>Produto</th><th class="text-center">Pode devolver</th><th class="text-center">Devolver</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of returnableItems">
+            <td>{{ item.description }}<span class="return-price">R$ {{ item.unitPrice | number:'1.2-2' }} un.</span></td>
+            <td class="text-center">{{ item.available }}</td>
+            <td class="text-center">
+              <input class="return-qty" type="number" min="0" [max]="item.available" step="1"
+                     [name]="'qty-' + item.productId" [(ngModel)]="returnQuantities[item.productId]"
+                     [attr.aria-label]="'Quantidade a devolver de ' + item.description" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="return-options">
+        <label class="return-field" *ngIf="!openCrediario">
+          <span>Reembolso</span>
+          <select name="refundMethod" [(ngModel)]="refundMethod">
+            <option *ngFor="let option of refundOptions" [ngValue]="option">{{ refundLabels[option] }}</option>
+          </select>
+        </label>
+        <p class="return-hint" *ngIf="openCrediario">
+          Venda no fiado ainda não paga: o valor devolvido será abatido do débito do cliente.
+        </p>
+        <label class="return-check">
+          <input type="checkbox" name="restock" [(ngModel)]="restock" />
+          Os itens voltam para o estoque
+        </label>
+        <label class="return-field return-reason">
+          <span>Motivo (opcional)</span>
+          <input type="text" name="returnReason" maxlength="255" [(ngModel)]="returnReason"
+                 placeholder="Ex.: produto com defeito, troca de tamanho" />
+        </label>
+      </div>
+
+      <div class="return-footer">
+        <strong>Valor a devolver: R$ {{ returnTotal | number:'1.2-2' }}</strong>
+        <div class="receipt-dialog-actions">
+          <button mat-button type="button" (click)="cancelReturn()" [disabled]="returnBusy">Cancelar</button>
+          <button mat-flat-button color="warn" type="submit" [disabled]="returnBusy || returnTotal === 0">
+            {{ returnBusy ? 'Registrando...' : 'Confirmar devolução' }}
+          </button>
+        </div>
+      </div>
+      <p class="nfce-message" *ngIf="returnMessage" role="alert">{{ returnMessage }}</p>
+    </form>
+
+    <div class="nfce-box" *ngIf="selectedSale.returns?.length">
+      <div class="nfce-box-title">
+        <mat-icon>history</mat-icon>
+        <strong>Devoluções</strong>
+        <span class="nfce-box-status">R$ {{ selectedSale.returnedAmount | number:'1.2-2' }} devolvido</span>
+      </div>
+      <ul class="return-history">
+        <li *ngFor="let saleReturn of selectedSale.returns">
+          <div>
+            <strong>{{ formatTimestamp(saleReturn.timestamp) }}</strong> ·
+            R$ {{ saleReturn.refundAmount | number:'1.2-2' }} ·
+            {{ saleReturn.refundMethod ? refundLabels[saleReturn.refundMethod] : '' }}
+            <span *ngIf="!saleReturn.restocked"> · sem voltar ao estoque</span>
+            <div class="return-items">{{ returnSummary(saleReturn) }}</div>
+            <div class="return-items" *ngIf="saleReturn.reason">Motivo: {{ saleReturn.reason }}</div>
+          </div>
+          <button mat-icon-button (click)="printReturn(saleReturn)" aria-label="Imprimir comprovante desta devolução">
+            <mat-icon>print</mat-icon>
+          </button>
+        </li>
+      </ul>
     </div>
 
     <div class="nfce-box" *ngIf="fiscalEnabled">
@@ -224,6 +325,10 @@
           Cancelar NFC-e
         </button>
       </div>
+      <p class="return-hint" *ngIf="showCancel && selectedSale.status === 'RETURNED'">
+        A venda foi devolvida por completo. A SEFAZ só aceita cancelar a NFC-e logo após a emissão
+        (em geral até 30 minutos); depois disso, a devolução fiscal é feita com NF-e de entrada pelo seu contador.
+      </p>
       <div class="cancel-row" *ngIf="showCancel">
         <mat-form-field appearance="outline" class="cancel-field">
           <mat-label>Motivo do cancelamento (mín. 15 caracteres)</mat-label>
