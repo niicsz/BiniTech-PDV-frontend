@@ -115,18 +115,18 @@
             <input matInput [(ngModel)]="form.category" name="category" placeholder="Ex: Bebidas, Alimentos..." />
             <mat-icon matPrefix>sell</mat-icon>
           </mat-form-field>
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="fiscalEnabled()">
             <mat-label>NCM (NFC-e)</mat-label>
             <input matInput [(ngModel)]="form.ncm" name="ncm" maxlength="8" inputmode="numeric" placeholder="8 dígitos, ex: 22021000" />
             <mat-icon matPrefix>receipt_long</mat-icon>
             <mat-hint>Opcional. Sem NCM, a nota usa o NCM padrão da loja.</mat-hint>
           </mat-form-field>
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="fiscalEnabled()">
             <mat-label>CFOP (NFC-e)</mat-label>
             <input matInput [(ngModel)]="form.cfop" name="cfop" maxlength="4" inputmode="numeric" placeholder="Padrão: 5102" />
             <mat-icon matPrefix>receipt_long</mat-icon>
           </mat-form-field>
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="fiscalEnabled()">
             <mat-label>CSOSN (NFC-e)</mat-label>
             <input matInput [(ngModel)]="form.csosn" name="csosn" maxlength="3" inputmode="numeric" placeholder="Padrão: 102" />
             <mat-icon matPrefix>receipt_long</mat-icon>

@@ -136,7 +136,7 @@
             <th class="text-right">Lucro</th>
             <th class="text-right">Pago</th>
             <th class="text-right">Troco</th>
-            <th class="text-center" *ngIf="fiscalEnabled">NFC-e</th>
+            <th class="text-center">Nota</th>
           </tr>
         </thead>
         <tbody>
@@ -168,15 +168,15 @@
             <td class="text-right" [class.text-success]="(sale.change || 0) > 0">
               R$ {{ sale.change | number:'1.2-2' }}
             </td>
-            <td class="text-center" *ngIf="fiscalEnabled">
-              <button mat-stroked-button class="nfce-btn" (click)="nfceAction(sale)" [disabled]="nfceBusySale === sale.id">
-                <mat-icon>receipt_long</mat-icon>
-                {{ nfceLabel(sale.id) }}
+            <td class="text-center">
+              <button mat-stroked-button class="nfce-btn" (click)="openReceipt(sale)">
+                <mat-icon>receipt</mat-icon>
+                Ver nota
               </button>
             </td>
           </tr>
           <tr *ngIf="sales.length === 0">
-            <td [attr.colspan]="fiscalEnabled ? 11 : 10" class="empty-state">
+            <td colspan="11" class="empty-state">
               <mat-icon class="empty-icon">search_off</mat-icon>
               <p>Nenhuma venda encontrada para o período selecionado</p>
             </td>
@@ -187,3 +187,51 @@
   </div>
 </div>
 
+<div class="receipt-overlay" *ngIf="selectedSale" (click)="closeReceipt()">
+  <div class="receipt-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nota da venda">
+    <div class="receipt-dialog-header">
+      <h3>Venda #{{ selectedSale.id?.substring(0, 8) }}</h3>
+      <button mat-icon-button (click)="closeReceipt()" aria-label="Fechar"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <app-matrix-receipt [lines]="receiptLines"></app-matrix-receipt>
+
+    <div class="receipt-dialog-actions">
+      <button mat-flat-button color="primary" (click)="printReceipt()">
+        <mat-icon>print</mat-icon>
+        Imprimir comprovante
+      </button>
+    </div>
+
+    <div class="nfce-box" *ngIf="fiscalEnabled">
+      <div class="nfce-box-title">
+        <mat-icon>receipt_long</mat-icon>
+        <strong>NFC-e</strong>
+        <span class="nfce-box-status">{{ nfceLoading ? 'Consultando...' : nfceLabel() }}</span>
+      </div>
+      <span class="nfce-key" *ngIf="nfce?.chave && canPrintNfce">{{ nfce?.chave }}</span>
+      <div class="receipt-dialog-actions" *ngIf="!nfceLoading">
+        <button mat-stroked-button *ngIf="canIssueNfce" (click)="issueNfce()" [disabled]="nfceBusy">
+          <mat-icon>send</mat-icon>
+          {{ nfce?.status === 'REJECTED' ? 'Emitir de novo' : 'Emitir NFC-e' }}
+        </button>
+        <button mat-stroked-button *ngIf="canPrintNfce" (click)="printNfce()">
+          <mat-icon>print</mat-icon>
+          Imprimir NFC-e
+        </button>
+        <button mat-stroked-button color="warn" *ngIf="canCancelNfce && !showCancel" (click)="showCancel = true">
+          <mat-icon>block</mat-icon>
+          Cancelar NFC-e
+        </button>
+      </div>
+      <div class="cancel-row" *ngIf="showCancel">
+        <mat-form-field appearance="outline" class="cancel-field">
+          <mat-label>Motivo do cancelamento (mín. 15 caracteres)</mat-label>
+          <input matInput [(ngModel)]="cancelReason" maxlength="255" />
+        </mat-form-field>
+        <button mat-flat-button color="warn" (click)="cancelNfce()" [disabled]="nfceBusy">Confirmar cancelamento</button>
+      </div>
+      <p class="nfce-message" *ngIf="nfceMessage">{{ nfceMessage }}</p>
+    </div>
+  </div>
+</div>

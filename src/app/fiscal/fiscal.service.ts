@@ -71,6 +71,12 @@ export interface NfceDocument {
   cancelledAt: string | null;
 }
 
+export interface FiscalPreferences {
+  decided: boolean;
+  nfceEnabled: boolean;
+  decidedAt: string | null;
+}
+
 export interface SefazStatus {
   kind: string;
   cStat: string;
@@ -89,6 +95,14 @@ export function isNfceInProgress(document: NfceDocument | null): boolean {
 export class FiscalService {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/fiscal';
+
+  getPreferences(): Observable<FiscalPreferences> {
+    return this.http.get<FiscalPreferences>(`${this.base}/preferences`);
+  }
+
+  updatePreferences(nfceEnabled: boolean): Observable<FiscalPreferences> {
+    return this.http.put<FiscalPreferences>(`${this.base}/preferences`, { nfceEnabled });
+  }
 
   getIssuer(): Observable<FiscalIssuer | null> {
     return this.http.get<FiscalIssuer | null>(`${this.base}/issuer`);
