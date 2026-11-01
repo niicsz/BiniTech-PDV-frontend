@@ -11,31 +11,35 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { FiscalProfile, FiscalProfileRequest, FiscalService } from './fiscal.service';
+import { FiscalIssuer, FiscalIssuerRequest, FiscalService } from './fiscal.service';
 
-const EMPTY_FORM: FiscalProfileRequest = {
-  cnpj: '',
-  razaoSocial: '',
-  inscricaoEstadual: '',
-  regimeTributario: '3',
-  codigoMunicipio: '',
-  email: '',
-  telefone: '',
-  logradouro: '',
-  numero: '',
-  complemento: '',
-  bairro: '',
-  cidade: '',
-  uf: '',
-  cep: '',
-  serieNfce: 1,
-  cscId: '',
-  cscToken: '',
-  defaultNcm: '',
-  defaultCfop: '5102',
-  defaultCsosn: '102',
-  autoIssue: true,
-};
+function emptyForm(): FiscalIssuerRequest {
+  return {
+    cnpj: '',
+    razaoSocial: '',
+    nomeFantasia: '',
+    inscricaoEstadual: '',
+    regime: 'SIMPLES_NACIONAL',
+    address: {
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      codigoMunicipio: '',
+      cidade: '',
+      uf: '',
+      cep: '',
+    },
+    telefone: '',
+    email: '',
+    serie: 1,
+    defaultNcm: '',
+    defaultCfop: '5102',
+    defaultCsosn: '102',
+    autoIssue: true,
+    contingencyEnabled: true,
+  };
+}
 
 @Component({
   selector: 'app-fiscal-settings',
@@ -55,27 +59,25 @@ const EMPTY_FORM: FiscalProfileRequest = {
   ],
   template: `
     <div class="fiscal">
-      <header class="fiscal-head">
-        <div>
-          <a routerLink="/pdv" class="back">← Voltar ao PDV</a>
-          <h1>Nota Fiscal (NFC-e)</h1>
-          <p class="subtitle">Configure a loja para emitir NFC-e com o seu certificado digital A1.</p>
-        </div>
+      <header>
+        <a routerLink="/pdv" class="back">← Voltar ao PDV</a>
+        <h1>Nota Fiscal (NFC-e)</h1>
+        <p class="subtitle">A NFC-e é emitida direto na SEFAZ e assinada com o certificado digital A1 da sua loja.</p>
       </header>
 
       <div *ngIf="loading()" class="loading"><mat-spinner diameter="36"></mat-spinner></div>
 
       <ng-container *ngIf="!loading()">
-        <div class="status" [class.ok]="profile()?.readyToIssue">
-          <mat-icon>{{ profile()?.readyToIssue ? 'verified' : 'pending' }}</mat-icon>
+        <div class="status" [class.ok]="issuer()?.readyToIssue">
+          <mat-icon>{{ issuer()?.readyToIssue ? 'verified' : 'pending' }}</mat-icon>
           <div>
             <strong>{{ statusTitle() }}</strong>
             <p>{{ statusText() }}</p>
           </div>
-          <span class="env" *ngIf="profile()">{{ profile()?.environment === 1 ? 'Produção' : 'Homologação (sem valor fiscal)' }}</span>
+          <span class="env" *ngIf="issuer()">{{ issuer()?.environment === 1 ? 'Produção' : 'Homologação (sem valor fiscal)' }}</span>
         </div>
 
-        <form class="card" (ngSubmit)="save()" #f="ngForm">
+        <form class="card" (ngSubmit)="save()">
           <h2>1. Dados da empresa</h2>
           <div class="grid">
             <mat-form-field appearance="outline">
@@ -87,14 +89,18 @@ const EMPTY_FORM: FiscalProfileRequest = {
               <input matInput [(ngModel)]="form.razaoSocial" name="razaoSocial" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
+              <mat-label>Nome fantasia</mat-label>
+              <input matInput [(ngModel)]="form.nomeFantasia" name="nomeFantasia" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
               <mat-label>Inscrição estadual</mat-label>
               <input matInput [(ngModel)]="form.inscricaoEstadual" name="ie" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Regime tributário</mat-label>
-              <mat-select [(ngModel)]="form.regimeTributario" name="regime">
-                <mat-option value="3">Simples Nacional (ME/EPP)</mat-option>
-                <mat-option value="2">MEI</mat-option>
+              <mat-select [(ngModel)]="form.regime" name="regime">
+                <mat-option value="SIMPLES_NACIONAL">Simples Nacional (ME/EPP)</mat-option>
+                <mat-option value="MEI">MEI</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
@@ -111,54 +117,44 @@ const EMPTY_FORM: FiscalProfileRequest = {
           <div class="grid">
             <mat-form-field appearance="outline">
               <mat-label>CEP</mat-label>
-              <input matInput [(ngModel)]="form.cep" name="cep" (blur)="fillFromCep()" required />
+              <input matInput [(ngModel)]="form.address.cep" name="cep" (blur)="fillFromCep()" required />
               <mat-hint>Preenche o endereço e o código IBGE.</mat-hint>
             </mat-form-field>
             <mat-form-field appearance="outline" class="wide">
               <mat-label>Logradouro</mat-label>
-              <input matInput [(ngModel)]="form.logradouro" name="logradouro" required />
+              <input matInput [(ngModel)]="form.address.logradouro" name="logradouro" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Número</mat-label>
-              <input matInput [(ngModel)]="form.numero" name="numero" />
+              <input matInput [(ngModel)]="form.address.numero" name="numero" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Complemento</mat-label>
-              <input matInput [(ngModel)]="form.complemento" name="complemento" />
+              <input matInput [(ngModel)]="form.address.complemento" name="complemento" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Bairro</mat-label>
-              <input matInput [(ngModel)]="form.bairro" name="bairro" required />
+              <input matInput [(ngModel)]="form.address.bairro" name="bairro" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Cidade</mat-label>
-              <input matInput [(ngModel)]="form.cidade" name="cidade" required />
+              <input matInput [(ngModel)]="form.address.cidade" name="cidade" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>UF</mat-label>
-              <input matInput [(ngModel)]="form.uf" name="uf" maxlength="2" required />
+              <input matInput [(ngModel)]="form.address.uf" name="uf" maxlength="2" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Código IBGE do município</mat-label>
-              <input matInput [(ngModel)]="form.codigoMunicipio" name="ibge" maxlength="7" required />
+              <input matInput [(ngModel)]="form.address.codigoMunicipio" name="ibge" maxlength="7" required />
             </mat-form-field>
           </div>
 
-          <h2>3. NFC-e</h2>
+          <h2>3. Emissão</h2>
           <div class="grid">
             <mat-form-field appearance="outline">
-              <mat-label>ID do CSC</mat-label>
-              <input matInput [(ngModel)]="form.cscId" name="cscId" />
-              <mat-hint>Gerado no portal da SEFAZ.</mat-hint>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="wide">
-              <mat-label>Token do CSC</mat-label>
-              <input matInput type="password" autocomplete="off" [(ngModel)]="form.cscToken" name="cscToken" />
-              <mat-hint>{{ profile()?.cscConfigured ? 'Já cadastrado. Preencha só para trocar.' : 'Obrigatório para gerar o QR Code da NFC-e.' }}</mat-hint>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
               <mat-label>Série da NFC-e</mat-label>
-              <input matInput type="number" min="1" max="999" [(ngModel)]="form.serieNfce" name="serie" />
+              <input matInput type="number" min="1" max="889" [(ngModel)]="form.serie" name="serie" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>NCM padrão</mat-label>
@@ -171,12 +167,23 @@ const EMPTY_FORM: FiscalProfileRequest = {
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>CSOSN padrão</mat-label>
-              <input matInput [(ngModel)]="form.defaultCsosn" name="defaultCsosn" maxlength="3" />
+              <mat-select [(ngModel)]="form.defaultCsosn" name="defaultCsosn">
+                <mat-option value="102">102 - Tributada sem permissão de crédito</mat-option>
+                <mat-option value="103">103 - Isenção por faixa de receita</mat-option>
+                <mat-option value="300">300 - Imune</mat-option>
+                <mat-option value="400">400 - Não tributada</mat-option>
+                <mat-option value="500">500 - ICMS cobrado por substituição tributária</mat-option>
+              </mat-select>
             </mat-form-field>
           </div>
-          <mat-slide-toggle [(ngModel)]="form.autoIssue" name="autoIssue">
-            Emitir NFC-e automaticamente ao finalizar cada venda
-          </mat-slide-toggle>
+          <div class="toggles">
+            <mat-slide-toggle [(ngModel)]="form.autoIssue" name="autoIssue">
+              Emitir NFC-e automaticamente ao finalizar cada venda
+            </mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="form.contingencyEnabled" name="contingencyEnabled">
+              Usar contingência offline quando a SEFAZ estiver fora do ar
+            </mat-slide-toggle>
+          </div>
 
           <div class="actions">
             <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
@@ -188,25 +195,34 @@ const EMPTY_FORM: FiscalProfileRequest = {
 
         <section class="card">
           <h2>4. Certificado digital A1</h2>
-          <p class="hint" *ngIf="profile()?.certificateValidUntil as validUntil">
-            Certificado atual válido até <strong>{{ formatDate(validUntil) }}</strong>.
+          <p class="hint" *ngIf="issuer()?.certificateValidUntil as validUntil">
+            Certificado de <strong>{{ issuer()?.certificateHolder }}</strong>, válido até <strong>{{ formatDate(validUntil) }}</strong>.
           </p>
-          <p class="hint" *ngIf="!profile()?.certificateValidUntil">
-            Envie o arquivo .pfx ou .p12 do e-CNPJ da loja. A senha é usada só para validar e guardar o certificado no emissor fiscal; o BiniTech PDV não a armazena.
+          <p class="hint">
+            Envie o arquivo .pfx ou .p12 do e-CNPJ da loja. O arquivo e a senha ficam guardados criptografados e só são usados para assinar as notas da sua loja.
           </p>
           <div class="cert-row">
-            <input type="file" accept=".pfx,.p12" (change)="onFile($event)" [disabled]="!profile()" />
+            <input type="file" accept=".pfx,.p12" (change)="onFile($event)" [disabled]="!issuer()" />
             <mat-form-field appearance="outline">
               <mat-label>Senha do certificado</mat-label>
-              <input matInput type="password" autocomplete="off" [(ngModel)]="certPassword" name="certPassword" [disabled]="!profile()" />
+              <input matInput type="password" autocomplete="off" [(ngModel)]="certPassword" name="certPassword" [disabled]="!issuer()" />
             </mat-form-field>
-            <button mat-stroked-button (click)="uploadCertificate()" [disabled]="!profile() || !certFile || !certPassword || uploading()">
+            <button mat-stroked-button (click)="uploadCertificate()" [disabled]="!issuer() || !certFile || !certPassword || uploading()">
               <mat-spinner *ngIf="uploading()" diameter="18"></mat-spinner>
               <mat-icon *ngIf="!uploading()">upload_file</mat-icon>
               Enviar certificado
             </button>
           </div>
-          <p class="hint" *ngIf="!profile()">Salve os dados fiscais antes de enviar o certificado.</p>
+          <p class="hint" *ngIf="!issuer()">Salve os dados fiscais antes de enviar o certificado.</p>
+
+          <div class="sefaz-row" *ngIf="issuer()?.readyToIssue">
+            <button mat-stroked-button (click)="checkSefaz()" [disabled]="checking()">
+              <mat-spinner *ngIf="checking()" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!checking()">wifi_tethering</mat-icon>
+              Testar conexão com a SEFAZ
+            </button>
+            <span *ngIf="sefazMessage()" [class.ok]="sefazOk()">{{ sefazMessage() }}</span>
+          </div>
         </section>
       </ng-container>
     </div>
@@ -222,6 +238,7 @@ const EMPTY_FORM: FiscalProfileRequest = {
       box-shadow:6px 6px 0 var(--shadow-hard-color); margin-bottom:22px; display:block; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px 16px; margin-bottom:12px; }
     .grid .wide { grid-column:span 2; }
+    .toggles { display:flex; flex-direction:column; gap:12px; }
     .status { display:flex; gap:12px; align-items:flex-start; background:var(--warning-bg); border:1.5px solid var(--accent);
       border-radius:var(--radius-md); padding:16px 20px; margin-bottom:22px; color:var(--text); }
     .status.ok { background:var(--success-bg); border-color:var(--success); }
@@ -229,8 +246,11 @@ const EMPTY_FORM: FiscalProfileRequest = {
     .status div { flex:1; }
     .env { font-family:var(--font-mono); font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:100px; border:1.5px solid currentColor; white-space:nowrap; }
     .actions { display:flex; justify-content:flex-end; margin-top:20px; }
-    .actions button, .cert-row button { display:flex; align-items:center; gap:8px; }
-    .cert-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+    .actions button, .cert-row button, .sefaz-row button { display:flex; align-items:center; gap:8px; }
+    .cert-row, .sefaz-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+    .sefaz-row { margin-top:12px; }
+    .sefaz-row span { color:var(--danger); font-size:13.5px; }
+    .sefaz-row span.ok { color:var(--success); }
     .hint { color:var(--text-secondary); font-size:13.5px; }
     @media (max-width: 640px) { .grid .wide { grid-column:auto; } }
   `]
@@ -239,40 +259,40 @@ export class FiscalSettingsComponent implements OnInit {
   private fiscalService = inject(FiscalService);
   private snackBar = inject(MatSnackBar);
 
-  profile = signal<FiscalProfile | null>(null);
+  issuer = signal<FiscalIssuer | null>(null);
   loading = signal(false);
   saving = signal(false);
   uploading = signal(false);
-  form: FiscalProfileRequest = { ...EMPTY_FORM };
+  checking = signal(false);
+  sefazMessage = signal('');
+  sefazOk = signal(false);
+  form: FiscalIssuerRequest = emptyForm();
   certFile: File | null = null;
   certPassword = '';
 
   statusTitle = computed(() => {
-    const p = this.profile();
-    if (!p) return 'NFC-e não configurada';
-    return p.readyToIssue ? 'Pronto para emitir NFC-e' : 'Configuração incompleta';
+    const issuer = this.issuer();
+    if (!issuer) return 'NFC-e não configurada';
+    return issuer.readyToIssue ? 'Pronto para emitir NFC-e' : 'Configuração incompleta';
   });
 
   statusText = computed(() => {
-    const p = this.profile();
-    if (!p) return 'Preencha os dados da empresa, o CSC e envie o certificado A1.';
-    if (p.readyToIssue) {
-      return p.autoIssue
+    const issuer = this.issuer();
+    if (!issuer) return 'Preencha os dados da empresa e envie o certificado A1 da loja.';
+    if (issuer.readyToIssue) {
+      return issuer.autoIssue
         ? 'A NFC-e é emitida automaticamente ao finalizar cada venda.'
         : 'Emita a NFC-e pelo comprovante, depois de finalizar a venda.';
     }
-    const missing: string[] = [];
-    if (!p.cscConfigured) missing.push('CSC');
-    if (!p.certificateValidUntil) missing.push('certificado A1');
-    else if (new Date(p.certificateValidUntil) < new Date()) missing.push('certificado A1 válido (o atual venceu)');
-    return missing.length ? `Falta: ${missing.join(', ')}.` : 'Verifique os dados fiscais.';
+    if (!issuer.certificateValidUntil) return 'Falta enviar o certificado digital A1.';
+    return 'O certificado A1 venceu. Envie o certificado renovado.';
   });
 
   ngOnInit(): void {
     this.loading.set(true);
-    this.fiscalService.getProfile().subscribe({
-      next: (profile) => {
-        this.setProfile(profile);
+    this.fiscalService.getIssuer().subscribe({
+      next: (issuer) => {
+        this.setIssuer(issuer);
         this.loading.set(false);
       },
       error: () => {
@@ -283,15 +303,19 @@ export class FiscalSettingsComponent implements OnInit {
   }
 
   fillFromCep(): void {
-    const cep = (this.form.cep || '').replace(/\D/g, '');
+    const cep = (this.form.address.cep || '').replace(/\D/g, '');
     if (cep.length !== 8) return;
     this.fiscalService.lookupCep(cep).subscribe({
       next: (address) => {
-        this.form.logradouro = this.form.logradouro || address.logradouro || '';
-        this.form.bairro = this.form.bairro || address.bairro || '';
-        this.form.cidade = address.cidade || this.form.cidade;
-        this.form.uf = address.uf || this.form.uf;
-        this.form.codigoMunicipio = address.codigoMunicipio || this.form.codigoMunicipio;
+        const current = this.form.address;
+        this.form.address = {
+          ...current,
+          logradouro: current.logradouro || address.logradouro || '',
+          bairro: current.bairro || address.bairro || '',
+          cidade: address.cidade || current.cidade,
+          uf: address.uf || current.uf,
+          codigoMunicipio: address.codigoMunicipio || current.codigoMunicipio,
+        };
       },
       error: () => undefined,
     });
@@ -299,17 +323,17 @@ export class FiscalSettingsComponent implements OnInit {
 
   save(): void {
     this.saving.set(true);
-    const payload: FiscalProfileRequest = {
+    const payload: FiscalIssuerRequest = {
       ...this.form,
-      cscToken: this.form.cscToken?.trim() || null,
+      nomeFantasia: this.form.nomeFantasia?.trim() || null,
       defaultNcm: this.form.defaultNcm?.trim() || null,
       defaultCfop: this.form.defaultCfop?.trim() || null,
       defaultCsosn: this.form.defaultCsosn?.trim() || null,
     };
-    this.fiscalService.saveProfile(payload).subscribe({
-      next: (profile) => {
+    this.fiscalService.saveIssuer(payload).subscribe({
+      next: (issuer) => {
         this.saving.set(false);
-        this.setProfile(profile);
+        this.setIssuer(issuer);
         this.snackBar.open('Dados fiscais salvos.', 'OK', { duration: 4000 });
       },
       error: (error: HttpErrorResponse) => {
@@ -328,10 +352,10 @@ export class FiscalSettingsComponent implements OnInit {
     if (!this.certFile || !this.certPassword) return;
     this.uploading.set(true);
     this.fiscalService.uploadCertificate(this.certFile, this.certPassword).subscribe({
-      next: (profile) => {
+      next: (issuer) => {
         this.uploading.set(false);
         this.certPassword = '';
-        this.setProfile(profile);
+        this.setIssuer(issuer);
         this.snackBar.open('Certificado A1 enviado.', 'OK', { duration: 4000 });
       },
       error: (error: HttpErrorResponse) => {
@@ -341,36 +365,50 @@ export class FiscalSettingsComponent implements OnInit {
     });
   }
 
+  checkSefaz(): void {
+    this.checking.set(true);
+    this.sefazMessage.set('');
+    this.fiscalService.sefazStatus().subscribe({
+      next: (status) => {
+        this.checking.set(false);
+        this.sefazOk.set(status.kind === 'AUTHORIZED');
+        this.sefazMessage.set(`${status.cStat} - ${status.xMotivo}`);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.checking.set(false);
+        this.sefazOk.set(false);
+        this.sefazMessage.set(this.errorMessage(error, 'Não foi possível consultar a SEFAZ.'));
+      },
+    });
+  }
+
   formatDate(value: string): string {
     const [year, month, day] = value.split('-').map(Number);
     return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
   }
 
-  private setProfile(profile: FiscalProfile | null): void {
-    this.profile.set(profile);
-    if (!profile) return;
+  private setIssuer(issuer: FiscalIssuer | null): void {
+    this.issuer.set(issuer);
+    if (!issuer) return;
     this.form = {
-      cnpj: profile.cnpj,
-      razaoSocial: profile.razaoSocial,
-      inscricaoEstadual: profile.inscricaoEstadual,
-      regimeTributario: profile.regimeTributario,
-      codigoMunicipio: profile.codigoMunicipio,
-      email: profile.email ?? '',
-      telefone: profile.telefone ?? '',
-      logradouro: profile.logradouro,
-      numero: profile.numero,
-      complemento: profile.complemento ?? '',
-      bairro: profile.bairro,
-      cidade: profile.cidade,
-      uf: profile.uf,
-      cep: profile.cep,
-      serieNfce: profile.serieNfce,
-      cscId: profile.cscId ?? '',
-      cscToken: '',
-      defaultNcm: profile.defaultNcm ?? '',
-      defaultCfop: profile.defaultCfop ?? '',
-      defaultCsosn: profile.defaultCsosn ?? '',
-      autoIssue: profile.autoIssue,
+      cnpj: issuer.cnpj,
+      razaoSocial: issuer.razaoSocial,
+      nomeFantasia: issuer.nomeFantasia ?? '',
+      inscricaoEstadual: issuer.inscricaoEstadual,
+      regime: issuer.regime,
+      address: {
+        ...issuer.address,
+        numero: issuer.address.numero ?? '',
+        complemento: issuer.address.complemento ?? '',
+      },
+      telefone: issuer.telefone ?? '',
+      email: issuer.email ?? '',
+      serie: issuer.serie,
+      defaultNcm: issuer.defaultNcm ?? '',
+      defaultCfop: issuer.defaultCfop ?? '',
+      defaultCsosn: issuer.defaultCsosn ?? '102',
+      autoIssue: issuer.autoIssue,
+      contingencyEnabled: issuer.contingencyEnabled,
     };
   }
 
