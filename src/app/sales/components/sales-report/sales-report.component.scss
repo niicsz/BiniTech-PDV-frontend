@@ -772,3 +772,10 @@
   padding-top: 8px; border-top: 1px solid var(--border);
 }
 .return-items { color: var(--text-secondary); font-size: 12.5px; margin-top: 2px; }
+
+.return-fiscal {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+  font-size: 12.5px; color: var(--text-secondary);
+}
+.return-fiscal mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.return-fiscal-error { color: var(--danger); }

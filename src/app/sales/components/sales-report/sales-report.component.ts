@@ -11,7 +11,9 @@ import { SaleService } from '../../../pos/services/sale.service';
 import { RefundMethod, SaleDTO, SaleReturnDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
-import { FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
+import {
+  FiscalReturnDocument, FiscalService, NfceDocument, canPrintNfce, fiscalReturnLabel,
+} from '../../../fiscal/fiscal.service';
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
@@ -27,8 +29,6 @@ interface ReturnableItem {
   available: number;
   unitPrice: number;
 }
-
-const FULL_RETURN_CANCEL_REASON = 'Devolucao total da mercadoria pelo consumidor';
 
 interface ProductRanking {
   name: string;
@@ -73,6 +73,8 @@ export class SalesReportComponent implements OnInit {
   readonly refundOptions: RefundMethod[] = ['CASH', 'PIX', 'CREDIT_CARD', 'DEBIT_CARD'];
   readonly refundLabels = REFUND_LABELS;
   totalReturned = 0;
+  fiscalReturns: Record<string, FiscalReturnDocument> = {};
+  fiscalReturnBusy: string | null = null;
 
   sales: SaleDTO[] = [];
   filterMode: 'today' | 'period' = 'today';
@@ -298,16 +300,77 @@ export class SalesReportComponent implements OnInit {
     this.selectedSale = updated;
     this.receiptLines = this.saleReceipt(updated);
     this.lastReturn = (updated.returns ?? []).at(-1) ?? null;
-    const full = saleStatus(updated) === 'RETURNED';
     this.analytics.track('sale_returned', {
       value: this.lastReturn?.refundAmount ?? 0,
       currency: 'BRL',
-      full,
+      full: saleStatus(updated) === 'RETURNED',
     });
-    if (full && this.canCancelNfce) {
-      this.showCancel = true;
-      this.cancelReason = FULL_RETURN_CANCEL_REASON;
+    if (this.fiscalEnabled && updated.id) {
+      const saleId = updated.id;
+      setTimeout(() => this.loadFiscalReturns(saleId), 3000);
     }
+  }
+
+  loadFiscalReturns(saleId: string): void {
+    if (!this.fiscalEnabled) return;
+    this.fiscalService.listReturns(saleId).subscribe({
+      next: (documents) => {
+        if (this.selectedSale?.id !== saleId) return;
+        this.fiscalReturns = Object.fromEntries(documents.map(d => [d.returnId, d]));
+        if (documents.some(d => d.status === 'NFCE_CANCELLED')) {
+          this.fiscalService.getNfce(saleId).subscribe({ next: (nfce) => (this.nfce = nfce), error: () => undefined });
+        }
+      },
+      error: () => (this.fiscalReturns = {}),
+    });
+  }
+
+  fiscalReturnLabel(saleReturn: SaleReturnDTO): string {
+    return fiscalReturnLabel(saleReturn.id ? this.fiscalReturns[saleReturn.id] : undefined);
+  }
+
+  canRetryFiscalReturn(saleReturn: SaleReturnDTO): boolean {
+    const status = this.fiscalReturnStatus(saleReturn);
+    return this.authService.canManageTenantUsers() && (status === 'REJECTED' || status === 'VOIDED');
+  }
+
+  fiscalReturnStatus(saleReturn: SaleReturnDTO): string | null {
+    return saleReturn.id ? this.fiscalReturns[saleReturn.id]?.status ?? null : null;
+  }
+
+  retryFiscalReturn(saleReturn: SaleReturnDTO): void {
+    const returnId = saleReturn.id;
+    const saleId = this.selectedSale?.id;
+    if (!returnId || !saleId) return;
+    this.fiscalReturnBusy = returnId;
+    this.fiscalService.retryReturn(returnId).subscribe({
+      next: (document) => {
+        this.fiscalReturnBusy = null;
+        this.fiscalReturns = { ...this.fiscalReturns, [returnId]: document };
+        setTimeout(() => this.loadFiscalReturns(saleId), 3000);
+      },
+      error: (err) => {
+        this.fiscalReturnBusy = null;
+        this.nfceMessage = err.error?.message || 'Não foi possível reenviar a NF-e de devolução.';
+      },
+    });
+  }
+
+  printReturnDanfe(saleReturn: SaleReturnDTO): void {
+    const returnId = saleReturn.id;
+    if (!returnId) return;
+    const popup = window.open('', '_blank');
+    this.fiscalService.downloadReturnDanfe(returnId).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        if (popup) popup.location.href = url; else window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: (err) => {
+        popup?.close();
+        this.nfceMessage = err.error?.message || 'Não foi possível abrir o DANFE da devolução.';
+      },
+    });
   }
 
   printReturn(saleReturn: SaleReturnDTO | null): void {
@@ -345,6 +408,7 @@ export class SalesReportComponent implements OnInit {
     this.returnMode = false;
     this.returnMessage = '';
     this.lastReturn = null;
+    this.fiscalReturns = {};
     this.nfce = null;
     this.nfceMessage = '';
     this.showCancel = false;
@@ -355,6 +419,9 @@ export class SalesReportComponent implements OnInit {
         next: (document) => {
           this.nfceLoading = false;
           this.nfce = document;
+          if (sale.id && (sale.returns?.length ?? 0) > 0) {
+            this.loadFiscalReturns(sale.id);
+          }
         },
         error: () => {
           this.nfceLoading = false;
