@@ -11,7 +11,7 @@ import { SaleService } from '../../../pos/services/sale.service';
 import { SaleDTO, SaleItemDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
-import { FiscalService, NfceDocument } from '../../../fiscal/fiscal.service';
+import { FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
 
 interface ProductRanking {
   name: string;
@@ -50,8 +50,8 @@ export class SalesReportComponent implements OnInit {
   constructor(private saleService: SaleService, private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
-    this.fiscalService.getProfile().subscribe({
-      next: (profile) => (this.fiscalEnabled = !!profile?.readyToIssue),
+    this.fiscalService.getIssuer().subscribe({
+      next: (issuer) => (this.fiscalEnabled = !!issuer?.readyToIssue),
       error: () => (this.fiscalEnabled = false),
     });
     this.loadToday();
@@ -152,10 +152,13 @@ export class SalesReportComponent implements OnInit {
     if (document === undefined) return 'NFC-e';
     if (document === null) return 'Emitir';
     switch (document.status) {
-      case 'ISSUED': return `Nº ${document.numero}`;
+      case 'AUTHORIZED': return `Nº ${document.numero}`;
+      case 'CONTINGENCY': return `Nº ${document.numero} (contingência)`;
       case 'CANCELLED': return 'Cancelada';
-      case 'CANCELLING': return 'Cancelando';
-      case 'ERROR': return 'Rejeitada';
+      case 'REJECTED': return 'Rejeitada';
+      case 'DENIED': return 'Denegada';
+      case 'VOIDED': return 'Inutilizada';
+      case 'AWAITING_REQUEST': return 'Emitir';
       default: return 'Enviando';
     }
   }
@@ -168,12 +171,16 @@ export class SalesReportComponent implements OnInit {
       next: (document) => {
         this.nfceBusySale = null;
         this.nfceBySale[saleId] = document;
-        if (!document || document.status === 'ERROR') {
-          const reason = document?.motivo ? `Última tentativa rejeitada: ${document.motivo}\n\n` : '';
+        if (!document) {
+          alert('Esta venda ainda não chegou ao serviço fiscal. Tente de novo em alguns segundos.');
+        } else if (document.status === 'AWAITING_REQUEST' || document.status === 'REJECTED') {
+          const reason = document.xMotivo ? `Última tentativa rejeitada: ${document.xMotivo}
+
+` : '';
           if (confirm(`${reason}Emitir NFC-e para a venda #${saleId.substring(0, 8)}?`)) {
             this.issue(saleId);
           }
-        } else if (document.status === 'ISSUED') {
+        } else if (canPrintNfce(document)) {
           this.issuedActions(saleId, document);
         } else {
           alert(`Situação da NFC-e: ${this.nfceLabel(saleId)}.`);
@@ -192,8 +199,8 @@ export class SalesReportComponent implements OnInit {
       next: (document) => {
         this.nfceBusySale = null;
         this.nfceBySale[saleId] = document;
-        if (document.status === 'ERROR') {
-          alert(`NFC-e rejeitada: ${document.motivo}`);
+        if (document.status === 'REJECTED') {
+          alert(`NFC-e rejeitada: ${document.xMotivo}`);
         }
       },
       error: (err) => {
@@ -204,7 +211,7 @@ export class SalesReportComponent implements OnInit {
   }
 
   private issuedActions(saleId: string, document: NfceDocument): void {
-    if (confirm(`NFC-e nº ${document.numero} autorizada. Abrir para imprimir?`)) {
+    if (confirm(`NFC-e nº ${document.numero}. Abrir para imprimir?`)) {
       const popup = window.open('', '_blank');
       this.fiscalService.downloadDanfe(saleId).subscribe({
         next: (pdf) => {
@@ -219,6 +226,7 @@ export class SalesReportComponent implements OnInit {
       });
       return;
     }
+    if (document.status !== 'AUTHORIZED') return;
     const reason = prompt('Para CANCELAR esta NFC-e, informe o motivo (mínimo 15 caracteres):');
     if (!reason) return;
     this.nfceBusySale = saleId;
