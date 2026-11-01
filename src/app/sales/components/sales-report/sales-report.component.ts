@@ -12,6 +12,10 @@ import { SaleDTO, SaleItemDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
 import { FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
+import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
+import { AuthService } from '../../../auth/services/auth.service';
+import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
+import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
 
 interface ProductRanking {
   name: string;
@@ -24,7 +28,7 @@ interface ProductRanking {
   imports: [
     CommonModule, FormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatChipsModule
+    MatFormFieldModule, MatInputModule, MatChipsModule, MatrixReceiptComponent
   ],
   templateUrl: './sales-report.component.html',
   styleUrls: ['./sales-report.component.scss']
@@ -32,9 +36,17 @@ interface ProductRanking {
 export class SalesReportComponent implements OnInit {
 
   private readonly fiscalService = inject(FiscalService);
+  private readonly fiscalFeature = inject(FiscalFeatureService);
+  private readonly authService = inject(AuthService);
   fiscalEnabled = false;
-  nfceBySale: Record<string, NfceDocument | null | undefined> = {};
-  nfceBusySale: string | null = null;
+  selectedSale: SaleDTO | null = null;
+  receiptLines: string[] = [];
+  nfce: NfceDocument | null = null;
+  nfceLoading = false;
+  nfceBusy = false;
+  nfceMessage = '';
+  cancelReason = '';
+  showCancel = false;
 
   sales: SaleDTO[] = [];
   filterMode: 'today' | 'period' = 'today';
@@ -50,10 +62,7 @@ export class SalesReportComponent implements OnInit {
   constructor(private saleService: SaleService, private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
-    this.fiscalService.getIssuer().subscribe({
-      next: (issuer) => (this.fiscalEnabled = !!issuer?.readyToIssue),
-      error: () => (this.fiscalEnabled = false),
-    });
+    this.fiscalFeature.ensureLoaded().subscribe((enabled) => (this.fiscalEnabled = enabled));
     this.loadToday();
   }
 
@@ -147,97 +156,115 @@ export class SalesReportComponent implements OnInit {
     return (sale.totalAmount || 0) - (sale.totalCost || 0);
   }
 
-  nfceLabel(saleId: string | undefined): string {
-    const document = saleId ? this.nfceBySale[saleId] : undefined;
-    if (document === undefined) return 'NFC-e';
-    if (document === null) return 'Emitir';
-    switch (document.status) {
-      case 'AUTHORIZED': return `Nº ${document.numero}`;
-      case 'CONTINGENCY': return `Nº ${document.numero} (contingência)`;
-      case 'CANCELLED': return 'Cancelada';
-      case 'REJECTED': return 'Rejeitada';
-      case 'DENIED': return 'Denegada';
-      case 'VOIDED': return 'Inutilizada';
-      case 'AWAITING_REQUEST': return 'Emitir';
-      default: return 'Enviando';
-    }
+  get canCancelNfce(): boolean {
+    return this.nfce?.status === 'AUTHORIZED' && this.authService.canManageTenantUsers();
   }
 
-  nfceAction(sale: SaleDTO): void {
-    const saleId = sale.id;
-    if (!saleId || this.nfceBusySale) return;
-    this.nfceBusySale = saleId;
-    this.fiscalService.getNfce(saleId).subscribe({
-      next: (document) => {
-        this.nfceBusySale = null;
-        this.nfceBySale[saleId] = document;
-        if (!document) {
-          alert('Esta venda ainda não chegou ao serviço fiscal. Tente de novo em alguns segundos.');
-        } else if (document.status === 'AWAITING_REQUEST' || document.status === 'REJECTED') {
-          const reason = document.xMotivo ? `Última tentativa rejeitada: ${document.xMotivo}
-
-` : '';
-          if (confirm(`${reason}Emitir NFC-e para a venda #${saleId.substring(0, 8)}?`)) {
-            this.issue(saleId);
-          }
-        } else if (canPrintNfce(document)) {
-          this.issuedActions(saleId, document);
-        } else {
-          alert(`Situação da NFC-e: ${this.nfceLabel(saleId)}.`);
-        }
-      },
-      error: (err) => {
-        this.nfceBusySale = null;
-        alert(err.error?.message || 'Não foi possível consultar a NFC-e.');
-      },
-    });
+  get canPrintNfce(): boolean {
+    return canPrintNfce(this.nfce);
   }
 
-  private issue(saleId: string): void {
-    this.nfceBusySale = saleId;
-    this.fiscalService.issueNfce(saleId, null).subscribe({
-      next: (document) => {
-        this.nfceBusySale = null;
-        this.nfceBySale[saleId] = document;
-        if (document.status === 'REJECTED') {
-          alert(`NFC-e rejeitada: ${document.xMotivo}`);
-        }
-      },
-      error: (err) => {
-        this.nfceBusySale = null;
-        alert(err.error?.message || 'Não foi possível emitir a NFC-e.');
-      },
-    });
+  get canIssueNfce(): boolean {
+    return !this.nfce || this.nfce.status === 'AWAITING_REQUEST' || this.nfce.status === 'REJECTED';
   }
 
-  private issuedActions(saleId: string, document: NfceDocument): void {
-    if (confirm(`NFC-e nº ${document.numero}. Abrir para imprimir?`)) {
-      const popup = window.open('', '_blank');
-      this.fiscalService.downloadDanfe(saleId).subscribe({
-        next: (pdf) => {
-          const url = URL.createObjectURL(pdf);
-          if (popup) popup.location.href = url; else window.open(url, '_blank');
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
+  openReceipt(sale: SaleDTO): void {
+    this.selectedSale = sale;
+    this.receiptLines = buildSaleReceipt(sale, { operator: sale.userId === this.authService.getUserId() ? this.authService.getUsername() : null });
+    this.nfce = null;
+    this.nfceMessage = '';
+    this.showCancel = false;
+    this.cancelReason = '';
+    if (this.fiscalEnabled && sale.id) {
+      this.nfceLoading = true;
+      this.fiscalService.getNfce(sale.id).subscribe({
+        next: (document) => {
+          this.nfceLoading = false;
+          this.nfce = document;
         },
-        error: (err) => {
-          popup?.close();
-          alert(err.error?.message || 'Não foi possível abrir a NFC-e.');
+        error: () => {
+          this.nfceLoading = false;
+          this.nfceMessage = 'Não foi possível consultar a NFC-e desta venda.';
         },
       });
-      return;
     }
-    if (document.status !== 'AUTHORIZED') return;
-    const reason = prompt('Para CANCELAR esta NFC-e, informe o motivo (mínimo 15 caracteres):');
-    if (!reason) return;
-    this.nfceBusySale = saleId;
-    this.fiscalService.cancelNfce(saleId, reason).subscribe({
-      next: (cancelled) => {
-        this.nfceBusySale = null;
-        this.nfceBySale[saleId] = cancelled;
+  }
+
+  closeReceipt(): void {
+    this.selectedSale = null;
+  }
+
+  printReceipt(): void {
+    printMatrix(this.receiptLines, `Venda ${this.selectedSale?.id?.slice(0, 8) ?? ''}`);
+  }
+
+  nfceLabel(): string {
+    const document = this.nfce;
+    if (!document) return 'Ainda não emitida';
+    switch (document.status) {
+      case 'AUTHORIZED': return `NFC-e nº ${document.numero} autorizada`;
+      case 'CONTINGENCY': return `NFC-e nº ${document.numero} em contingência (será transmitida)`;
+      case 'CANCELLED': return `NFC-e nº ${document.numero} cancelada`;
+      case 'REJECTED': return `Rejeitada: ${document.xMotivo ?? ''}`;
+      case 'DENIED': return 'Uso denegado pela SEFAZ';
+      case 'VOIDED': return 'Numeração inutilizada';
+      case 'AWAITING_REQUEST': return 'Ainda não emitida';
+      default: return 'Enviando para a SEFAZ...';
+    }
+  }
+
+  issueNfce(): void {
+    const saleId = this.selectedSale?.id;
+    if (!saleId) return;
+    this.nfceBusy = true;
+    this.nfceMessage = '';
+    this.fiscalService.issueNfce(saleId, this.selectedSale?.customerCpf ?? null).subscribe({
+      next: (document) => {
+        this.nfceBusy = false;
+        this.nfce = document;
       },
       error: (err) => {
-        this.nfceBusySale = null;
-        alert(err.error?.message || 'Não foi possível cancelar a NFC-e.');
+        this.nfceBusy = false;
+        this.nfceMessage = err.error?.message || 'Não foi possível emitir a NFC-e.';
+      },
+    });
+  }
+
+  printNfce(): void {
+    const saleId = this.selectedSale?.id;
+    if (!saleId) return;
+    const popup = window.open('', '_blank');
+    this.fiscalService.downloadDanfe(saleId).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        if (popup) popup.location.href = url; else window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: (err) => {
+        popup?.close();
+        this.nfceMessage = err.error?.message || 'Não foi possível abrir a NFC-e.';
+      },
+    });
+  }
+
+  cancelNfce(): void {
+    const saleId = this.selectedSale?.id;
+    if (!saleId) return;
+    if (this.cancelReason.trim().length < 15) {
+      this.nfceMessage = 'Informe o motivo do cancelamento com pelo menos 15 caracteres.';
+      return;
+    }
+    this.nfceBusy = true;
+    this.nfceMessage = '';
+    this.fiscalService.cancelNfce(saleId, this.cancelReason.trim()).subscribe({
+      next: (document) => {
+        this.nfceBusy = false;
+        this.nfce = document;
+        this.showCancel = false;
+      },
+      error: (err) => {
+        this.nfceBusy = false;
+        this.nfceMessage = err.error?.message || 'Não foi possível cancelar a NFC-e.';
       },
     });
   }
