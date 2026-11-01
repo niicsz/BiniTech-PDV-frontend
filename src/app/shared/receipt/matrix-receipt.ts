@@ -19,9 +19,9 @@ export interface ReceiptOptions {
 export function plain(value: string | null | undefined): string {
   return (value ?? '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^\x20-\x7E]/g, '')
-    .replace(/\s+/g, ' ')
+    .replaceAll(/[̀-ͯ]/g, '')
+    .replaceAll(/[^\x20-\x7E]/g, '')
+    .replaceAll(/\s+/g, ' ')
     .trim();
 }
 
@@ -64,7 +64,7 @@ function wrap(text: string, width: number, indent = ''): string[] {
 function formatDate(timestamp?: string): string {
   if (!timestamp) return '';
   const date = new Date(timestamp);
-  if (isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -73,14 +73,15 @@ export function buildSaleReceipt(sale: SaleDTO, options: ReceiptOptions = {}): s
   const width = options.columns ?? MATRIX_COLUMNS;
   const rule = '-'.repeat(width);
   const doubleRule = '='.repeat(width);
-  const lines: string[] = [];
+  const lines: string[] = [
+    doubleRule,
+    center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width),
+    center('COMPROVANTE DE VENDA', width),
+    center('*** NAO E DOCUMENTO FISCAL ***', width),
+    doubleRule,
+    columns(`Venda: #${(sale.id ?? '').slice(0, 8)}`, formatDate(sale.timestamp), width),
+  ];
 
-  lines.push(doubleRule);
-  lines.push(center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width));
-  lines.push(center('COMPROVANTE DE VENDA', width));
-  lines.push(center('*** NAO E DOCUMENTO FISCAL ***', width));
-  lines.push(doubleRule);
-  lines.push(columns(`Venda: #${(sale.id ?? '').slice(0, 8)}`, formatDate(sale.timestamp), width));
   if (options.operator) {
     lines.push(`Operador: ${plain(options.operator)}`.slice(0, width));
   }
@@ -91,40 +92,47 @@ export function buildSaleReceipt(sale: SaleDTO, options: ReceiptOptions = {}): s
     lines.push(`Telefone: ${plain(sale.customerPhone)}`.slice(0, width));
   }
   if (sale.customerCpf) {
-    const cpf = sale.customerCpf.replace(/\D/g, '');
+    const cpf = sale.customerCpf.replaceAll(/\D/g, '');
     const masked = cpf.length === 11 ? `${cpf.slice(0, 3)}.***.***-${cpf.slice(9)}` : cpf;
     lines.push(`CPF: ${masked}`);
   }
-  lines.push(rule);
-  lines.push(columns('ITEM DESCRICAO', '', width).trimEnd());
-  lines.push(columns('     QTD x VL.UNIT', 'SUBTOTAL', width));
-  lines.push(rule);
+  lines.push(
+    rule,
+    columns('ITEM DESCRICAO', '', width).trimEnd(),
+    columns('     QTD x VL.UNIT', 'SUBTOTAL', width),
+    rule,
+  );
 
   (sale.items ?? []).forEach((item, index) => {
     const number = String(index + 1).padStart(3, '0');
     const description = plain(item.productDescription).toUpperCase() || 'PRODUTO';
-    wrap(`${number} ${description}`, width).forEach((line, i) =>
-      lines.push(i === 0 ? line : `    ${line.trimStart()}`.slice(0, width)),
+    const descriptionLines = wrap(`${number} ${description}`, width).map((line, i) =>
+      i === 0 ? line : `    ${line.trimStart()}`.slice(0, width),
     );
     lines.push(
+      ...descriptionLines,
       columns(`     ${item.quantity ?? 0} x ${money(item.unitPrice)}`, money(item.subtotal), width),
     );
   });
 
-  lines.push(rule);
-  lines.push(columns('TOTAL R$', money(sale.totalAmount), width));
-  lines.push(rule);
-  (sale.payments ?? []).forEach((payment) => {
-    lines.push(columns(PAYMENT_LABELS[payment.method] ?? plain(payment.method), money(payment.amount), width));
-  });
-  lines.push(columns('Total pago', money(sale.totalPaid), width));
+  lines.push(
+    rule,
+    columns('TOTAL R$', money(sale.totalAmount), width),
+    rule,
+    ...(sale.payments ?? []).map((payment) =>
+      columns(PAYMENT_LABELS[payment.method] ?? plain(payment.method), money(payment.amount), width),
+    ),
+    columns('Total pago', money(sale.totalPaid), width),
+  );
   if ((sale.change ?? 0) > 0) {
     lines.push(columns('Troco', money(sale.change), width));
   }
-  lines.push(doubleRule);
-  lines.push(center('Obrigado pela preferencia!', width));
-  lines.push(center('BiniTech PDV', width));
-  lines.push('');
+  lines.push(
+    doubleRule,
+    center('Obrigado pela preferencia!', width),
+    center('BiniTech PDV', width),
+    '',
+  );
   return lines;
 }
 
@@ -143,19 +151,19 @@ export function printMatrix(lines: string[], title = 'Comprovante'): void {
     frame.remove();
     return;
   }
-  const escaped = lines
-    .join('\n')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  doc.open();
-  doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
-<style>
-@page { margin: 4mm; }
-html, body { margin: 0; padding: 0; background: #fff; color: #000; }
-pre { margin: 0; font-family: "Courier New", Courier, monospace; font-size: 12px; line-height: 1.25; white-space: pre; }
-</style></head><body><pre>${escaped}</pre></body></html>`);
-  doc.close();
+  doc.title = title;
+  const meta = doc.createElement('meta');
+  meta.setAttribute('charset', 'utf-8');
+  const style = doc.createElement('style');
+  style.textContent = [
+    '@page { margin: 4mm; }',
+    'html, body { margin: 0; padding: 0; background: #fff; color: #000; }',
+    'pre { margin: 0; font-family: "Courier New", Courier, monospace; font-size: 12px; line-height: 1.25; white-space: pre; }',
+  ].join('\n');
+  doc.head.append(meta, style);
+  const pre = doc.createElement('pre');
+  pre.textContent = lines.join('\n');
+  doc.body.replaceChildren(pre);
   const win = frame.contentWindow;
   setTimeout(() => {
     win?.focus();
