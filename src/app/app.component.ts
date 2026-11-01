@@ -12,6 +12,8 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from './auth/services/auth.service';
 import { ThemeService } from './shared/services/theme.service';
 import { SettingsModalComponent } from './shared/components/settings-modal.component';
+import { NfceQuestionComponent } from './fiscal/nfce-question.component';
+import { FiscalFeatureService } from './fiscal/fiscal-feature.service';
 import { CookieConsentComponent } from './shared/components/cookie-consent.component';
 import { SaleService } from './pos/services/sale.service';
 import { SeoService } from './core/seo.service';
@@ -25,7 +27,7 @@ import { localIsoDate } from './core/local-date';
     CommonModule, RouterOutlet, RouterLink, RouterLinkActive,
     MatToolbarModule, MatButtonModule, MatIconModule, MatTooltipModule, MatChipsModule,
     MatBadgeModule, MatSnackBarModule,
-    SettingsModalComponent, CookieConsentComponent
+    SettingsModalComponent, CookieConsentComponent, NfceQuestionComponent
   ],
   template: `
     @if (authService.isLoggedIn() && !isPublicRoute()) {
@@ -64,6 +66,8 @@ import { localIsoDate } from './core/local-date';
                 <mat-icon>manage_accounts</mat-icon>
                 <span>Usuários</span>
               </a>
+            }
+            @if (authService.canManageTenantUsers() && fiscalFeature.enabled()) {
               <a routerLink="/fiscal" routerLinkActive="active-link" class="nav-item">
                 <mat-icon>receipt_long</mat-icon>
                 <span>Nota Fiscal</span>
@@ -135,6 +139,9 @@ import { localIsoDate } from './core/local-date';
       <span>Precisa de ajuda?</span>
     </a>
 
+    @if (showNfceQuestion()) {
+      <app-nfce-question></app-nfce-question>
+    }
     @if (showSettings) {
       <app-settings-modal (close)="showSettings = false"></app-settings-modal>
     }
@@ -499,6 +506,7 @@ export class AppComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private seoService = inject(SeoService);
   private analytics = inject(AnalyticsService);
+  readonly fiscalFeature = inject(FiscalFeatureService);
 
   showSettings = false;
   debtorsCount = 0;
@@ -513,8 +521,23 @@ export class AppComponent implements OnInit {
     ).subscribe(() => {
       if (this.authService.isLoggedIn()) {
         this.loadDebtorsCount();
+        this.loadFiscalFeature();
       }
     });
+    this.loadFiscalFeature();
+  }
+
+  private loadFiscalFeature(): void {
+    if (!this.authService.isLoggedIn() || this.authService.isSuperAdmin() || this.isPublicRoute()) return;
+    this.fiscalFeature.ensureLoaded().subscribe();
+  }
+
+  showNfceQuestion(): boolean {
+    return this.authService.isLoggedIn()
+      && !this.isPublicRoute()
+      && this.authService.canManageTenantUsers()
+      && !this.authService.isSuperAdmin()
+      && this.fiscalFeature.needsDecision();
   }
 
   private loadDebtorsCount(): void {
@@ -558,6 +581,7 @@ export class AppComponent implements OnInit {
   }
 
   onLogout(): void {
+    this.fiscalFeature.reset();
     this.authService.logout();
   }
 }

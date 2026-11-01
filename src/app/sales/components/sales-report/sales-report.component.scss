@@ -677,3 +677,54 @@
   white-space: nowrap;
   font-size: 12px;
 }
+
+.receipt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 14, 10, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 32px 16px;
+  z-index: 1000;
+}
+.receipt-dialog {
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--text);
+  border-radius: var(--radius-md);
+  box-shadow: 6px 6px 0 var(--shadow-hard-color);
+  width: 100%;
+  max-width: 520px;
+  padding: 18px;
+}
+.receipt-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  h3 { margin: 0; font-family: var(--font-display); }
+}
+.receipt-dialog-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  button { display: flex; align-items: center; gap: 6px; }
+}
+.nfce-box {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--border);
+}
+.nfce-box-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nfce-box-status { color: var(--text-secondary); font-size: 13.5px; }
+.nfce-key { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); word-break: break-all; margin-top: 6px; }
+.cancel-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.cancel-field { flex: 1; min-width: 220px; }
+.nfce-message { color: var(--danger); font-size: 13px; margin: 8px 0 0; }

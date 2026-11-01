@@ -6,10 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ThemeService, ThemeColors } from '../services/theme.service';
 import { AnalyticsService } from '../../core/analytics.service';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { AuthService } from '../../auth/services/auth.service';
+import { FiscalFeatureService } from '../../fiscal/fiscal-feature.service';
 
 @Component({
   selector: 'app-settings-modal',
-  imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSlideToggleModule, MatSnackBarModule],
   template: `
     <div class="modal-overlay" (click)="close.emit()">
       <mat-card class="modal-card" (click)="$event.stopPropagation()" appearance="outlined">
@@ -40,6 +44,13 @@ import { AnalyticsService } from '../../core/analytics.service';
               <span class="color-value">{{ colors.headerBg || '#241a12' }}</span>
             </div>
           </div>
+          <div class="fiscal-section" *ngIf="canManageFiscal">
+            <h4>Nota fiscal (NFC-e)</h4>
+            <mat-slide-toggle [checked]="fiscalFeature.enabled()" (change)="toggleNfce($event.checked)" [disabled]="savingFiscal">
+              Minha loja emite NFC-e
+            </mat-slide-toggle>
+            <p class="description">Deixe desligado se você vende como pessoa física ou não tem inscrição estadual.</p>
+          </div>
         </mat-card-content>
 
         <mat-card-actions align="end">
@@ -56,6 +67,8 @@ import { AnalyticsService } from '../../core/analytics.service';
     </div>
   `,
   styles: [`
+    .fiscal-section { border-top: 1px dashed var(--border); margin-top: 16px; padding-top: 12px; }
+    .fiscal-section h4 { margin: 0 0 8px; }
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -133,7 +146,11 @@ export class SettingsModalComponent {
   @Output() close = new EventEmitter<void>();
 
   themeService = inject(ThemeService);
-  private analytics = inject(AnalyticsService);
+  private readonly analytics = inject(AnalyticsService);
+  private readonly snackBar = inject(MatSnackBar);
+  readonly fiscalFeature = inject(FiscalFeatureService);
+  readonly canManageFiscal = inject(AuthService).canManageTenantUsers();
+  savingFiscal = false;
   colors: ThemeColors = {};
 
   constructor() {
@@ -145,6 +162,20 @@ export class SettingsModalComponent {
   updateColor(key: keyof ThemeColors, value: string) {
     this.themeService.updateColor(key, value);
     this.analytics.track('settings_changed', { setting: `color_${key}` });
+  }
+
+  toggleNfce(enabled: boolean) {
+    this.savingFiscal = true;
+    this.fiscalFeature.decide(enabled).subscribe({
+      next: () => {
+        this.savingFiscal = false;
+        this.analytics.track('settings_changed', { setting: enabled ? 'nfce_on' : 'nfce_off' });
+      },
+      error: () => {
+        this.savingFiscal = false;
+        this.snackBar.open('Não foi possível salvar a opção de NFC-e.', 'OK', { duration: 5000 });
+      },
+    });
   }
 
   resetColors() {
