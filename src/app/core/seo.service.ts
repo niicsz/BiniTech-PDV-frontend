@@ -17,7 +17,7 @@ export interface RouteSeo {
 const SITE_URL = 'https://www.binitechpdv.com.br';
 const DEFAULT_TITLE = 'BiniTech PDV | Sistema de Ponto de Venda Online para Lojas';
 const DEFAULT_DESCRIPTION =
-  'Sistema PDV online para mercadinhos, padarias e lojas de bairro. Frente de caixa, estoque, crediário e relatórios na nuvem — sem instalar nada. Comece grátis.';
+  'Sistema PDV online para mercadinhos, padarias e lojas de bairro. Caixa, estoque, fiado, relatórios de lucro e NFC-e opcional na nuvem — sem instalar nada.';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 @Injectable({ providedIn: 'root' })
