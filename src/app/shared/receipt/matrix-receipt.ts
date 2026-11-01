@@ -191,8 +191,10 @@ export function buildReturnReceipt(
   if (sale.customerName) {
     lines.push(`Cliente: ${plain(sale.customerName)}`.slice(0, width));
   }
-  lines.push(rule, ...returnItemLines(saleReturn, width), rule);
   lines.push(
+    rule,
+    ...returnItemLines(saleReturn, width),
+    rule,
     columns('TOTAL DEVOLVIDO R$', money(saleReturn.refundAmount), width),
     columns(
       'Reembolso',
