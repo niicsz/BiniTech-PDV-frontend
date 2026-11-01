@@ -187,8 +187,8 @@
   </div>
 </div>
 
-<div class="receipt-overlay" *ngIf="selectedSale" (click)="closeReceipt()">
-  <div class="receipt-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nota da venda">
+<div class="receipt-overlay" *ngIf="selectedSale">
+  <div class="receipt-dialog" role="dialog" aria-modal="true" aria-label="Nota da venda">
     <div class="receipt-dialog-header">
       <h3>Venda #{{ selectedSale.id?.substring(0, 8) }}</h3>
       <button mat-icon-button (click)="closeReceipt()" aria-label="Fechar"><mat-icon>close</mat-icon></button>

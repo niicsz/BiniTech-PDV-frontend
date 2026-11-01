@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -190,6 +190,7 @@ export class SalesReportComponent implements OnInit {
     }
   }
 
+  @HostListener('document:keydown.escape')
   closeReceipt(): void {
     this.selectedSale = null;
   }
