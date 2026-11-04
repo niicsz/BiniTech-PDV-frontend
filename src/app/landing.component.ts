@@ -598,7 +598,7 @@ export class LandingComponent {
 
   plans = [
     { name: 'Starter', price: 99, featured: false, items: ['Até 200 produtos', 'Até 300 vendas/mês', '1 operador', 'Relatórios essenciais'] },
-    { name: 'Pro', price: 199, featured: true, items: ['Até 500 produtos', 'Até 1.000 vendas/mês', '3 operadores', 'Crediário e devedores', 'Suporte prioritário'] },
+    { name: 'Pro', price: 149, featured: true, items: ['Até 500 produtos', 'Até 1.000 vendas/mês', '3 operadores', 'Crediário e devedores', 'Suporte prioritário'] },
     { name: 'Enterprise', price: 349, featured: false, items: ['Até 2.000 produtos', 'Até 5.000 vendas/mês', '10 operadores', 'Todos os recursos'] },
   ];
 
