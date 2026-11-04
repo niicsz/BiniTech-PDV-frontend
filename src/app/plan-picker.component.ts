@@ -53,7 +53,7 @@ interface Pending {
             <div>
               <strong>Usuários adicionais</strong>
               <p>
-                Você usa {{ o.operatorsInUse }} de {{ o.operatorLimit }} operador(es).
+                Você usa {{ o.operatorsInUse }} de {{ o.operatorLimit }} operador(es) de caixa; o administrador não conta.
                 Cada usuário além do plano custa R$ {{ o.extraUserPrice | number:'1.2-2' }}/mês e entra na mesma fatura.
               </p>
             </div>
@@ -70,6 +70,7 @@ interface Pending {
           </div>
 
           <p class="total">Total mensal: <strong>R$ {{ o.monthlyAmount | number:'1.2-2' }}</strong></p>
+          <p class="hint">Vendas ilimitadas em todos os planos. No limite de produtos, inative os que não vende mais ou mude de plano; não há cobrança por produto a mais.</p>
           @if (!canManage) { <p class="hint">Só o administrador da loja muda o plano.</p> }
 
           @if (pending(); as p) {

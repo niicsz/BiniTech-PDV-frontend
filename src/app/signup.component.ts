@@ -59,10 +59,11 @@ import { TenantPublicService } from './tenant-public.service';
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Plano</mat-label>
             <mat-select formControlName="planId">
-              <mat-option value="starter">Starter — R$ 99/mês</mat-option>
-              <mat-option value="pro">Pro — R$ 149/mês</mat-option>
-              <mat-option value="enterprise">Enterprise — R$ 349/mês</mat-option>
+              <mat-option value="starter">Starter — R$ 99/mês · 1 operador · 3.000 produtos</mat-option>
+              <mat-option value="pro">Pro — R$ 149/mês · 3 operadores · 10.000 produtos</mat-option>
+              <mat-option value="enterprise">Enterprise — R$ 349/mês · 10 operadores · produtos ilimitados</mat-option>
             </mat-select>
+            <mat-hint>Vendas ilimitadas em todos. Dá para mudar de plano depois, em Assinatura.</mat-hint>
           </mat-form-field>
 
           <mat-checkbox formControlName="acceptTerms" class="accept-terms">
