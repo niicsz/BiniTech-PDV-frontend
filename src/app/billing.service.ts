@@ -40,6 +40,25 @@ export interface UrlDTO {
   url: string;
 }
 
+export interface PlanOptionDTO {
+  id: string;
+  maxProducts: number;
+  maxSalesPerMonth: number;
+  maxOperators: number;
+  price: number;
+}
+
+export interface PlanOverviewDTO {
+  currentPlan: string;
+  extraUsers: number;
+  operatorsInUse: number;
+  operatorLimit: number | null;
+  monthlyAmount: number;
+  extraUserPrice: number;
+  recurringCard: boolean;
+  plans: PlanOptionDTO[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class BillingService {
   private readonly http = inject(HttpClient);
@@ -59,6 +78,18 @@ export class BillingService {
 
   getPixCheckoutUrl(): Observable<UrlDTO> {
     return this.http.get<UrlDTO>(`${this.base}/checkout/pix`);
+  }
+
+  getPlan(): Observable<PlanOverviewDTO> {
+    return this.http.get<PlanOverviewDTO>(`${this.base}/plan`);
+  }
+
+  changePlan(planId: string): Observable<PlanOverviewDTO> {
+    return this.http.put<PlanOverviewDTO>(`${this.base}/plan`, { planId });
+  }
+
+  setExtraUsers(quantity: number): Observable<PlanOverviewDTO> {
+    return this.http.put<PlanOverviewDTO>(`${this.base}/extra-users`, { quantity });
   }
 
   getPortalUrl(): Observable<UrlDTO> {
