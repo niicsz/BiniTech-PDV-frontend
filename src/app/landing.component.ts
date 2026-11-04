@@ -68,7 +68,7 @@ import { AnalyticsService } from './core/analytics.service';
             </p>
             <div class="hero-actions">
               <a class="btn btn-solid btn-lg" routerLink="/signup" (click)="trackCta('hero')">
-                Criar conta grátis <mat-icon>arrow_forward</mat-icon>
+                Testar 7 dias grátis <mat-icon>arrow_forward</mat-icon>
               </a>
               <a class="btn btn-outline btn-lg" href="#planos">Ver planos</a>
             </div>
@@ -176,6 +176,7 @@ import { AnalyticsService } from './core/analytics.service';
           <li><mat-icon>badge</mat-icon><span><b>Operador</b> é quem usa o caixa. O administrador da loja não conta no limite.</span></li>
           <li><mat-icon>person_add</mat-icon><span><b>Precisa de mais gente?</b> Usuário adicional por R$ 30/mês, em qualquer plano, na mesma fatura.</span></li>
           <li><mat-icon>inventory_2</mat-icon><span><b>Chegou ao limite de produtos?</b> Inative os que não vende mais ou mude de plano. Não cobramos por produto ou venda a mais.</span></li>
+          <li><mat-icon>card_giftcard</mat-icon><span><b>7 dias grátis:</b> use tudo sem cartão a partir da aprovação da conta. Depois, assine para continuar.</span></li>
           <li><mat-icon>swap_horiz</mat-icon><span><b>Sem fidelidade:</b> troque de plano ou cancele quando quiser, direto em Assinatura. Sem taxa de adesão.</span></li>
         </ul>
       </section>
@@ -201,7 +202,7 @@ import { AnalyticsService } from './core/analytics.service';
         <div class="cta-inner">
           <span class="cta-kicker">✺ Comece hoje ✺</span>
           <h2>Pronto para modernizar sua loja?</h2>
-          <p>Crie sua conta agora e venda ainda hoje. Sem cartão, sem compromisso.</p>
+          <p>Crie sua conta e teste por 7 dias grátis, sem cartão e sem compromisso. Depois, escolha como pagar.</p>
           <a class="btn cta-btn btn-lg" routerLink="/signup" (click)="trackCta('footer_cta')">
             Começar grátis <mat-icon>arrow_forward</mat-icon>
           </a>
