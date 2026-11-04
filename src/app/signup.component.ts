@@ -60,7 +60,7 @@ import { TenantPublicService } from './tenant-public.service';
             <mat-label>Plano</mat-label>
             <mat-select formControlName="planId">
               <mat-option value="starter">Starter — R$ 99/mês</mat-option>
-              <mat-option value="pro">Pro — R$ 199/mês</mat-option>
+              <mat-option value="pro">Pro — R$ 149/mês</mat-option>
               <mat-option value="enterprise">Enterprise — R$ 349/mês</mat-option>
             </mat-select>
           </mat-form-field>
