@@ -193,6 +193,25 @@ export const routes: Routes = [
       import('./fiscal/fiscal-settings.component').then(m => m.FiscalSettingsComponent),
     canActivate: [adminGuard]
   },
+  {
+    path: 'delivery',
+    title: 'Delivery | BiniTech PDV',
+    data: seo({ title: 'Delivery | BiniTech PDV', noindex: true }),
+    loadComponent: () => import('./delivery/delivery-admin.component').then(m => m.DeliveryAdminComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'pedir/:slug',
+    title: 'Peça online',
+    data: seo({ title: 'Peça online', noindex: true }),
+    loadComponent: () => import('./delivery/storefront.component').then(m => m.StorefrontComponent)
+  },
+  {
+    path: 'pedir/:slug/pedido/:orderId',
+    title: 'Acompanhe seu pedido',
+    data: seo({ title: 'Acompanhe seu pedido', noindex: true }),
+    loadComponent: () => import('./delivery/order-tracking.component').then(m => m.OrderTrackingComponent)
+  },
   { path: 'register', redirectTo: 'users', pathMatch: 'full' },
   {
     path: 'change-password',

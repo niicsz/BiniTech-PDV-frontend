@@ -131,6 +131,10 @@
             <input matInput [(ngModel)]="form.csosn" name="csosn" maxlength="3" inputmode="numeric" placeholder="Padrão: 102" />
             <mat-icon matPrefix>receipt_long</mat-icon>
           </mat-form-field>
+          <div class="delivery-toggle" *ngIf="deliveryAvailable()">
+            <mat-slide-toggle [(ngModel)]="form.deliveryVisible" name="deliveryVisible">Mostrar no delivery</mat-slide-toggle>
+            <span>Aparece no cardápio online da loja.</span>
+          </div>
           <mat-form-field appearance="outline" *ngIf="editingId">
             <mat-label>Status</mat-label>
             <mat-select [(ngModel)]="form.active" name="active">
@@ -214,6 +218,7 @@
             <td>
               <span class="category-tag" *ngIf="product.category">{{ product.category }}</span>
               <span class="category-tag category-none" *ngIf="!product.category">Sem Categoria</span>
+              <mat-icon class="delivery-flag" *ngIf="deliveryAvailable() && product.deliveryVisible" matTooltip="No cardápio do delivery">delivery_dining</mat-icon>
             </td>
             <td class="text-right price-cell">R$ {{ product.price | number:'1.2-2' }}</td>
             <td class="text-right cost-cell">R$ {{ product.costPrice | number:'1.2-2' }}</td>
