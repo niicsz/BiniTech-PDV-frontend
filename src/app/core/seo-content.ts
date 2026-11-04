@@ -1,7 +1,7 @@
 export const FAQ_ITEMS = [
   {
     q: 'O que é um sistema PDV online?',
-    a: 'É um ponto de venda que funciona no navegador, sem instalação. O BiniTech PDV reúne frente de caixa, estoque, crediário, relatórios e emissão de NFC-e em um só lugar.',
+    a: 'É um ponto de venda que funciona no navegador, sem instalação. O BiniTech PDV reúne frente de caixa, estoque, crediário, delivery, relatórios e emissão de NFC-e em um só lugar.',
   },
   {
     q: 'O BiniTech PDV serve para mercadinhos e lojas pequenas?',
@@ -30,6 +30,10 @@ export const FAQ_ITEMS = [
   {
     q: 'Consigo importar meus produtos de uma planilha?',
     a: 'Sim. Envie um arquivo CSV, XLSX ou XLS com até 50 mil produtos, revise os dados na tela e confirme a importação.',
+  },
+  {
+    q: 'O BiniTech PDV tem delivery?',
+    a: 'Sim. A loja ganha um link de cardápio online para divulgar. O cliente escolhe os produtos pelo celular, informa entrega ou retirada e forma de pagamento, e o pedido chega no WhatsApp da loja. Na tela de Delivery você aceita, acompanha e conclui o pedido, que entra no caixa como venda e baixa o estoque.',
   },
   {
     q: 'Quais formas de pagamento o caixa aceita?',
