@@ -172,6 +172,12 @@ import { AnalyticsService } from './core/analytics.service';
             </a>
           </article>
         </div>
+        <ul class="plan-notes reveal">
+          <li><mat-icon>badge</mat-icon><span><b>Operador</b> é quem usa o caixa. O administrador da loja não conta no limite.</span></li>
+          <li><mat-icon>person_add</mat-icon><span><b>Precisa de mais gente?</b> Usuário adicional por R$ 30/mês, em qualquer plano, na mesma fatura.</span></li>
+          <li><mat-icon>inventory_2</mat-icon><span><b>Chegou ao limite de produtos?</b> Inative os que não vende mais ou mude de plano. Não cobramos por produto ou venda a mais.</span></li>
+          <li><mat-icon>swap_horiz</mat-icon><span><b>Sem fidelidade:</b> troque de plano ou cancele quando quiser, direto em Assinatura. Sem taxa de adesão.</span></li>
+        </ul>
       </section>
 
 
@@ -450,6 +456,12 @@ import { AnalyticsService } from './core/analytics.service';
       font-family:'Spline Sans Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.8px;
       text-transform:uppercase; padding:6px 13px; border:2px solid var(--ink); box-shadow:3px 3px 0 rgba(36,26,18,.4); }
     .plan h3{ font-family:'Fraunces',serif; font-weight:700; font-size:23px; margin:0 0 8px; letter-spacing:-.4px; }
+    .plan-notes{ width:min(1144px, calc(100% - 56px)); margin:30px auto 0; padding:0; list-style:none;
+      display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 28px; }
+    .plan-notes li{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; line-height:1.5; color:var(--ink-2); }
+    .plan-notes mat-icon{ color:var(--vermillion); flex-shrink:0; font-size:20px; width:20px; height:20px; margin-top:2px; }
+    .plan-notes b{ color:var(--ink); }
+    @media (max-width: 760px){ .plan-notes{ grid-template-columns:1fr; } }
     .promo-strip{ width:min(1144px, calc(100% - 56px)); margin:34px auto -10px; display:flex; align-items:center; gap:10px;
       padding:12px 18px; border:2px dashed var(--vermillion); border-radius:3px; background:var(--paper-2); color:var(--ink); font-size:15px; }
     .promo-strip mat-icon{ color:var(--vermillion); flex-shrink:0; }
@@ -621,17 +633,17 @@ export class LandingComponent {
     {
       name: 'Starter', price: 99, oldPrice: null as number | null, featured: false,
       upgrades: [{ was: 'Até 300 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 200 produtos', now: 'Até 3.000 produtos' }],
-      items: ['1 operador', 'Relatórios essenciais'],
+      items: ['1 operador de caixa', 'Relatórios essenciais'],
     },
     {
       name: 'Pro', price: 149, oldPrice: 199 as number | null, featured: true,
       upgrades: [{ was: 'Até 1.000 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 500 produtos', now: 'Até 10.000 produtos' }],
-      items: ['3 operadores', 'Crediário e devedores', 'Suporte prioritário'],
+      items: ['3 operadores de caixa', 'Crediário e devedores', 'Suporte prioritário'],
     },
     {
       name: 'Enterprise', price: 349, oldPrice: null as number | null, featured: false,
       upgrades: [{ was: 'Até 5.000 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 2.000 produtos', now: 'Produtos ilimitados' }],
-      items: ['10 operadores', 'Todos os recursos'],
+      items: ['10 operadores de caixa', 'Todos os recursos'],
     },
   ];
 

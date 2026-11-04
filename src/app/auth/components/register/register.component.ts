@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,6 +15,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
   selector: 'app-register',
   standalone: true,
   imports: [
+    RouterLink,
     CommonModule, FormsModule,
     MatCardModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule
@@ -70,7 +71,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
 
             <p class="plan-note">
               <mat-icon>badge</mat-icon>
-              O novo acesso será criado como operador e respeitará o limite do plano contratado.
+              O novo acesso será criado como operador e conta no limite do plano. Precisa de mais? Contrate um usuário adicional em <a routerLink="/billing">Assinatura</a>.
             </p>
 
             @if (errorMessage) {
