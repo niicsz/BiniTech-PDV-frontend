@@ -41,14 +41,14 @@ import { AuthResponse } from '../../../shared/models/api.models';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Usuário</mat-label>
               <mat-icon matPrefix>person</mat-icon>
-              <input matInput [(ngModel)]="username" name="username"
+              <input maxlength="254" matInput [(ngModel)]="username" name="username"
                      placeholder="Digite o nome de usuário" required autofocus />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Senha</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hidePassword ? 'password' : 'text'"
+              <input maxlength="128" matInput [type]="hidePassword ? 'password' : 'text'"
                      [(ngModel)]="password" name="password"
                      placeholder="Digite a senha (mín. 6 caracteres)" required minlength="6" />
               <button mat-icon-button matSuffix type="button"
@@ -60,7 +60,7 @@ import { AuthResponse } from '../../../shared/models/api.models';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Confirmar Senha</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hideConfirm ? 'password' : 'text'"
+              <input maxlength="128" matInput [type]="hideConfirm ? 'password' : 'text'"
                      [(ngModel)]="confirmPassword" name="confirmPassword"
                      placeholder="Confirme a senha" required />
               <button mat-icon-button matSuffix type="button"

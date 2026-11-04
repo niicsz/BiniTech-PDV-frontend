@@ -82,12 +82,12 @@
         <div class="form-row">
           <mat-form-field appearance="outline">
             <mat-label>Código de Barras</mat-label>
-            <input matInput [(ngModel)]="form.barcode" name="barcode" required />
+            <input maxlength="64" matInput [(ngModel)]="form.barcode" name="barcode" required />
             <mat-icon matPrefix>qr_code</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" class="flex-2">
             <mat-label>Descrição</mat-label>
-            <input matInput [(ngModel)]="form.description" name="description" required />
+            <input maxlength="200" matInput [(ngModel)]="form.description" name="description" required />
             <mat-icon matPrefix>label</mat-icon>
           </mat-form-field>
         </div>
@@ -112,7 +112,7 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Categoria</mat-label>
-            <input matInput [(ngModel)]="form.category" name="category" placeholder="Ex: Bebidas, Alimentos..." />
+            <input maxlength="100" matInput [(ngModel)]="form.category" name="category" placeholder="Ex: Bebidas, Alimentos..." />
             <mat-icon matPrefix>sell</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" *ngIf="fiscalEnabled()">

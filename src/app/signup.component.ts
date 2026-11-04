@@ -45,13 +45,13 @@ import { TenantPublicService } from './tenant-public.service';
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Nome da empresa</mat-label>
-            <input matInput formControlName="name" placeholder="Ex.: Mercado do João" />
+            <input maxlength="120" matInput formControlName="name" placeholder="Ex.: Mercado do João" />
             <mat-error *ngIf="form.get('name')?.hasError('required')">Informe o nome da empresa.</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>E-mail de cobrança</mat-label>
-            <input matInput formControlName="billingEmail" type="email" placeholder="contato@empresa.com" />
+            <input maxlength="254" matInput formControlName="billingEmail" type="email" placeholder="contato@empresa.com" />
             <mat-error *ngIf="form.get('billingEmail')?.hasError('required')">Informe o e-mail.</mat-error>
             <mat-error *ngIf="form.get('billingEmail')?.hasError('email')">E-mail inválido.</mat-error>
           </mat-form-field>

@@ -51,7 +51,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Nova senha</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hideNew ? 'password' : 'text'" [(ngModel)]="newPassword"
+              <input maxlength="128" matInput [type]="hideNew ? 'password' : 'text'" [(ngModel)]="newPassword"
                      name="newPassword" required minlength="6" placeholder="Mínimo 6 caracteres" />
               <button mat-icon-button matSuffix type="button" (click)="hideNew = !hideNew">
                 <mat-icon>{{ hideNew ? 'visibility_off' : 'visibility' }}</mat-icon>
@@ -61,7 +61,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Confirmar nova senha</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hideConfirm ? 'password' : 'text'" [(ngModel)]="confirmPassword"
+              <input maxlength="128" matInput [type]="hideConfirm ? 'password' : 'text'" [(ngModel)]="confirmPassword"
                      name="confirmPassword" required />
               <button mat-icon-button matSuffix type="button" (click)="hideConfirm = !hideConfirm">
                 <mat-icon>{{ hideConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
