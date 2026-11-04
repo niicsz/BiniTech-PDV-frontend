@@ -32,7 +32,13 @@ import {
 
 type OrderFilter = 'active' | 'COMPLETED' | 'CANCELLED';
 
-const ACTIVE: DeliveryOrderStatus[] = ['RECEIVED', 'ACCEPTED', 'DISPATCHED'];
+const ACTIVE: ReadonlySet<DeliveryOrderStatus> = new Set<DeliveryOrderStatus>(['RECEIVED', 'ACCEPTED', 'DISPATCHED']);
+
+const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
+  CASH: 'CASH',
+  PIX: 'PIX',
+  CARD: 'DEBIT_CARD',
+};
 
 @Component({
   selector: 'app-delivery-admin',
@@ -394,7 +400,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
   private readonly authService = inject(AuthService);
   private poll: Subscription | null = null;
-  private knownNew = new Set<string>();
+  private readonly knownNew = new Set<string>();
 
   readonly canManage = this.authService.canManageTenantUsers();
   readonly methods: DeliveryPaymentMethod[] = ['PIX', 'CASH', 'CARD'];
@@ -413,7 +419,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
   visibleOrders = computed(() => {
     const filter = this.filter();
     const list = this.orders();
-    return filter === 'active' ? list.filter((o) => ACTIVE.includes(o.status)) : list.filter((o) => o.status === filter);
+    return filter === 'active' ? list.filter((o) => ACTIVE.has(o.status)) : list.filter((o) => o.status === filter);
   });
   newCount = computed(() => this.orders().filter((o) => o.status === 'RECEIVED').length);
   storeUrl = computed(() => `${location.origin}/pedir/${this.settings()?.slug ?? ''}`);
@@ -458,7 +464,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
   }
 
   isActive(order: DeliveryOrder): boolean {
-    return ACTIVE.includes(order.status);
+    return ACTIVE.has(order.status);
   }
 
   customerWhatsapp(order: DeliveryOrder): string {
@@ -507,7 +513,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
   }
 
   startComplete(order: DeliveryOrder): void {
-    this.completeMethod = order.paymentMethod === 'CASH' ? 'CASH' : order.paymentMethod === 'PIX' ? 'PIX' : 'DEBIT_CARD';
+    this.completeMethod = SALE_METHOD[order.paymentMethod];
     this.completing.set(order.id);
   }
 
