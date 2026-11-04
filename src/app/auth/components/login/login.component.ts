@@ -113,13 +113,13 @@ import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../..
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Usuário</mat-label>
               <mat-icon matPrefix>person</mat-icon>
-              <input matInput [(ngModel)]="username" name="username" placeholder="Digite seu usuário" required autofocus />
+              <input maxlength="254" matInput [(ngModel)]="username" name="username" placeholder="Digite seu usuário" required autofocus />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Senha</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hidePassword ? 'password' : 'text'" [(ngModel)]="password"
+              <input maxlength="1024" matInput [type]="hidePassword ? 'password' : 'text'" [(ngModel)]="password"
                      name="password" placeholder="Digite sua senha" required />
               <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
                 <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>

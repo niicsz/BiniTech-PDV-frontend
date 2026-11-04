@@ -36,7 +36,7 @@ import { AuthService } from '../../services/auth.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Senha atual</mat-label>
               <mat-icon matPrefix>lock</mat-icon>
-              <input matInput [type]="hideCurrent ? 'password' : 'text'"
+              <input maxlength="1024" matInput [type]="hideCurrent ? 'password' : 'text'"
                      [(ngModel)]="currentPassword" name="currentPassword" required />
               <button mat-icon-button matSuffix type="button" (click)="hideCurrent = !hideCurrent">
                 <mat-icon>{{ hideCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
@@ -46,7 +46,7 @@ import { AuthService } from '../../services/auth.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Nova senha</mat-label>
               <mat-icon matPrefix>lock_reset</mat-icon>
-              <input matInput [type]="hideNew ? 'password' : 'text'"
+              <input maxlength="128" matInput [type]="hideNew ? 'password' : 'text'"
                      [(ngModel)]="newPassword" name="newPassword" required minlength="6"
                      placeholder="Mínimo 6 caracteres" />
               <button mat-icon-button matSuffix type="button" (click)="hideNew = !hideNew">
@@ -57,7 +57,7 @@ import { AuthService } from '../../services/auth.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Confirmar nova senha</mat-label>
               <mat-icon matPrefix>lock_reset</mat-icon>
-              <input matInput [type]="hideConfirm ? 'password' : 'text'"
+              <input maxlength="128" matInput [type]="hideConfirm ? 'password' : 'text'"
                      [(ngModel)]="confirmPassword" name="confirmPassword" required />
               <button mat-icon-button matSuffix type="button" (click)="hideConfirm = !hideConfirm">
                 <mat-icon>{{ hideConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
