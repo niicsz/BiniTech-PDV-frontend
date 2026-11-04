@@ -63,8 +63,8 @@ import { AnalyticsService } from './core/analytics.service';
             </h1>
             <p class="lede">
               Ponto de venda na nuvem para mercadinhos, padarias e lojas de bairro:
-              frente de caixa, estoque, crediário, relatórios de lucro e NFC-e opcional
-              direto na SEFAZ. Comece em minutos — sem instalar nada no balcão.
+              frente de caixa, estoque, crediário, delivery com pedido pelo WhatsApp,
+              relatórios de lucro e NFC-e opcional direto na SEFAZ. Comece em minutos — sem instalar nada no balcão.
             </p>
             <div class="hero-actions">
               <a class="btn btn-solid btn-lg" routerLink="/signup" (click)="trackCta('hero')">
@@ -114,7 +114,7 @@ import { AnalyticsService } from './core/analytics.service';
         <div class="strip-inner">
           <div class="strip-item"><b>Pix · Cartão · Fiado</b><span>todas as formas de pagamento</span></div>
           <div class="strip-item"><b>NFC-e opcional</b><span>direto na SEFAZ</span></div>
-          <div class="strip-item"><b>Planilha → estoque</b><span>importe CSV ou Excel</span></div>
+          <div class="strip-item"><b>Delivery pelo WhatsApp</b><span>cardápio online da sua loja</span></div>
           <div class="strip-item"><b>Lucro por período</b><span>faturamento, custo e margem</span></div>
         </div>
       </section>
@@ -585,9 +585,9 @@ export class LandingComponent {
   faqs = FAQ_ITEMS;
 
   features = [
-    { icon: 'storefront', title: 'Frente de caixa ágil', desc: 'Venda por código de barras ou busca, divida o pagamento entre dinheiro, Pix, cartão e fiado, com troco automático.' },
+    { icon: 'storefront', title: 'Frente de caixa ágil', desc: 'Venda por código de barras ou busca, divida o pagamento entre dinheiro, Pix, cartão e fiado, com troco automático e cupom para impressora matricial ou térmica.' },
+    { icon: 'delivery_dining', title: 'Delivery pelo WhatsApp', desc: 'Sua loja ganha um cardápio online. O cliente monta o pedido no celular, ele chega no seu WhatsApp e, ao concluir, vira venda no caixa com baixa no estoque.' },
     { icon: 'receipt_long', title: 'NFC-e direto na SEFAZ', desc: 'Emita cupom fiscal com o seu certificado A1, CPF na nota e contingência offline. Só liga quem precisa: pessoa física vende sem nota.' },
-    { icon: 'print', title: 'Comprovante para impressora', desc: 'Cupom no estilo matricial de 48 colunas, pronto para impressoras matriciais e térmicas, com reimpressão a qualquer hora.' },
     { icon: 'inventory_2', title: 'Controle de estoque', desc: 'Baixa automática a cada venda, alerta de produtos em falta e dados fiscais (NCM, CFOP) por produto.' },
     { icon: 'upload_file', title: 'Importação por planilha', desc: 'Traga seu catálogo de um arquivo CSV ou Excel, revise e corrija antes de salvar. Até 50 mil produtos de uma vez.' },
     { icon: 'account_balance_wallet', title: 'Crediário e devedores', desc: 'Registre fiados e acompanhe quem precisa pagar, sem caderninho.' },

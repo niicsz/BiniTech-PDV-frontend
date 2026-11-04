@@ -30,7 +30,7 @@ export const routes: Routes = [
     data: seo({
       title: 'BiniTech PDV | Sistema de Ponto de Venda Online para Lojas',
       description:
-        'Sistema PDV online para mercadinhos, padarias e lojas de bairro. Caixa, estoque, fiado, relatórios de lucro e NFC-e opcional na nuvem — sem instalar nada.',
+        'Sistema PDV online para mercadinhos, padarias e lojas de bairro. Caixa, estoque, fiado, delivery pelo WhatsApp, relatórios de lucro e NFC-e opcional na nuvem — sem instalar nada.',
       canonicalPath: '/',
       structuredData: homeStructuredData,
     }),
