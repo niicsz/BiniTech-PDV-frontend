@@ -37,8 +37,8 @@ interface Pending {
                 <p class="price">R$ {{ plan.price | number:'1.2-2' }}<small>/mês</small></p>
                 <ul>
                   <li>{{ plan.maxOperators }} {{ plan.maxOperators === 1 ? 'operador' : 'operadores' }}</li>
-                  <li>Até {{ plan.maxProducts | number }} produtos</li>
-                  <li>Até {{ plan.maxSalesPerMonth | number }} vendas/mês</li>
+                  <li>{{ plan.maxSalesPerMonth === null ? 'Vendas ilimitadas' : 'Até ' + (plan.maxSalesPerMonth | number) + ' vendas/mês' }}</li>
+                  <li>{{ plan.maxProducts === null ? 'Produtos ilimitados' : 'Até ' + (plan.maxProducts | number) + ' produtos' }}</li>
                 </ul>
                 @if (plan.id !== o.currentPlan && canManage) {
                   <button mat-stroked-button type="button" (click)="askPlan(plan, o)" [disabled]="saving()">
