@@ -42,8 +42,8 @@ export interface UrlDTO {
 
 export interface PlanOptionDTO {
   id: string;
-  maxProducts: number;
-  maxSalesPerMonth: number;
+  maxProducts: number | null;
+  maxSalesPerMonth: number | null;
   maxOperators: number;
   price: number;
 }
