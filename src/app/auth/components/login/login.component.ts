@@ -1,7 +1,7 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -49,6 +49,16 @@ import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../..
             <span class="brand-logo"><mat-icon>point_of_sale</mat-icon></span>
             <span class="brand-name">BiniTech <strong>PDV</strong></span>
           </div>
+
+          @if (sessionEnded && !errorMessage) {
+            <div class="session-ended" role="status">
+              <mat-icon>devices</mat-icon>
+              <div>
+                <strong>Sua sessão foi encerrada</strong>
+                <span>Esta conta entrou em outro computador ou celular. Cada usuário fica conectado em um aparelho por vez.</span>
+              </div>
+            </div>
+          }
 
           @if (lockedUntil) {
             <div class="lock-banner" role="alert">
@@ -205,6 +215,10 @@ import { isTwoFactorCode, sanitizeTwoFactorCode, twoFactorCodeHint } from '../..
     .divider { display:flex; align-items:center; gap:14px; margin:24px 0; color:var(--text-tertiary);
       font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:1px; }
     .divider::before, .divider::after { content:''; flex:1; height:2px; background:var(--border); }
+    .session-ended { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; margin-bottom:18px;
+      border:1.5px solid var(--accent); border-radius:var(--radius-md); background:var(--warning-bg); color:var(--text); }
+    .session-ended div { display:flex; flex-direction:column; gap:2px; font-size:13.5px; }
+    .session-ended span { color:var(--text-secondary); }
     .signup-hint { text-align:center; font-size:13.5px; color:var(--text-secondary); margin:0; }
     .signup-hint a { color:var(--primary-text); font-weight:700; text-decoration:none; }
     .signup-hint a:hover { text-decoration:underline; }
@@ -228,6 +242,7 @@ export class LoginComponent implements OnDestroy {
   useRecoveryCode = false;
   lockedUntil: Date | null = null;
   private lockTimer?: ReturnType<typeof setTimeout>;
+  readonly sessionEnded = inject(ActivatedRoute).snapshot.queryParamMap.get('sessao') === 'encerrada';
 
   constructor(
     private authService: AuthService,
