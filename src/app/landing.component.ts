@@ -138,6 +138,25 @@ import { AnalyticsService } from './core/analytics.service';
       </section>
 
 
+      <section class="clients" id="clientes" aria-labelledby="clients-heading">
+        <div class="section-head">
+          <span class="kicker">[ clientes ]</span>
+          <h2 id="clients-heading">Clientes que<br /> confiam em nós</h2>
+        </div>
+        <ul class="client-list">
+          <li class="client reveal">
+            <img src="clientes/banca-oz-bini.jpg" alt="Logo da Banca Oz Bini" width="88" height="88" loading="lazy" />
+            <div class="client-info">
+              <strong>Banca Oz Bini</strong>
+              <span class="stars" role="img" aria-label="Avaliação 5 de 5 estrelas">
+                <mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon>
+                <b>5,0</b>
+              </span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
       <section class="pricing" id="planos">
         <div class="section-head">
           <span class="kicker">[ planos ]</span>
@@ -427,6 +446,17 @@ import { AnalyticsService } from './core/analytics.service';
 
 
     .features{ padding:96px 0; }
+    .clients{ padding:24px 0 72px; }
+    .client-list{ width:min(1144px, calc(100% - 56px)); margin:34px auto 0; padding:0; list-style:none;
+      display:flex; flex-wrap:wrap; gap:18px; }
+    .client{ display:flex; align-items:center; gap:16px; padding:16px 22px 16px 16px; background:var(--surface);
+      border:2px solid var(--ink); border-radius:3px; box-shadow:5px 5px 0 var(--ink); }
+    .client img{ width:88px; height:88px; border-radius:10px; object-fit:contain; background:#000; border:2px solid var(--ink); flex-shrink:0; }
+    .client-info{ display:flex; flex-direction:column; gap:6px; }
+    .client-info strong{ font-family:'Fraunces',serif; font-size:21px; font-weight:700; letter-spacing:-.3px; color:var(--ink); }
+    .stars{ display:inline-flex; align-items:center; gap:1px; color:var(--ochre); }
+    .stars mat-icon{ font-size:20px; width:20px; height:20px; }
+    .stars b{ margin-left:8px; font-family:'Spline Sans Mono',monospace; font-size:14px; color:var(--ink); }
     .feature-grid{ width:min(1144px, calc(100% - 56px)); margin:46px auto 0; display:grid;
       grid-template-columns:repeat(3,1fr); gap:0; border-top:2px solid var(--ink); border-left:2px solid var(--ink); }
     .feature{ position:relative; padding:34px 30px 38px; border-right:2px solid var(--ink);
