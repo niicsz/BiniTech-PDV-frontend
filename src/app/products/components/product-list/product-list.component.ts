@@ -1,5 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
+import { DeliveryFeatureService } from '../../../delivery/delivery-feature.service';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -22,7 +24,7 @@ import { isValidBarcode } from '../../../core/barcode';
     RouterLink,
     MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatTooltipModule
+    MatTooltipModule, MatSlideToggleModule
   ],
   templateUrl: './product-list.component.html',
   styleUrls: ['./product-list.component.scss']
@@ -49,7 +51,8 @@ export class ProductListComponent implements OnInit {
     ncm: '',
     cfop: '',
     csosn: '',
-    active: true
+    active: true,
+    deliveryVisible: false
   };
 
   statusMessage = '';
@@ -57,6 +60,7 @@ export class ProductListComponent implements OnInit {
   private statusTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly fiscalEnabled = inject(FiscalFeatureService).enabled;
+  readonly deliveryAvailable = inject(DeliveryFeatureService).featureAvailable;
 
   constructor(
     private productService: ProductService,
@@ -186,7 +190,7 @@ export class ProductListComponent implements OnInit {
 
   openCreateForm(): void {
     this.editingId = null;
-    this.form = { barcode: '', description: '', price: 0, costPrice: 0, stockQuantity: 0, category: '', ncm: '', cfop: '', csosn: '', active: true };
+    this.form = { barcode: '', description: '', price: 0, costPrice: 0, stockQuantity: 0, category: '', ncm: '', cfop: '', csosn: '', active: true, deliveryVisible: false };
     this.showForm = true;
   }
 
@@ -202,7 +206,8 @@ export class ProductListComponent implements OnInit {
       ncm: product.ncm || '',
       cfop: product.cfop || '',
       csosn: product.csosn || '',
-      active: product.active ?? true
+      active: product.active ?? true,
+      deliveryVisible: product.deliveryVisible ?? false
     };
     this.showForm = true;
   }
@@ -275,7 +280,8 @@ export class ProductListComponent implements OnInit {
       ncm: product.ncm || null,
       cfop: product.cfop || null,
       csosn: product.csosn || null,
-      active: true
+      active: true,
+      deliveryVisible: product.deliveryVisible ?? false
     };
     this.productService.update(product.id!, dto).subscribe({
       next: () => {

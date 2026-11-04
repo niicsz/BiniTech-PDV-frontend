@@ -10,6 +10,7 @@ export interface ProductDTO {
   ncm?: string | null;
   cfop?: string | null;
   csosn?: string | null;
+  deliveryVisible?: boolean;
   userId?: string;
 }
 
@@ -24,6 +25,7 @@ export interface CreateProductDTO {
   cfop?: string | null;
   csosn?: string | null;
   active?: boolean;
+  deliveryVisible?: boolean;
 }
 
 export interface SaleDTO {

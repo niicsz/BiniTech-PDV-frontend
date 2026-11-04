@@ -14,6 +14,7 @@ import { ThemeService } from './shared/services/theme.service';
 import { SettingsModalComponent } from './shared/components/settings-modal.component';
 import { NfceQuestionComponent } from './fiscal/nfce-question.component';
 import { FiscalFeatureService } from './fiscal/fiscal-feature.service';
+import { DeliveryFeatureService } from './delivery/delivery-feature.service';
 import { CookieConsentComponent } from './shared/components/cookie-consent.component';
 import { SaleService } from './pos/services/sale.service';
 import { SeoService } from './core/seo.service';
@@ -65,6 +66,14 @@ import { localIsoDate } from './core/local-date';
               <a routerLink="/users" routerLinkActive="active-link" class="nav-item">
                 <mat-icon>manage_accounts</mat-icon>
                 <span>Usuários</span>
+              </a>
+            }
+            @if (deliveryFeature.featureAvailable() && !authService.isSuperAdmin()) {
+              <a routerLink="/delivery" routerLinkActive="active-link" class="nav-item"
+                 [matBadge]="deliveryFeature.newOrders() > 0 ? deliveryFeature.newOrders() : null"
+                 matBadgeColor="warn" matBadgeSize="small" matBadgeOverlap="false">
+                <mat-icon>delivery_dining</mat-icon>
+                <span>Delivery</span>
               </a>
             }
             @if (authService.canManageTenantUsers() && fiscalFeature.enabled()) {
@@ -129,6 +138,7 @@ import { localIsoDate } from './core/local-date';
 
     <app-cookie-consent />
 
+    @if (!isStorefront()) {
     <a
       class="help-chat"
       href="https://wa.me/5511958710404?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20BiniTech%20PDV."
@@ -138,6 +148,7 @@ import { localIsoDate } from './core/local-date';
       <mat-icon aria-hidden="true">chat</mat-icon>
       <span>Precisa de ajuda?</span>
     </a>
+    }
 
     @if (showNfceQuestion()) {
       <app-nfce-question></app-nfce-question>
@@ -507,6 +518,7 @@ export class AppComponent implements OnInit {
   private seoService = inject(SeoService);
   private analytics = inject(AnalyticsService);
   readonly fiscalFeature = inject(FiscalFeatureService);
+  readonly deliveryFeature = inject(DeliveryFeatureService);
 
   showSettings = false;
   debtorsCount = 0;
@@ -530,6 +542,7 @@ export class AppComponent implements OnInit {
   private loadFiscalFeature(): void {
     if (!this.authService.isLoggedIn() || this.authService.isSuperAdmin() || this.isPublicRoute()) return;
     this.fiscalFeature.ensureLoaded().subscribe();
+    this.deliveryFeature.ensureLoaded().subscribe();
   }
 
   showNfceQuestion(): boolean {
@@ -573,7 +586,12 @@ export class AppComponent implements OnInit {
     const url = this.router.url.split('?')[0];
     return url === '/login' || url === '/' || url.startsWith('/signup')
       || url === '/forgot-password' || url === '/reset-password'
-      || url === '/termos' || url === '/privacidade' || url === '/sobre-nos' || url === '/admin';
+      || url === '/termos' || url === '/privacidade' || url === '/sobre-nos' || url === '/admin'
+      || this.isStorefront();
+  }
+
+  isStorefront(): boolean {
+    return this.router.url.startsWith('/pedir/');
   }
 
   isLoginRoute(): boolean {
@@ -582,6 +600,7 @@ export class AppComponent implements OnInit {
 
   onLogout(): void {
     this.fiscalFeature.reset();
+    this.deliveryFeature.reset();
     this.authService.logout();
   }
 }
