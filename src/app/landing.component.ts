@@ -145,16 +145,25 @@ import { AnalyticsService } from './core/analytics.service';
           <p>Escolha o tamanho da sua operação. Todos os planos têm caixa, estoque, NFC-e opcional
             e segurança em dois fatores. Pague a mensalidade no cartão ou no Pix.</p>
         </div>
+        <div class="promo-strip reveal" role="note">
+          <mat-icon>local_offer</mat-icon>
+          <span><b>Planos novos:</b> vendas ilimitadas em todos, até 15&times; mais produtos e o Pro <b>R$ 50 mais barato</b>.</span>
+        </div>
         <div class="plan-grid">
           <article class="plan reveal" *ngFor="let p of plans; let i = index"
                    [class.featured]="p.featured" [style.animation-delay]="(i * 0.08) + 's'">
-            <div class="plan-badge" *ngIf="p.featured">Mais popular</div>
+            <div class="plan-badge" *ngIf="p.featured">{{ p.oldPrice ? 'Mais popular · R$ ' + (p.oldPrice - p.price) + ' off' : 'Mais popular' }}</div>
             <h3>{{ p.name }}</h3>
+            <div class="was-price" *ngIf="p.oldPrice">de <s>R$ {{ p.oldPrice }}</s> por</div>
             <div class="plan-price">
               <span class="cur">R$</span><span class="num">{{ p.price }}</span><span class="per">/mês</span>
             </div>
             <div class="plan-rule"></div>
             <ul>
+              <li *ngFor="let up of p.upgrades" class="upgrade">
+                <mat-icon>check</mat-icon>
+                <span><s>{{ up.was }}</s><b>{{ up.now }}</b></span>
+              </li>
               <li *ngFor="let item of p.items"><mat-icon>check</mat-icon> {{ item }}</li>
             </ul>
             <a class="btn plan-cta" [class.btn-solid]="p.featured" [class.btn-outline]="!p.featured"
@@ -441,6 +450,18 @@ import { AnalyticsService } from './core/analytics.service';
       font-family:'Spline Sans Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.8px;
       text-transform:uppercase; padding:6px 13px; border:2px solid var(--ink); box-shadow:3px 3px 0 rgba(36,26,18,.4); }
     .plan h3{ font-family:'Fraunces',serif; font-weight:700; font-size:23px; margin:0 0 8px; letter-spacing:-.4px; }
+    .promo-strip{ width:min(1144px, calc(100% - 56px)); margin:34px auto -10px; display:flex; align-items:center; gap:10px;
+      padding:12px 18px; border:2px dashed var(--vermillion); border-radius:3px; background:var(--paper-2); color:var(--ink); font-size:15px; }
+    .promo-strip mat-icon{ color:var(--vermillion); flex-shrink:0; }
+    .promo-strip b{ color:var(--vermillion); }
+    .was-price{ font-family:'Spline Sans Mono',monospace; font-size:13px; color:var(--ink-3); margin:-4px 0 2px; }
+    .was-price s{ text-decoration-color:var(--vermillion); text-decoration-thickness:2px; }
+    .plan.featured .was-price{ color:#d9cfbf; }
+    .plan li.upgrade span{ display:flex; flex-direction:column; line-height:1.25; }
+    .plan li.upgrade s{ font-size:12.5px; color:var(--ink-3); text-decoration-color:var(--vermillion); text-decoration-thickness:2px; }
+    .plan li.upgrade b{ color:var(--ink); }
+    .plan.featured li.upgrade s{ color:#b8ad9d; }
+    .plan.featured li.upgrade b{ color:var(--band-text); }
     .plan-price{ display:flex; align-items:baseline; gap:3px; font-family:'Fraunces',serif; }
     .plan-price .cur{ font-size:20px; font-weight:600; color:var(--primary-text); }
     .plan.featured .plan-price .cur{ color:var(--ochre); }
@@ -597,9 +618,21 @@ export class LandingComponent {
   ];
 
   plans = [
-    { name: 'Starter', price: 99, featured: false, items: ['Vendas ilimitadas', 'Até 3.000 produtos', '1 operador', 'Relatórios essenciais'] },
-    { name: 'Pro', price: 149, featured: true, items: ['Vendas ilimitadas', 'Até 10.000 produtos', '3 operadores', 'Crediário e devedores', 'Suporte prioritário'] },
-    { name: 'Enterprise', price: 349, featured: false, items: ['Vendas ilimitadas', 'Produtos ilimitados', '10 operadores', 'Todos os recursos'] },
+    {
+      name: 'Starter', price: 99, oldPrice: null as number | null, featured: false,
+      upgrades: [{ was: 'Até 300 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 200 produtos', now: 'Até 3.000 produtos' }],
+      items: ['1 operador', 'Relatórios essenciais'],
+    },
+    {
+      name: 'Pro', price: 149, oldPrice: 199 as number | null, featured: true,
+      upgrades: [{ was: 'Até 1.000 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 500 produtos', now: 'Até 10.000 produtos' }],
+      items: ['3 operadores', 'Crediário e devedores', 'Suporte prioritário'],
+    },
+    {
+      name: 'Enterprise', price: 349, oldPrice: null as number | null, featured: false,
+      upgrades: [{ was: 'Até 5.000 vendas/mês', now: 'Vendas ilimitadas' }, { was: 'Até 2.000 produtos', now: 'Produtos ilimitados' }],
+      items: ['10 operadores', 'Todos os recursos'],
+    },
   ];
 
   pad(n: number): string {
