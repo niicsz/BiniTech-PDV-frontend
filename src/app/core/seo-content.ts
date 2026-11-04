@@ -32,6 +32,10 @@ export const FAQ_ITEMS = [
     a: 'Sim. Envie um arquivo CSV, XLSX ou XLS com até 50 mil produtos, revise os dados na tela e confirme a importação.',
   },
   {
+    q: 'Tem teste grátis?',
+    a: 'Sim. Depois que a conta é aprovada, você usa o BiniTech PDV por 7 dias grátis, sem cadastrar cartão. Ao fim do teste, assine no cartão ou no Pix para continuar; seus produtos e vendas ficam salvos.',
+  },
+  {
     q: 'Quanto custa o BiniTech PDV?',
     a: 'Starter R$ 99/mês (1 operador de caixa, até 3.000 produtos), Pro R$ 149/mês (3 operadores, até 10.000 produtos) e Enterprise R$ 349/mês (10 operadores, produtos ilimitados). Todos têm vendas ilimitadas. Paga no cartão, que renova sozinho todo mês, ou no Pix, 30 dias por vez.',
   },

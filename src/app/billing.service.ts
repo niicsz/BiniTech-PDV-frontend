@@ -57,6 +57,8 @@ export interface PlanOverviewDTO {
   extraUserPrice: number;
   recurringCard: boolean;
   plans: PlanOptionDTO[];
+  trialEndsAt: string | null;
+  paid: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
