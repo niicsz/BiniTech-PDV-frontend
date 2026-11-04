@@ -8,6 +8,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BillingService, InvoiceDTO, SubscriptionDTO } from './billing.service';
 import { AnalyticsService } from './core/analytics.service';
+import { PlanPickerComponent } from './plan-picker.component';
+import { PlanOverviewDTO } from './billing.service';
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
@@ -47,6 +49,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
     MatButtonModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    PlanPickerComponent,
   ],
   template: `
     <div class="billing">
@@ -126,6 +129,8 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
             <mat-icon>verified</mat-icon> Plano cortesia vitalício — acesso liberado, sem cobrança.
           </p>
         </section>
+
+        <app-plan-picker (loaded)="monthly.set($event.monthlyAmount)" (changed)="onPlanChanged($event)"></app-plan-picker>
 
         <section class="card">
           <h2>Faturas</h2>
@@ -208,6 +213,7 @@ export class BillingComponent implements OnInit {
   paying = signal(false);
   managing = signal(false);
   payingPix = signal(false);
+  monthly = signal<number | null>(null);
 
   planTier = computed(() => this.subscription()?.planTier?.toLowerCase() ?? '');
 
@@ -403,7 +409,12 @@ export class BillingComponent implements OnInit {
   }
 
   planPrice(): number {
-    return PLAN_PRICE[this.planTier()] ?? 0;
+    return this.monthly() ?? PLAN_PRICE[this.planTier()] ?? 0;
+  }
+
+  onPlanChanged(overview: PlanOverviewDTO): void {
+    this.monthly.set(overview.monthlyAmount);
+    this.load();
   }
 
   statusLabel(): string {
