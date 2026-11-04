@@ -33,7 +33,7 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
         console.warn('[AuthInterceptor] Recebido 401, tentando renovar token para:', req.url);
         return sessionRefresh.refresh(
           () => authService.refreshToken(),
-          () => authService.logout()
+          () => authService.logout('session-ended')
         ).pipe(
           switchMap(res => {
             console.info('[AuthInterceptor] Token renovado, reenviando requisição:', req.url);

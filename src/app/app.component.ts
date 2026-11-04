@@ -8,6 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { interval } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './auth/services/auth.service';
 import { ThemeService } from './shared/services/theme.service';
@@ -537,6 +538,16 @@ export class AppComponent implements OnInit {
       }
     });
     this.loadFiscalFeature();
+    this.watchSession();
+  }
+
+  private watchSession(): void {
+    const check = () => {
+      if (!this.authService.isLoggedIn() || this.isPublicRoute() || document.visibilityState !== 'visible') return;
+      this.authService.checkSession().subscribe({ error: () => {} });
+    };
+    interval(30000).subscribe(check);
+    document.addEventListener('visibilitychange', check);
   }
 
   private loadFiscalFeature(): void {
