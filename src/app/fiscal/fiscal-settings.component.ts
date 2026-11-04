@@ -83,19 +83,19 @@ function emptyForm(): FiscalIssuerRequest {
           <div class="grid">
             <mat-form-field appearance="outline">
               <mat-label>CNPJ</mat-label>
-              <input matInput [(ngModel)]="form.cnpj" name="cnpj" required />
+              <input maxlength="18" matInput [(ngModel)]="form.cnpj" name="cnpj" required />
             </mat-form-field>
             <mat-form-field appearance="outline" class="wide">
               <mat-label>Razão social</mat-label>
-              <input matInput [(ngModel)]="form.razaoSocial" name="razaoSocial" required />
+              <input maxlength="60" matInput [(ngModel)]="form.razaoSocial" name="razaoSocial" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Nome fantasia</mat-label>
-              <input matInput [(ngModel)]="form.nomeFantasia" name="nomeFantasia" />
+              <input maxlength="60" matInput [(ngModel)]="form.nomeFantasia" name="nomeFantasia" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Inscrição estadual</mat-label>
-              <input matInput [(ngModel)]="form.inscricaoEstadual" name="ie" required />
+              <input maxlength="20" matInput [(ngModel)]="form.inscricaoEstadual" name="ie" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Regime tributário</mat-label>
@@ -106,11 +106,11 @@ function emptyForm(): FiscalIssuerRequest {
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>E-mail</mat-label>
-              <input matInput type="email" [(ngModel)]="form.email" name="email" />
+              <input maxlength="254" matInput type="email" [(ngModel)]="form.email" name="email" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
-              <input matInput [(ngModel)]="form.telefone" name="telefone" />
+              <input maxlength="20" matInput [(ngModel)]="form.telefone" name="telefone" />
             </mat-form-field>
           </div>
 
@@ -118,28 +118,28 @@ function emptyForm(): FiscalIssuerRequest {
           <div class="grid">
             <mat-form-field appearance="outline">
               <mat-label>CEP</mat-label>
-              <input matInput [(ngModel)]="form.address.cep" name="cep" (blur)="fillFromCep()" required />
+              <input maxlength="9" matInput [(ngModel)]="form.address.cep" name="cep" (blur)="fillFromCep()" required />
               <mat-hint>Preenche o endereço e o código IBGE.</mat-hint>
             </mat-form-field>
             <mat-form-field appearance="outline" class="wide">
               <mat-label>Logradouro</mat-label>
-              <input matInput [(ngModel)]="form.address.logradouro" name="logradouro" required />
+              <input maxlength="60" matInput [(ngModel)]="form.address.logradouro" name="logradouro" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Número</mat-label>
-              <input matInput [(ngModel)]="form.address.numero" name="numero" />
+              <input maxlength="60" matInput [(ngModel)]="form.address.numero" name="numero" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Complemento</mat-label>
-              <input matInput [(ngModel)]="form.address.complemento" name="complemento" />
+              <input maxlength="60" matInput [(ngModel)]="form.address.complemento" name="complemento" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Bairro</mat-label>
-              <input matInput [(ngModel)]="form.address.bairro" name="bairro" required />
+              <input maxlength="60" matInput [(ngModel)]="form.address.bairro" name="bairro" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Cidade</mat-label>
-              <input matInput [(ngModel)]="form.address.cidade" name="cidade" required />
+              <input maxlength="60" matInput [(ngModel)]="form.address.cidade" name="cidade" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>UF</mat-label>
@@ -211,7 +211,7 @@ function emptyForm(): FiscalIssuerRequest {
             <input type="file" accept=".pfx,.p12" (change)="onFile($event)" [disabled]="!issuer()" />
             <mat-form-field appearance="outline">
               <mat-label>Senha do certificado</mat-label>
-              <input matInput type="password" autocomplete="off" [(ngModel)]="certPassword" name="certPassword" [disabled]="!issuer()" />
+              <input maxlength="200" matInput type="password" autocomplete="off" [(ngModel)]="certPassword" name="certPassword" [disabled]="!issuer()" />
             </mat-form-field>
             <button mat-stroked-button (click)="uploadCertificate()" [disabled]="!issuer() || !certFile || !certPassword || uploading()">
               <mat-spinner *ngIf="uploading()" diameter="18"></mat-spinner>

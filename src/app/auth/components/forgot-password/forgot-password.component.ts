@@ -47,7 +47,7 @@ import { AnalyticsService } from '../../../core/analytics.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Usuário</mat-label>
               <mat-icon matPrefix>person</mat-icon>
-              <input matInput [(ngModel)]="username" name="username" placeholder="Seu usuário" required autofocus />
+              <input maxlength="254" matInput [(ngModel)]="username" name="username" placeholder="Seu usuário" required autofocus />
             </mat-form-field>
 
             @if (errorMessage) {
