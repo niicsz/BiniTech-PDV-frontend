@@ -80,7 +80,7 @@ export interface PaymentConfirmation {
               <div class="crediario-fields" *ngIf="selectedMethod === 'CREDIARIO'">
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Nome do Cliente</mat-label>
-                  <input matInput #customerNameInput type="text"
+                  <input maxlength="120" matInput #customerNameInput type="text"
                          [(ngModel)]="customerName"
                          (ngModelChange)="onCustomerNameChange($event)"
                          placeholder="Digite o nome do cliente"
