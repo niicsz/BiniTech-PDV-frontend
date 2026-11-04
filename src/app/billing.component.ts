@@ -6,10 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { BillingService, InvoiceDTO, SubscriptionDTO } from './billing.service';
+import { BillingService, InvoiceDTO, PlanOverviewDTO, SubscriptionDTO } from './billing.service';
 import { AnalyticsService } from './core/analytics.service';
 import { PlanPickerComponent } from './plan-picker.component';
-import { PlanOverviewDTO } from './billing.service';
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
