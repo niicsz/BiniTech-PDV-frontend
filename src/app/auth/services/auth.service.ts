@@ -102,10 +102,14 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  checkSession(): Observable<unknown> {
+    return this.http.get(`${this.authUrl}/me`);
+  }
+
+  logout(reason?: 'session-ended'): void {
     console.info('[AuthService] Realizando logout do usuário:', this.getUsername());
     const token = this.getToken();
-    if (token) {
+    if (token && !reason) {
       this.http.post(`${this.authUrl}/logout`, {}).subscribe({
         error: () => console.warn('[AuthService] Erro ao invalidar token no servidor')
       });
@@ -116,7 +120,7 @@ export class AuthService {
     localStorage.removeItem('role');
     localStorage.removeItem('tenantId');
     this.loggedIn$.next(false);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login'], reason ? { queryParams: { sessao: 'encerrada' } } : {});
   }
 
   getToken(): string | null {
