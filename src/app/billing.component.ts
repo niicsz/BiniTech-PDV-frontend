@@ -231,6 +231,12 @@ export class BillingComponent implements OnInit {
     this.paid.set(overview.paid);
   }
 
+  private daysLeftLabel(left: number): string {
+    if (left === 0) return 'Hoje é o último dia';
+    if (left === 1) return 'Falta 1 dia';
+    return `Faltam ${left} dias`;
+  }
+
   alertTitle(): string {
     if (this.isBlocked()) return 'Assinatura suspensa';
     const left = this.trialDaysLeft();
@@ -458,8 +464,7 @@ export class BillingComponent implements OnInit {
     const left = this.trialDaysLeft();
     const end = this.formatDate(this.trialEndsAt());
     if (!this.isBlocked() && left !== null && left >= 0) {
-      const days = left === 0 ? 'Hoje é o último dia' : left === 1 ? 'Falta 1 dia' : `Faltam ${left} dias`;
-      return `${days} (até ${end}). Assine quando quiser para continuar usando o caixa depois disso; nada é cobrado antes.`;
+      return `${this.daysLeftLabel(left)} (até ${end}). Assine quando quiser para continuar usando o caixa depois disso; nada é cobrado antes.`;
     }
     if (!this.isBlocked() && left !== null) {
       return `O teste de 7 dias terminou em ${end}. Assine no cartão ou no Pix para voltar a usar o caixa. Seus produtos e vendas continuam salvos.`;
