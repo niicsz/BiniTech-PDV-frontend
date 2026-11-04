@@ -32,6 +32,22 @@ export const FAQ_ITEMS = [
     a: 'Sim. Envie um arquivo CSV, XLSX ou XLS com até 50 mil produtos, revise os dados na tela e confirme a importação.',
   },
   {
+    q: 'Quanto custa o BiniTech PDV?',
+    a: 'Starter R$ 99/mês (1 operador de caixa, até 3.000 produtos), Pro R$ 149/mês (3 operadores, até 10.000 produtos) e Enterprise R$ 349/mês (10 operadores, produtos ilimitados). Todos têm vendas ilimitadas. Paga no cartão, que renova sozinho todo mês, ou no Pix, 30 dias por vez.',
+  },
+  {
+    q: 'Posso ter mais operadores do que o meu plano permite?',
+    a: 'Sim. Em Assinatura você contrata usuários adicionais por R$ 30/mês cada, em qualquer plano, cobrados na mesma fatura. O administrador da loja não conta no limite de operadores.',
+  },
+  {
+    q: 'O que acontece se eu passar do limite de produtos?',
+    a: 'O sistema avisa e não deixa cadastrar novos produtos ativos além do limite. Você pode inativar os que não vende mais ou mudar de plano. Não existe cobrança por produto ou por venda a mais.',
+  },
+  {
+    q: 'Posso mudar de plano ou cancelar?',
+    a: 'Sim, sem fidelidade e sem taxa de adesão. A troca de plano é feita em Assinatura: os novos limites valem na hora e o novo valor entra na próxima cobrança. O cancelamento vale ao fim do período já pago.',
+  },
+  {
     q: 'O BiniTech PDV tem delivery?',
     a: 'Sim. A loja ganha um link de cardápio online para divulgar. O cliente escolhe os produtos pelo celular, informa entrega ou retirada e forma de pagamento, e o pedido chega no WhatsApp da loja. Na tela de Delivery você aceita, acompanha e conclui o pedido, que entra no caixa como venda e baixa o estoque.',
   },

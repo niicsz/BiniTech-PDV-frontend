@@ -16,7 +16,10 @@ import { MatIconModule } from '@angular/material/icon';
         <h2>1. Uso do serviço</h2>
         <p>O serviço é fornecido mediante assinatura de um dos planos disponíveis. O uso deve respeitar a legislação vigente.</p>
         <h2>2. Assinatura e cobrança</h2>
-        <p>As assinaturas são cobradas mensalmente. O não pagamento pode resultar na suspensão do acesso.</p>
+        <p>As assinaturas são cobradas mensalmente, no cartão de crédito com renovação automática ou no Pix, por 30 dias a cada pagamento. O não pagamento pode resultar na suspensão do acesso.</p>
+        <p>Cada plano tem um preço mensal fixo e limites de operadores de caixa e de produtos ativos, informados na página inicial e na tela de Assinatura. As vendas são ilimitadas em todos os planos. O administrador da loja não conta no limite de operadores.</p>
+        <p>Ao atingir o limite de produtos ativos, o cadastro de novos produtos fica bloqueado até a loja inativar produtos ou mudar de plano. Não há cobrança por produto ou por venda excedente.</p>
+        <p>A loja pode contratar usuários adicionais por R$ 30,00 por mês cada, cobrados na mesma fatura, e trocar de plano a qualquer momento pela tela de Assinatura. Os novos limites valem imediatamente e o novo valor é aplicado a partir da próxima cobrança. Não há taxa de adesão nem fidelidade.</p>
         <h2>3. Responsabilidades</h2>
         <p>O cliente é responsável pela veracidade dos dados cadastrados e pelo uso adequado das credenciais de acesso.</p>
         <h2>4. Cancelamento</h2>
