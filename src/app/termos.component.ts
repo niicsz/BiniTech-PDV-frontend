@@ -16,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
         <h2>1. Uso do serviço</h2>
         <p>O serviço é fornecido mediante assinatura de um dos planos disponíveis. O uso deve respeitar a legislação vigente.</p>
         <h2>2. Assinatura e cobrança</h2>
+        <p>Planos pagos começam com um teste grátis de 7 dias, contado a partir da aprovação da conta, sem cadastro de cartão. Ao fim do teste, o uso do caixa depende da assinatura; os dados da loja são mantidos.</p>
         <p>As assinaturas são cobradas mensalmente, no cartão de crédito com renovação automática ou no Pix, por 30 dias a cada pagamento. O não pagamento pode resultar na suspensão do acesso.</p>
         <p>Cada plano tem um preço mensal fixo e limites de operadores de caixa e de produtos ativos, informados na página inicial e na tela de Assinatura. As vendas são ilimitadas em todos os planos. O administrador da loja não conta no limite de operadores.</p>
         <p>Ao atingir o limite de produtos ativos, o cadastro de novos produtos fica bloqueado até a loja inativar produtos ou mudar de plano. Não há cobrança por produto ou por venda excedente.</p>

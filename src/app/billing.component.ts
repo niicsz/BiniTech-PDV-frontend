@@ -66,7 +66,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
         <div *ngIf="needsAction()" class="alert" [class.alert-danger]="isBlocked()">
           <mat-icon>{{ isBlocked() ? 'error' : 'info' }}</mat-icon>
           <div>
-            <strong>{{ isBlocked() ? 'Assinatura suspensa' : 'Ative sua assinatura' }}</strong>
+            <strong>{{ alertTitle() }}</strong>
             <p>{{ alertMessage() }}</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
           </p>
         </section>
 
-        <app-plan-picker (loaded)="monthly.set($event.monthlyAmount)" (changed)="onPlanChanged($event)"></app-plan-picker>
+        <app-plan-picker (loaded)="onPlanLoaded($event)" (changed)="onPlanChanged($event)"></app-plan-picker>
 
         <section class="card">
           <h2>Faturas</h2>
@@ -213,6 +213,31 @@ export class BillingComponent implements OnInit {
   managing = signal(false);
   payingPix = signal(false);
   monthly = signal<number | null>(null);
+  trialEndsAt = signal<string | null>(null);
+  paid = signal(false);
+
+  trialDaysLeft = computed(() => {
+    const end = this.trialEndsAt();
+    if (!end || this.paid()) return null;
+    const [y, m, d] = end.split('-').map(Number);
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return Math.round((new Date(y, m - 1, d).getTime() - startOfToday) / 86400000);
+  });
+
+  onPlanLoaded(overview: PlanOverviewDTO): void {
+    this.monthly.set(overview.monthlyAmount);
+    this.trialEndsAt.set(overview.trialEndsAt);
+    this.paid.set(overview.paid);
+  }
+
+  alertTitle(): string {
+    if (this.isBlocked()) return 'Assinatura suspensa';
+    const left = this.trialDaysLeft();
+    if (left !== null && left >= 0) return 'Você está no teste grátis';
+    if (left !== null) return 'Seu teste grátis terminou';
+    return 'Ative sua assinatura';
+  }
 
   planTier = computed(() => this.subscription()?.planTier?.toLowerCase() ?? '');
 
@@ -412,7 +437,7 @@ export class BillingComponent implements OnInit {
   }
 
   onPlanChanged(overview: PlanOverviewDTO): void {
-    this.monthly.set(overview.monthlyAmount);
+    this.onPlanLoaded(overview);
     this.load();
   }
 
@@ -430,6 +455,15 @@ export class BillingComponent implements OnInit {
   }
 
   alertMessage(): string {
+    const left = this.trialDaysLeft();
+    const end = this.formatDate(this.trialEndsAt());
+    if (!this.isBlocked() && left !== null && left >= 0) {
+      const days = left === 0 ? 'Hoje é o último dia' : left === 1 ? 'Falta 1 dia' : `Faltam ${left} dias`;
+      return `${days} (até ${end}). Assine quando quiser para continuar usando o caixa depois disso; nada é cobrado antes.`;
+    }
+    if (!this.isBlocked() && left !== null) {
+      return `O teste de 7 dias terminou em ${end}. Assine no cartão ou no Pix para voltar a usar o caixa. Seus produtos e vendas continuam salvos.`;
+    }
     if (this.isBlocked()) {
       return 'Seu acesso ao sistema está suspenso por pagamento pendente. Regularize para reativar.';
     }
