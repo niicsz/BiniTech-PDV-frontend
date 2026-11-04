@@ -19,7 +19,7 @@ const PLAN_LABELS: Record<string, string> = {
 
 const PLAN_PRICE: Record<string, number> = {
   starter: 99,
-  pro: 199,
+  pro: 149,
   enterprise: 349,
   free: 0,
 };
