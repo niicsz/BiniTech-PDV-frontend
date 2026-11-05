@@ -11,6 +11,11 @@ export interface CreateTenantRequest {
   password?: string;
   phone?: string;
   website?: string;
+  adsConsent?: boolean;
+  eventId?: string;
+  fbp?: string;
+  fbc?: string;
+  sourceUrl?: string;
 }
 
 export interface SignupResponse {
