@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BillingService, InvoiceDTO, PlanOverviewDTO, SubscriptionDTO } from './billing.service';
 import { AnalyticsService } from './core/analytics.service';
+import { MetaPixelService } from './core/meta-pixel.service';
 import { PlanPickerComponent } from './plan-picker.component';
 
 const PLAN_LABELS: Record<string, string> = {
@@ -202,6 +203,7 @@ export class BillingComponent implements OnInit {
   private billingService = inject(BillingService);
   private snackBar = inject(MatSnackBar);
   private analytics = inject(AnalyticsService);
+  private metaPixel = inject(MetaPixelService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private checkoutReturned = false;
@@ -338,6 +340,11 @@ export class BillingComponent implements OnInit {
         currency: 'BRL',
         items: [{ item_id: plan, item_name: PLAN_LABELS[plan] ?? plan, price, quantity: 1 }],
       });
+      this.metaPixel.track(
+        'Purchase',
+        { currency: 'BRL', value: this.monthly() ?? price, content_name: plan },
+        `${sub.id}-${sub.currentPeriodStart ?? sub.updatedAt}`,
+      );
     }
   }
 
