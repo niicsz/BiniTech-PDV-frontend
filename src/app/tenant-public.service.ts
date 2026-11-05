@@ -8,6 +8,20 @@ export interface CreateTenantRequest {
   billingEmail: string;
   acceptedTerms: boolean;
   termsVersion: string;
+  password?: string;
+  phone?: string;
+  website?: string;
+}
+
+export interface SignupResponse {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  planId: string;
+  active: boolean;
+  username: string | null;
+  trialEndsAt: string | null;
 }
 
 export interface TenantDTO {
@@ -27,5 +41,9 @@ export class TenantPublicService {
 
   createTenant(payload: CreateTenantRequest): Observable<TenantDTO> {
     return this.http.post<TenantDTO>(this.baseUrl, payload);
+  }
+
+  signUp(payload: CreateTenantRequest): Observable<SignupResponse> {
+    return this.http.post<SignupResponse>(this.baseUrl, payload);
   }
 }
