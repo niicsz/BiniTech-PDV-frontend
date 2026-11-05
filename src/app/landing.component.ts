@@ -5,12 +5,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { FAQ_ITEMS } from './core/seo-content';
 import { ThemeService } from './shared/services/theme.service';
 import { AnalyticsService } from './core/analytics.service';
+import { LandingDemoComponent } from './landing-demo.component';
 
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule],
+  imports: [CommonModule, RouterLink, MatIconModule, LandingDemoComponent],
   template: `
     <div class="lp">
 
@@ -70,7 +71,7 @@ import { AnalyticsService } from './core/analytics.service';
               <a class="btn btn-solid btn-lg" routerLink="/signup" (click)="trackCta('hero')">
                 Testar 7 dias grátis <mat-icon>arrow_forward</mat-icon>
               </a>
-              <a class="btn btn-outline btn-lg" href="#planos">Ver planos</a>
+              <a class="btn btn-outline btn-lg" href="#demo">Ver como funciona</a>
             </div>
             <ul class="hero-stats">
               <li><strong>2 min</strong><span>pra abrir o caixa</span></li>
@@ -119,6 +120,8 @@ import { AnalyticsService } from './core/analytics.service';
         </div>
       </section>
 
+
+      <app-landing-demo />
 
       <section class="features" id="recursos">
         <div class="section-head">
