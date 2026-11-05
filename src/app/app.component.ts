@@ -21,6 +21,7 @@ import { SaleService } from './pos/services/sale.service';
 import { SeoService } from './core/seo.service';
 import { AnalyticsService } from './core/analytics.service';
 import { localIsoDate } from './core/local-date';
+import { BillingService } from './billing.service';
 
 @Component({
   selector: 'app-root',
@@ -515,6 +516,7 @@ export class AppComponent implements OnInit {
   themeService = inject(ThemeService);
   private router = inject(Router);
   private saleService = inject(SaleService);
+  private billingService = inject(BillingService);
   private snackBar = inject(MatSnackBar);
   private seoService = inject(SeoService);
   private analytics = inject(AnalyticsService);
@@ -536,6 +538,7 @@ export class AppComponent implements OnInit {
       if (this.authService.isLoggedIn()) {
         this.loadDebtorsCount();
         this.loadFiscalFeature();
+        this.nudgeFirstSale();
       }
     });
     this.loadFiscalFeature();
@@ -562,6 +565,49 @@ export class AppComponent implements OnInit {
       })
       .onAction()
       .subscribe(() => this.router.navigate(['/products']));
+  }
+
+  private nudgeFirstSale(): void {
+    if (
+      !this.authService.canManageTenantUsers() ||
+      this.authService.isSuperAdmin() ||
+      this.isPublicRoute() ||
+      this.router.url.includes('bemvindo=1')
+    ) {
+      return;
+    }
+    const storageKey = 'pdv_first_sale_nudge_date';
+    const today = localIsoDate();
+    try {
+      if (localStorage.getItem(storageKey) === today) return;
+      localStorage.setItem(storageKey, today);
+    } catch {
+      return;
+    }
+    this.billingService.getPlan().subscribe({
+      next: (plan) => {
+        if (!plan.trialEndsAt || plan.paid || plan.trialEndsAt < today) return;
+        const start = new Date(`${plan.trialEndsAt}T12:00:00`);
+        start.setDate(start.getDate() - 7);
+        const startDate = localIsoDate(start);
+        if (startDate >= today) return;
+        this.saleService.listByPeriod(startDate, today).subscribe({
+          next: (sales) => {
+            if (sales.length > 0) return;
+            this.snackBar
+              .open(
+                'Sua loja ainda não fez nenhuma venda no teste. Cadastre um produto e faça a primeira venda no caixa.',
+                'Cadastrar produto',
+                { duration: 12000, horizontalPosition: 'center', verticalPosition: 'top' },
+              )
+              .onAction()
+              .subscribe(() => this.router.navigate(['/products']));
+          },
+          error: () => {},
+        });
+      },
+      error: () => {},
+    });
   }
 
   private loadFiscalFeature(): void {
