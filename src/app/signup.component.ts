@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { AnalyticsService } from './core/analytics.service';
 import { TERMS_VERSION } from './core/legal';
+import { AuthService } from './auth/services/auth.service';
 import { TenantPublicService } from './tenant-public.service';
 
 @Component({
@@ -50,11 +51,33 @@ import { TenantPublicService } from './tenant-public.service';
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>E-mail de cobrança</mat-label>
-            <input maxlength="254" matInput formControlName="billingEmail" type="email" placeholder="contato@empresa.com" />
+            <mat-label>Seu e-mail</mat-label>
+            <input maxlength="254" matInput formControlName="billingEmail" type="email" autocomplete="email" placeholder="voce@email.com" />
+            <mat-hint>Você entra no sistema com ele.</mat-hint>
             <mat-error *ngIf="form.get('billingEmail')?.hasError('required')">Informe o e-mail.</mat-error>
             <mat-error *ngIf="form.get('billingEmail')?.hasError('email')">E-mail inválido.</mat-error>
           </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Crie uma senha</mat-label>
+            <input maxlength="128" matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" autocomplete="new-password" />
+            <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Esconder senha'">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('password')?.hasError('required')">Crie uma senha.</mat-error>
+            <mat-error *ngIf="form.get('password')?.hasError('minlength')">Use pelo menos 8 caracteres.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>WhatsApp da loja</mat-label>
+            <input maxlength="20" matInput formControlName="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 91234-5678" />
+            <mat-hint>Para te ajudar durante o teste. Não enviamos spam.</mat-hint>
+            <mat-error *ngIf="form.get('phone')?.invalid">Informe o WhatsApp com DDD.</mat-error>
+          </mat-form-field>
+
+          <div class="hp" aria-hidden="true">
+            <label>Site <input formControlName="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Plano</mat-label>
@@ -80,7 +103,7 @@ import { TenantPublicService } from './tenant-public.service';
 
           <button mat-flat-button color="primary" type="submit" [disabled]="loading" class="submit-btn">
             <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
-            {{ loading ? 'Enviando...' : 'Criar conta' }}
+            {{ loading ? 'Criando sua conta...' : 'Começar meu teste grátis' }}
           </button>
         </form>
 
@@ -89,6 +112,7 @@ import { TenantPublicService } from './tenant-public.service';
     </div>
   `,
   styles: [`
+    .hp { position:absolute; left:-10000px; width:1px; height:1px; overflow:hidden; }
     .signup-page { display:flex; justify-content:center; align-items:center; min-height:100vh;
       background:var(--bg); padding:24px;
       background-image:
@@ -129,13 +153,19 @@ export class SignupComponent {
   private router = inject(Router);
   private analytics = inject(AnalyticsService);
 
+  private authService = inject(AuthService);
+
   loading = false;
   errorMessage = '';
+  hidePassword = true;
 
   form = this.fb.group({
     name: ['', Validators.required],
     billingEmail: ['', [Validators.required, Validators.email]],
-    planId: ['starter', Validators.required],
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    phone: ['', [Validators.required, Validators.pattern(/^[0-9 ()+-]{10,20}$/)]],
+    website: [''],
+    planId: ['pro', Validators.required],
     acceptTerms: [false, Validators.requiredTrue]
   });
 
@@ -148,19 +178,29 @@ export class SignupComponent {
     }
     this.loading = true;
     this.errorMessage = '';
-    const { name, billingEmail, planId } = this.form.getRawValue();
+    const { name, billingEmail, password, phone, website, planId } = this.form.getRawValue();
     this.tenantService
-      .createTenant({
+      .signUp({
         name: name!,
-        billingEmail: billingEmail!,
+        billingEmail: billingEmail!.trim(),
+        password: password!,
+        phone: phone!,
+        website: website || '',
         planId: planId!,
         acceptedTerms: true,
         termsVersion: TERMS_VERSION
       })
       .subscribe({
-        next: () => {
+        next: (result) => {
           this.analytics.track('sign_up', { method: 'form', plan: planId! });
-          this.router.navigate(['/signup/success']);
+          if (!result.active || !result.username) {
+            this.router.navigate(['/signup/success']);
+            return;
+          }
+          this.authService.login(result.username, password!).subscribe({
+            next: () => this.router.navigate(['/pdv'], { queryParams: { bemvindo: 1 } }),
+            error: () => this.router.navigate(['/login']),
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.loading = false;

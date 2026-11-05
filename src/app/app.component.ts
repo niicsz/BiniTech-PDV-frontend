@@ -532,6 +532,7 @@ export class AppComponent implements OnInit {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
+      this.welcomeIfNew();
       if (this.authService.isLoggedIn()) {
         this.loadDebtorsCount();
         this.loadFiscalFeature();
@@ -548,6 +549,19 @@ export class AppComponent implements OnInit {
     };
     interval(30000).subscribe(check);
     document.addEventListener('visibilitychange', check);
+  }
+
+  private welcomeIfNew(): void {
+    if (!this.router.url.startsWith('/pdv') || !this.router.url.includes('bemvindo=1')) return;
+    this.router.navigate(['/pdv'], { replaceUrl: true });
+    this.snackBar
+      .open('Conta criada! Seu teste grátis de 7 dias começou. Comece cadastrando seus produtos.', 'Cadastrar produtos', {
+        duration: 12000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+      })
+      .onAction()
+      .subscribe(() => this.router.navigate(['/products']));
   }
 
   private loadFiscalFeature(): void {
