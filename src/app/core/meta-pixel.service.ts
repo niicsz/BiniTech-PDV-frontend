@@ -72,11 +72,11 @@ export class MetaPixelService {
   }
 
   newEventId(): string {
-    try {
+    if (typeof crypto.randomUUID === 'function') {
       return crypto.randomUUID();
-    } catch {
-      return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   }
 
   cookie(name: '_fbp' | '_fbc'): string | undefined {
@@ -111,7 +111,8 @@ export class MetaPixelService {
     const domains = ['', host, `.${host}`, `.${host.replace(/^www\./, '')}`];
     ['_fbp', '_fbc'].forEach((name) =>
       domains.forEach((domain) => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/${domain ? `; domain=${domain}` : ''}`;
+        const scope = domain ? '; domain=' + domain : '';
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/${scope}`;
       }),
     );
   }
