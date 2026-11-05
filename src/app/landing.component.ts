@@ -155,6 +155,10 @@ import { LandingDemoComponent } from './landing-demo.component';
                 <mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon><mat-icon>star</mat-icon>
                 <b>5,0</b>
               </span>
+              <blockquote class="quote">
+                <p>&ldquo;Fácil de usar no balcão. Passo as vendas rapidinho e no fim do dia já sei quanto entrou e quanto lucrei.&rdquo;</p>
+                <cite>Dono da Banca Oz Bini, Osasco</cite>
+              </blockquote>
             </div>
           </li>
         </ul>
@@ -452,13 +456,16 @@ import { LandingDemoComponent } from './landing-demo.component';
     .clients{ padding:24px 0 72px; }
     .client-list{ width:min(1144px, calc(100% - 56px)); margin:34px auto 0; padding:0; list-style:none;
       display:flex; flex-wrap:wrap; gap:18px; }
-    .client{ display:flex; align-items:center; gap:16px; padding:16px 22px 16px 16px; background:var(--surface);
+    .client{ display:flex; align-items:flex-start; gap:16px; padding:16px 22px 16px 16px; background:var(--surface);
       border:2px solid var(--ink); border-radius:3px; box-shadow:5px 5px 0 var(--ink); }
     .client img{ width:88px; height:88px; border-radius:10px; object-fit:contain; background:#000; border:2px solid var(--ink); flex-shrink:0; }
     .client-info{ display:flex; flex-direction:column; gap:6px; }
     .client-info strong{ font-family:'Fraunces',serif; font-size:21px; font-weight:700; letter-spacing:-.3px; color:var(--ink); }
     .stars{ display:inline-flex; align-items:center; gap:1px; color:var(--ochre); }
     .stars mat-icon{ font-size:20px; width:20px; height:20px; }
+    .quote{ margin:4px 0 0; padding:0; max-width:46ch; }
+    .quote p{ margin:0; font-size:15.5px; line-height:1.5; color:var(--ink); }
+    .quote cite{ display:block; margin-top:6px; font-style:normal; font-family:'Spline Sans Mono',monospace; font-size:12px; color:var(--text-secondary, #6b5d50); }
     .stars b{ margin-left:8px; font-family:'Spline Sans Mono',monospace; font-size:14px; color:var(--ink); }
     .feature-grid{ width:min(1144px, calc(100% - 56px)); margin:46px auto 0; display:grid;
       grid-template-columns:repeat(3,1fr); gap:0; border-top:2px solid var(--ink); border-left:2px solid var(--ink); }
