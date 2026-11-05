@@ -10,10 +10,11 @@ import { AnalyticsService } from '../../core/analytics.service';
   template: `
     @if (analytics.consentPending) {
       <section class="cookie-consent" role="dialog" aria-live="polite" aria-labelledby="cookie-consent-title">
-        <h2 id="cookie-consent-title">Cookies de estatística</h2>
+        <h2 id="cookie-consent-title">Cookies de estatística e anúncios</h2>
         <p>
-          Usamos o Google Analytics para entender como o BiniTech PDV é usado e melhorá-lo. Ele só é ativado
-          se você aceitar. Saiba mais na <a routerLink="/privacidade">Política de privacidade</a>.
+          Usamos o Google Analytics para entender como o BiniTech PDV é usado e o Pixel da Meta para medir
+          nossos anúncios. Eles só são ativados se você aceitar. Saiba mais na
+          <a routerLink="/privacidade">Política de privacidade</a>.
         </p>
         <div class="actions">
           <button mat-stroked-button type="button" (click)="analytics.setConsent('denied')">Recusar</button>

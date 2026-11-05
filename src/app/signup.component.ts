@@ -14,6 +14,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { AnalyticsService } from './core/analytics.service';
 import { TERMS_VERSION } from './core/legal';
 import { AuthService } from './auth/services/auth.service';
+import { MetaPixelService } from './core/meta-pixel.service';
+
+const PLAN_VALUE: Record<string, number> = { starter: 99, pro: 149, enterprise: 349 };
 import { TenantPublicService } from './tenant-public.service';
 
 @Component({
@@ -154,6 +157,7 @@ export class SignupComponent {
   private analytics = inject(AnalyticsService);
 
   private authService = inject(AuthService);
+  private metaPixel = inject(MetaPixelService);
 
   loading = false;
   errorMessage = '';
@@ -179,6 +183,8 @@ export class SignupComponent {
     this.loading = true;
     this.errorMessage = '';
     const { name, billingEmail, password, phone, website, planId } = this.form.getRawValue();
+    const adsConsent = this.metaPixel.active;
+    const eventId = this.metaPixel.newEventId();
     this.tenantService
       .signUp({
         name: name!,
@@ -188,11 +194,18 @@ export class SignupComponent {
         website: website || '',
         planId: planId!,
         acceptedTerms: true,
-        termsVersion: TERMS_VERSION
+        termsVersion: TERMS_VERSION,
+        adsConsent,
+        eventId: adsConsent ? eventId : undefined,
+        fbp: adsConsent ? this.metaPixel.cookie('_fbp') : undefined,
+        fbc: adsConsent ? this.metaPixel.cookie('_fbc') : undefined,
+        sourceUrl: adsConsent ? window.location.origin + window.location.pathname : undefined
       })
       .subscribe({
         next: (result) => {
           this.analytics.track('sign_up', { method: 'form', plan: planId! });
+          this.metaPixel.track('CompleteRegistration', { content_name: planId! }, eventId);
+          this.metaPixel.track('StartTrial', { currency: 'BRL', value: PLAN_VALUE[planId!] ?? 0 }, `${eventId}-trial`);
           if (!result.active || !result.username) {
             this.router.navigate(['/signup/success']);
             return;
