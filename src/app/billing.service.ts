@@ -59,6 +59,7 @@ export interface PlanOverviewDTO {
   plans: PlanOptionDTO[];
   trialEndsAt: string | null;
   paid: boolean;
+  checkoutUrl?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
