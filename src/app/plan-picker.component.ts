@@ -78,16 +78,19 @@ interface Pending {
               <strong id="confirm-title">{{ p.title }}</strong>
               <p>
                 Novo total mensal: <b>R$ {{ p.monthly | number:'1.2-2' }}</b>.
-                Os novos limites valem na hora.
                 @if (o.recurringCard) {
-                  O valor da assinatura no cartão muda a partir da próxima cobrança.
+                  Você vai para o pagamento seguro do Asaas. A nova assinatura é cobrada no cartão hoje e o
+                  próximo ciclo de 30 dias começa agora. Assim que o pagamento for aprovado, os novos limites
+                  passam a valer e a assinatura antiga é cancelada.
                 } @else {
-                  O novo valor vale a partir do próximo pagamento.
+                  Os novos limites valem na hora. O novo valor vale a partir do próximo pagamento.
                 }
               </p>
               <div class="row">
                 <button mat-stroked-button type="button" (click)="pending.set(null)" [disabled]="saving()">Voltar</button>
-                <button mat-flat-button color="primary" type="button" (click)="confirm(p)" [disabled]="saving()">Confirmar</button>
+                <button mat-flat-button color="primary" type="button" (click)="confirm(p)" [disabled]="saving()">
+                  {{ o.recurringCard ? 'Ir para o pagamento' : 'Confirmar' }}
+                </button>
               </div>
             </div>
           }
@@ -196,6 +199,10 @@ export class PlanPickerComponent implements OnInit {
         : this.billingService.setExtraUsers(p.quantity!);
     request.subscribe({
       next: (overview) => {
+        if (overview.checkoutUrl) {
+          window.location.href = overview.checkoutUrl;
+          return;
+        }
         this.saving.set(false);
         this.pending.set(null);
         this.apply(overview);
