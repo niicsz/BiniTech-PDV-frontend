@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { MetaPixelService } from './meta-pixel.service';
 
 type AnalyticsItem = Record<string, string | number>;
 type AnalyticsParams = Record<string, string | number | boolean | AnalyticsItem[]>;
@@ -16,6 +17,7 @@ const CONSENT_KEY = 'analytics_consent';
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
   private router = inject(Router);
+  private metaPixel = inject(MetaPixelService);
   private measurementId = '';
   private started = false;
 
@@ -34,7 +36,10 @@ export class AnalyticsService {
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe(event => this.sendPageView(event.urlAfterRedirects));
 
-    if (this.consent() === 'granted') this.start(false);
+    if (this.consent() === 'granted') {
+      this.start(false);
+      this.metaPixel.start();
+    }
   }
 
   get consentPending(): boolean {
@@ -47,8 +52,10 @@ export class AnalyticsService {
     this.consent.set(choice);
     if (choice === 'granted') {
       this.start(true);
+      this.metaPixel.start();
       return;
     }
+    this.metaPixel.stop();
     if (this.started) {
       (window as unknown as Record<string, unknown>)[`ga-disable-${this.measurementId}`] = true;
       window.gtag?.('consent', 'update', { analytics_storage: 'denied' });
