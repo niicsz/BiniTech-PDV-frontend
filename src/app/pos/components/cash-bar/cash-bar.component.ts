@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { CashMovementType, CashSessionDTO, PaymentMethodEnum } from '../../../shared/models/api.models';
 import { CashSessionService } from '../../services/cash-session.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -358,7 +359,7 @@ export class CashBarComponent implements OnInit {
 
   confirmClose(): void {
     if (!this.session) return;
-    const counted = this.amount === null || this.amount === undefined || (this.amount as unknown) === '' ? null : Number(this.amount);
+    const counted = this.countedValue();
     if (counted !== null && (!Number.isFinite(counted) || counted < 0)) {
       this.error = 'Informe um valor válido para o dinheiro contado.';
       return;
@@ -373,6 +374,12 @@ export class CashBarComponent implements OnInit {
       this.dialog = 'closed';
       this.error = '';
     });
+  }
+
+  private countedValue(): number | null {
+    const raw: unknown = this.amount;
+    if (raw === null || raw === undefined || raw === '') return null;
+    return Number(raw);
   }
 
   previewDifference(): number {
@@ -414,7 +421,7 @@ export class CashBarComponent implements OnInit {
     }, 60);
   }
 
-  private run(request: import('rxjs').Observable<CashSessionDTO>, onSuccess: (session: CashSessionDTO) => void): void {
+  private run(request: Observable<CashSessionDTO>, onSuccess: (session: CashSessionDTO) => void): void {
     if (this.busy) return;
     this.busy = true;
     this.error = '';
