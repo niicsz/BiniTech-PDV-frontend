@@ -46,6 +46,10 @@ export interface SaleDTO {
   returnedAmount?: number;
   returnedCost?: number;
   returns?: SaleReturnDTO[];
+  itemsTotal?: number;
+  discount?: number;
+  surcharge?: number;
+  cashSessionId?: string;
 }
 
 export type SaleStatus = 'COMPLETED' | 'PARTIALLY_RETURNED' | 'RETURNED';
@@ -78,6 +82,8 @@ export interface SaleItemDTO {
   unitPrice?: number;
   costPrice?: number;
   subtotal?: number;
+  discount?: number;
+  surcharge?: number;
 }
 
 export interface CreateSaleDTO {
@@ -87,6 +93,8 @@ export interface CreateSaleDTO {
   customerPhone?: string;
   customerCpf?: string;
   skipStockValidation?: boolean;
+  discount?: number;
+  surcharge?: number;
 }
 
 export interface CreateSaleItemDTO {
@@ -157,4 +165,52 @@ export interface TwoFactorError {
   message?: string;
   remainingAttempts?: number | null;
   lockedUntil?: string | null;
+}
+
+export type CashSessionStatus = 'OPEN' | 'CLOSED';
+
+export type CashMovementType = 'SUPPLY' | 'WITHDRAWAL';
+
+export interface CashMovementDTO {
+  id: string;
+  type: CashMovementType;
+  amount: number;
+  reason?: string;
+  userId?: string;
+  timestamp?: string;
+}
+
+export interface PaymentTotalDTO {
+  method: PaymentMethodEnum;
+  amount: number;
+}
+
+export interface CashSessionSummaryDTO {
+  salesCount: number;
+  salesTotal: number;
+  discountTotal: number;
+  surchargeTotal: number;
+  receivedByMethod: PaymentTotalDTO[];
+  cashSales: number;
+  cashRefunds: number;
+  supplies: number;
+  withdrawals: number;
+  expectedCash: number;
+}
+
+export interface CashSessionDTO {
+  id: string;
+  userId?: string;
+  operatorName?: string;
+  status: CashSessionStatus;
+  openedAt?: string;
+  openingAmount: number;
+  movements: CashMovementDTO[];
+  closedAt?: string;
+  closedByUserId?: string;
+  countedAmount?: number | null;
+  difference?: number | null;
+  notes?: string;
+  summary?: CashSessionSummaryDTO;
+  pendingDeliveryOrders?: number;
 }
