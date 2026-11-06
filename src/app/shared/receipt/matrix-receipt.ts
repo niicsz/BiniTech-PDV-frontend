@@ -1,4 +1,4 @@
-import { RefundMethod, SaleDTO, SaleReturnDTO } from '../models/api.models';
+import { CashSessionDTO, RefundMethod, SaleDTO, SaleItemDTO, SaleReturnDTO } from '../models/api.models';
 
 export const MATRIX_COLUMNS = 48;
 
@@ -123,8 +123,13 @@ export function buildSaleReceipt(sale: SaleDTO, options: ReceiptOptions = {}): s
     );
   });
 
+  lines.push(rule);
+  if ((sale.discount ?? 0) > 0 || (sale.surcharge ?? 0) > 0) {
+    lines.push(columns('Subtotal', money(sale.itemsTotal), width));
+    if ((sale.discount ?? 0) > 0) lines.push(columns('Desconto', `- ${money(sale.discount)}`, width));
+    if ((sale.surcharge ?? 0) > 0) lines.push(columns('Acrescimo', `+ ${money(sale.surcharge)}`, width));
+  }
   lines.push(
-    rule,
     columns('TOTAL R$', money(sale.totalAmount), width),
     rule,
     ...(sale.payments ?? []).map((payment) =>
@@ -162,10 +167,81 @@ function returnItemLines(saleReturn: SaleReturnDTO, width: number): string[] {
   return (saleReturn.items ?? []).map((item) =>
     columns(
       `  ${item.quantity ?? 0} x ${plain(item.productDescription).toUpperCase() || 'PRODUTO'}`,
-      money(item.subtotal),
+      money(netSubtotal(item)),
       width,
     ),
   );
+}
+
+export function netSubtotal(item: SaleItemDTO): number {
+  return Math.round(((item.subtotal ?? 0) - (item.discount ?? 0) + (item.surcharge ?? 0)) * 100) / 100;
+}
+
+export function buildCashSessionReport(session: CashSessionDTO, options: ReceiptOptions = {}): string[] {
+  const width = options.columns ?? MATRIX_COLUMNS;
+  const rule = '-'.repeat(width);
+  const doubleRule = '='.repeat(width);
+  const summary = session.summary;
+  const lines: string[] = [
+    doubleRule,
+    center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width),
+    center(session.status === 'OPEN' ? 'RESUMO DO CAIXA (PARCIAL)' : 'FECHAMENTO DE CAIXA', width),
+    center('*** NAO E DOCUMENTO FISCAL ***', width),
+    doubleRule,
+    `Operador: ${plain(session.operatorName || options.operator || '')}`.slice(0, width),
+    columns('Abertura', formatDate(session.openedAt), width),
+  ];
+  if (session.closedAt) {
+    lines.push(columns('Fechamento', formatDate(session.closedAt), width));
+  }
+  lines.push(
+    rule,
+    columns('Vendas', String(summary?.salesCount ?? 0), width),
+    columns('Total vendido', money(summary?.salesTotal), width),
+  );
+  if ((summary?.discountTotal ?? 0) > 0) lines.push(columns('Descontos', `- ${money(summary?.discountTotal)}`, width));
+  if ((summary?.surchargeTotal ?? 0) > 0) lines.push(columns('Acrescimos', `+ ${money(summary?.surchargeTotal)}`, width));
+  lines.push(rule, center('RECEBIDO POR FORMA', width));
+  for (const entry of summary?.receivedByMethod ?? []) {
+    lines.push(columns(PAYMENT_LABELS[entry.method] ?? plain(entry.method), money(entry.amount), width));
+  }
+  lines.push(
+    rule,
+    center('DINHEIRO NA GAVETA', width),
+    columns('Troco inicial', money(session.openingAmount), width),
+    columns('Vendas em dinheiro', `+ ${money(summary?.cashSales)}`, width),
+    columns('Suprimentos', `+ ${money(summary?.supplies)}`, width),
+    columns('Sangrias', `- ${money(summary?.withdrawals)}`, width),
+    columns('Devolucoes em dinheiro', `- ${money(summary?.cashRefunds)}`, width),
+    columns('ESPERADO R$', money(summary?.expectedCash), width),
+  );
+  if (session.countedAmount !== null && session.countedAmount !== undefined) {
+    const difference = session.difference ?? 0;
+    lines.push(
+      columns('CONTADO R$', money(session.countedAmount), width),
+      columns(difference < 0 ? 'FALTA R$' : difference > 0 ? 'SOBRA R$' : 'DIFERENCA R$', money(Math.abs(difference)), width),
+    );
+  }
+  if (session.movements.length > 0) {
+    lines.push(rule, center('MOVIMENTOS', width));
+    for (const movement of session.movements) {
+      const label = movement.type === 'WITHDRAWAL' ? 'Sangria' : 'Suprimento';
+      lines.push(columns(`${formatDate(movement.timestamp).slice(11)} ${label}`, money(movement.amount), width));
+      if (movement.reason) lines.push(...wrap(plain(movement.reason), width, '  '));
+    }
+  }
+  if (session.notes) {
+    lines.push(rule, ...wrap(`Obs: ${plain(session.notes)}`, width));
+  }
+  lines.push(
+    doubleRule,
+    '',
+    '',
+    center('_'.repeat(Math.min(36, width)), width),
+    center('Assinatura do operador', width),
+    '',
+  );
+  return lines;
 }
 
 export function buildReturnReceipt(
