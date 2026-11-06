@@ -752,7 +752,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
     this.cashFromBills = false;
     this.selectedMethod = method;
     const remaining = this.getRemaining();
-    this.currentAmount = remaining > 0 ? parseFloat(remaining.toFixed(2)) : parseFloat(this.finalTotal().toFixed(2));
+    this.currentAmount = remaining > 0 ? round2(remaining) : this.finalTotal();
 
     setTimeout(() => {
       if (method === 'CREDIARIO') {
