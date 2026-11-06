@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,8 +9,14 @@ import { MatInputModule } from '@angular/material/input';
 import { PaymentDTO, PaymentMethodEnum, SaleDTO } from '../../../shared/models/api.models';
 import { SaleService } from '../../services/sale.service';
 
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 export interface PaymentConfirmation {
   payments: PaymentDTO[];
+  discount: number;
+  surcharge: number;
   customerName?: string;
   customerPhone?: string;
   customerCpf?: string;
@@ -34,7 +40,51 @@ export interface PaymentConfirmation {
         <mat-card-content>
           <div class="payment-total">
             <span class="total-label">Total da Venda</span>
-            <strong class="total-amount">R$ {{ total | number:'1.2-2' }}</strong>
+            <strong class="total-amount">R$ {{ finalTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="adjustment-lines" *ngIf="discount > 0 || surcharge > 0">
+            <div class="summary-line">
+              <span>Produtos</span>
+              <strong>R$ {{ total | number:'1.2-2' }}</strong>
+            </div>
+            <div class="summary-line" *ngIf="discount > 0">
+              <span>Desconto</span>
+              <strong class="text-success">- R$ {{ discount | number:'1.2-2' }}</strong>
+            </div>
+            <div class="summary-line" *ngIf="surcharge > 0">
+              <span>Acréscimo</span>
+              <strong class="text-danger">+ R$ {{ surcharge | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+
+          <div class="adjustment-section">
+            <button type="button" mat-stroked-button class="adjustment-toggle"
+                    *ngIf="!adjustmentOpen" (click)="openAdjustment()">
+              <mat-icon>percent</mat-icon>
+              {{ discount > 0 || surcharge > 0 ? 'Alterar desconto / acréscimo' : 'Desconto / acréscimo' }}
+              <kbd>F6</kbd>
+            </button>
+            <div class="adjustment-form" *ngIf="adjustmentOpen">
+              <div class="segmented" role="group" aria-label="Tipo de ajuste">
+                <button type="button" [class.active]="adjustmentType === 'discount'" (click)="adjustmentType = 'discount'">Desconto</button>
+                <button type="button" [class.active]="adjustmentType === 'surcharge'" (click)="adjustmentType = 'surcharge'">Acréscimo</button>
+              </div>
+              <div class="segmented" role="group" aria-label="Unidade do ajuste">
+                <button type="button" [class.active]="adjustmentMode === 'value'" (click)="adjustmentMode = 'value'">R$</button>
+                <button type="button" [class.active]="adjustmentMode === 'percent'" (click)="adjustmentMode = 'percent'">%</button>
+              </div>
+              <mat-form-field appearance="outline" class="adjustment-input">
+                <mat-label>{{ adjustmentMode === 'percent' ? 'Percentual' : 'Valor (R$)' }}</mat-label>
+                <input matInput #adjustmentInput type="number" step="0.01" min="0"
+                       [(ngModel)]="adjustmentValue" (keydown.enter)="applyAdjustment()" />
+              </mat-form-field>
+              <div class="adjustment-actions">
+                <button type="button" mat-button (click)="clearAdjustment()">Remover</button>
+                <button type="button" mat-flat-button color="primary" (click)="applyAdjustment()">Aplicar</button>
+              </div>
+              <p class="crediario-error" *ngIf="adjustmentError" role="alert">{{ adjustmentError }}</p>
+            </div>
           </div>
 
           <div class="payments-list" *ngIf="payments.length > 0">
@@ -127,8 +177,19 @@ export interface PaymentConfirmation {
                 <mat-label>Valor Recebido (R$)</mat-label>
                 <input matInput #amountInput type="number" step="0.01" min="0"
                        class="amount-input" [(ngModel)]="currentAmount"
+                       (ngModelChange)="cashFromBills = false"
                        (keydown.enter)="addPayment()" autofocus />
               </mat-form-field>
+
+              <div class="bills" *ngIf="selectedMethod === 'CASH'" role="group" aria-label="Cédulas recebidas">
+                <button type="button" mat-stroked-button class="bill exact" (click)="exactCash()">Valor exato</button>
+                <button type="button" mat-stroked-button class="bill" *ngFor="let bill of bills" (click)="addBill(bill)">
+                  + R$ {{ bill }}
+                </button>
+              </div>
+              <p class="bills-change" *ngIf="selectedMethod === 'CASH' && cashChangePreview() > 0">
+                Troco: <strong>R$ {{ cashChangePreview() | number:'1.2-2' }}</strong>
+              </p>
 
               <mat-form-field appearance="outline" class="full-width" *ngIf="selectedMethod !== 'CASH'">
                 <mat-label>Valor (R$)</mat-label>
@@ -284,6 +345,74 @@ export interface PaymentConfirmation {
       margin-top: 8px;
     }
     .text-danger { color: var(--danger); }
+    .adjustment-lines {
+      margin: -8px 0 16px;
+      padding: 8px 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+    .adjustment-section { margin-bottom: 16px; }
+    .adjustment-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .adjustment-toggle kbd, .bill kbd {
+      font-size: 11px;
+      padding: 1px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+    .adjustment-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      padding: 12px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .adjustment-input, .adjustment-actions, .adjustment-form .crediario-error { grid-column: 1 / -1; }
+    .adjustment-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .segmented {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .segmented button {
+      flex: 1;
+      padding: 8px 6px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .segmented button.active { background: var(--primary); color: #fff; }
+    .bills {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .bill { font-weight: 600; min-width: 0; padding: 0 6px; }
+    .bill.exact { grid-column: span 2; }
+    .bills-change {
+      margin: 0;
+      padding: 8px 12px;
+      background: var(--success-bg);
+      color: var(--success);
+      border-radius: var(--radius);
+      font-size: 15px;
+    }
+    @media (max-width: 480px) {
+      .bills { grid-template-columns: repeat(3, 1fr); }
+      .bill.exact { grid-column: span 3; }
+    }
     .text-success { color: var(--success); }
     .method-buttons {
       display: grid;
@@ -481,6 +610,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   @ViewChild('amountInput') amountInput!: ElementRef<HTMLInputElement>;
   @ViewChild('amountInputCard') amountInputCard!: ElementRef<HTMLInputElement>;
   @ViewChild('customerNameInput') customerNameInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('adjustmentInput') adjustmentInputRef?: ElementRef<HTMLInputElement>;
 
   @Input() total = 0;
   @Input() initialMethod: PaymentMethodEnum | null = null;
@@ -504,6 +634,16 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   filteredDebtors: { name: string; phone: string; totalDebt: number }[] = [];
   duplicatePhoneWarning = '';
 
+  readonly bills = [2, 5, 10, 20, 50, 100];
+  cashFromBills = false;
+  discount = 0;
+  surcharge = 0;
+  adjustmentOpen = false;
+  adjustmentType: 'discount' | 'surcharge' = 'discount';
+  adjustmentMode: 'value' | 'percent' = 'value';
+  adjustmentValue: number | null = null;
+  adjustmentError = '';
+
   constructor(private saleService: SaleService) {}
 
   availableMethods = [
@@ -524,11 +664,95 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
     }
   }
 
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'F6') {
+      event.preventDefault();
+      this.openAdjustment();
+    }
+  }
+
+  finalTotal(): number {
+    return round2(this.total - this.discount + this.surcharge);
+  }
+
+  openAdjustment(): void {
+    this.adjustmentOpen = true;
+    this.adjustmentError = '';
+    if (this.surcharge > 0 && this.discount === 0) this.adjustmentType = 'surcharge';
+    const current = this.adjustmentType === 'discount' ? this.discount : this.surcharge;
+    this.adjustmentMode = 'value';
+    this.adjustmentValue = current > 0 ? current : null;
+    setTimeout(() => {
+      this.adjustmentInputRef?.nativeElement?.focus();
+      this.adjustmentInputRef?.nativeElement?.select();
+    }, 50);
+  }
+
+  applyAdjustment(): void {
+    const raw = Number(this.adjustmentValue ?? 0);
+    if (!Number.isFinite(raw) || raw < 0) {
+      this.adjustmentError = 'Informe um valor válido.';
+      return;
+    }
+    if (this.adjustmentMode === 'percent' && raw > 100) {
+      this.adjustmentError = 'O percentual não pode passar de 100%.';
+      return;
+    }
+    const amount = round2(this.adjustmentMode === 'percent' ? (this.total * raw) / 100 : raw);
+    if (this.adjustmentType === 'discount' && amount >= this.total) {
+      this.adjustmentError = 'O desconto precisa ser menor que o total dos produtos.';
+      return;
+    }
+    if (this.adjustmentType === 'discount') {
+      this.discount = amount;
+      this.surcharge = 0;
+    } else {
+      this.surcharge = amount;
+      this.discount = 0;
+    }
+    this.adjustmentError = '';
+    this.adjustmentOpen = false;
+    this.refreshSelectedAmount();
+  }
+
+  clearAdjustment(): void {
+    this.discount = 0;
+    this.surcharge = 0;
+    this.adjustmentValue = null;
+    this.adjustmentError = '';
+    this.adjustmentOpen = false;
+    this.refreshSelectedAmount();
+  }
+
+  private refreshSelectedAmount(): void {
+    if (this.selectedMethod && !this.cashFromBills) {
+      const remaining = this.getRemaining();
+      this.currentAmount = remaining > 0 ? round2(remaining) : 0;
+    }
+  }
+
+  exactCash(): void {
+    this.cashFromBills = false;
+    this.currentAmount = round2(this.getRemaining());
+    this.addPayment();
+  }
+
+  addBill(bill: number): void {
+    this.currentAmount = round2((this.cashFromBills ? this.currentAmount : 0) + bill);
+    this.cashFromBills = true;
+  }
+
+  cashChangePreview(): number {
+    return Math.max(0, round2(this.currentAmount - this.getRemaining()));
+  }
+
   selectMethod(method: PaymentMethodEnum): void {
     this.crediarioError = '';
+    this.cashFromBills = false;
     this.selectedMethod = method;
     const remaining = this.getRemaining();
-    this.currentAmount = remaining > 0 ? parseFloat(remaining.toFixed(2)) : parseFloat(this.total.toFixed(2));
+    this.currentAmount = remaining > 0 ? round2(remaining) : this.finalTotal();
 
     setTimeout(() => {
       if (method === 'CREDIARIO') {
@@ -647,6 +871,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
 
     this.selectedMethod = null;
     this.currentAmount = 0;
+    this.cashFromBills = false;
   }
 
   onCpfChange(value: string): void {
@@ -678,11 +903,11 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   }
 
   getRemaining(): number {
-    return Math.max(0, this.total - this.getTotalPaid());
+    return Math.max(0, round2(this.finalTotal() - this.getTotalPaid()));
   }
 
   getTotalChange(): number {
-    return Math.max(0, this.getTotalPaid() - this.total);
+    return Math.max(0, round2(this.getTotalPaid() - this.finalTotal()));
   }
 
   confirmAll(): void {
@@ -692,6 +917,8 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
     const hasCrediario = this.payments.some(p => p.method === 'CREDIARIO');
     const confirmation: PaymentConfirmation = {
       payments: [...this.payments],
+      discount: this.discount,
+      surcharge: this.surcharge,
       ...(hasCrediario && this.customerName.trim() ? { customerName: this.customerName.trim() } : {}),
       ...(hasCrediario && this.customerPhone.trim() ? { customerPhone: this.customerPhone.trim() } : {}),
       ...(cpfDigits ? { customerCpf: cpfDigits } : {})

@@ -25,6 +25,11 @@
     </div>
   </div>
 
+  <app-cash-bar
+    (sessionChange)="onCashSessionChange($event)"
+    (notify)="showStatus($event, 'success')">
+  </app-cash-bar>
+
   <div *ngIf="statusMessage" class="status-bar" [ngClass]="'status-' + statusType">
     <mat-icon class="status-icon">
       {{ statusType === 'success' ? 'check_circle' : statusType === 'error' ? 'error' : 'info' }}
@@ -180,6 +185,9 @@
       <h2>Venda Finalizada com Sucesso!</h2>
       <p class="success-total" *ngIf="lastSale">
         R$ {{ lastSale.totalAmount | number:'1.2-2' }}
+      </p>
+      <p class="success-change" *ngIf="lastSale && (lastSale.change ?? 0) > 0">
+        Troco <strong>R$ {{ lastSale.change | number:'1.2-2' }}</strong>
       </p>
     </div>
 
