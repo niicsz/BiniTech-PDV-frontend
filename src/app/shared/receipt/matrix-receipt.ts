@@ -177,11 +177,63 @@ export function netSubtotal(item: SaleItemDTO): number {
   return Math.round(((item.subtotal ?? 0) - (item.discount ?? 0) + (item.surcharge ?? 0)) * 100) / 100;
 }
 
+function cashSalesLines(session: CashSessionDTO, width: number): string[] {
+  const summary = session.summary;
+  const lines = [
+    columns('Vendas', String(summary?.salesCount ?? 0), width),
+    columns('Total vendido', money(summary?.salesTotal), width),
+  ];
+  if ((summary?.discountTotal ?? 0) > 0) lines.push(columns('Descontos', `- ${money(summary?.discountTotal)}`, width));
+  if ((summary?.surchargeTotal ?? 0) > 0) lines.push(columns('Acrescimos', `+ ${money(summary?.surchargeTotal)}`, width));
+  lines.push('-'.repeat(width), center('RECEBIDO POR FORMA', width));
+  for (const entry of summary?.receivedByMethod ?? []) {
+    lines.push(columns(PAYMENT_LABELS[entry.method] ?? plain(entry.method), money(entry.amount), width));
+  }
+  return lines;
+}
+
+function differenceLabel(difference: number): string {
+  if (difference < 0) return 'FALTA R$';
+  if (difference > 0) return 'SOBRA R$';
+  return 'DIFERENCA R$';
+}
+
+function cashDrawerLines(session: CashSessionDTO, width: number): string[] {
+  const summary = session.summary;
+  const lines = [
+    center('DINHEIRO NA GAVETA', width),
+    columns('Troco inicial', money(session.openingAmount), width),
+    columns('Vendas em dinheiro', `+ ${money(summary?.cashSales)}`, width),
+    columns('Suprimentos', `+ ${money(summary?.supplies)}`, width),
+    columns('Sangrias', `- ${money(summary?.withdrawals)}`, width),
+    columns('Devolucoes em dinheiro', `- ${money(summary?.cashRefunds)}`, width),
+    columns('ESPERADO R$', money(summary?.expectedCash), width),
+  ];
+  if (session.countedAmount !== null && session.countedAmount !== undefined) {
+    const difference = session.difference ?? 0;
+    lines.push(
+      columns('CONTADO R$', money(session.countedAmount), width),
+      columns(differenceLabel(difference), money(Math.abs(difference)), width),
+    );
+  }
+  return lines;
+}
+
+function cashMovementLines(session: CashSessionDTO, width: number, rule: string): string[] {
+  if (session.movements.length === 0) return [];
+  const lines = [rule, center('MOVIMENTOS', width)];
+  for (const movement of session.movements) {
+    const label = movement.type === 'WITHDRAWAL' ? 'Sangria' : 'Suprimento';
+    lines.push(columns(`${formatDate(movement.timestamp).slice(11)} ${label}`, money(movement.amount), width));
+    if (movement.reason) lines.push(...wrap(plain(movement.reason), width, '  '));
+  }
+  return lines;
+}
+
 export function buildCashSessionReport(session: CashSessionDTO, options: ReceiptOptions = {}): string[] {
   const width = options.columns ?? MATRIX_COLUMNS;
   const rule = '-'.repeat(width);
   const doubleRule = '='.repeat(width);
-  const summary = session.summary;
   const lines: string[] = [
     doubleRule,
     center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width),
@@ -196,40 +248,11 @@ export function buildCashSessionReport(session: CashSessionDTO, options: Receipt
   }
   lines.push(
     rule,
-    columns('Vendas', String(summary?.salesCount ?? 0), width),
-    columns('Total vendido', money(summary?.salesTotal), width),
-  );
-  if ((summary?.discountTotal ?? 0) > 0) lines.push(columns('Descontos', `- ${money(summary?.discountTotal)}`, width));
-  if ((summary?.surchargeTotal ?? 0) > 0) lines.push(columns('Acrescimos', `+ ${money(summary?.surchargeTotal)}`, width));
-  lines.push(rule, center('RECEBIDO POR FORMA', width));
-  for (const entry of summary?.receivedByMethod ?? []) {
-    lines.push(columns(PAYMENT_LABELS[entry.method] ?? plain(entry.method), money(entry.amount), width));
-  }
-  lines.push(
+    ...cashSalesLines(session, width),
     rule,
-    center('DINHEIRO NA GAVETA', width),
-    columns('Troco inicial', money(session.openingAmount), width),
-    columns('Vendas em dinheiro', `+ ${money(summary?.cashSales)}`, width),
-    columns('Suprimentos', `+ ${money(summary?.supplies)}`, width),
-    columns('Sangrias', `- ${money(summary?.withdrawals)}`, width),
-    columns('Devolucoes em dinheiro', `- ${money(summary?.cashRefunds)}`, width),
-    columns('ESPERADO R$', money(summary?.expectedCash), width),
+    ...cashDrawerLines(session, width),
+    ...cashMovementLines(session, width, rule),
   );
-  if (session.countedAmount !== null && session.countedAmount !== undefined) {
-    const difference = session.difference ?? 0;
-    lines.push(
-      columns('CONTADO R$', money(session.countedAmount), width),
-      columns(difference < 0 ? 'FALTA R$' : difference > 0 ? 'SOBRA R$' : 'DIFERENCA R$', money(Math.abs(difference)), width),
-    );
-  }
-  if (session.movements.length > 0) {
-    lines.push(rule, center('MOVIMENTOS', width));
-    for (const movement of session.movements) {
-      const label = movement.type === 'WITHDRAWAL' ? 'Sangria' : 'Suprimento';
-      lines.push(columns(`${formatDate(movement.timestamp).slice(11)} ${label}`, money(movement.amount), width));
-      if (movement.reason) lines.push(...wrap(plain(movement.reason), width, '  '));
-    }
-  }
   if (session.notes) {
     lines.push(rule, ...wrap(`Obs: ${plain(session.notes)}`, width));
   }
