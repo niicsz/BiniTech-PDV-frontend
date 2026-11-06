@@ -163,6 +163,14 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'cash-sessions',
+    title: 'Caixas | BiniTech PDV',
+    data: seo({ title: 'Caixas | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./cash/cash-sessions.component').then(m => m.CashSessionsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'debtors',
     title: 'Devedores | BiniTech PDV',
     data: seo({ title: 'Devedores | BiniTech PDV', noindex: true }),

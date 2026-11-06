@@ -15,10 +15,11 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { CartItem } from '../../../shared/models/cart.model';
 import {
   ProductDTO, CreateSaleDTO, CreateSaleItemDTO,
-  PaymentDTO, PaymentMethodEnum, SaleDTO, CreateProductDTO
+  PaymentDTO, PaymentMethodEnum, SaleDTO, CreateProductDTO, CashSessionDTO
 } from '../../../shared/models/api.models';
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
+import { CashBarComponent } from '../cash-bar/cash-bar.component';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { FiscalIssuer, FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
@@ -28,7 +29,7 @@ import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-re
 @Component({
   selector: 'app-pos-screen',
   imports: [
-    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent, MatrixReceiptComponent,
+    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent, MatrixReceiptComponent, CashBarComponent,
     MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatChipsModule
   ],
   templateUrl: './pos-screen.component.html',
@@ -37,6 +38,9 @@ import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-re
 export class PosScreenComponent implements OnInit, OnDestroy {
 
   @ViewChild('barcodeInput') barcodeInput!: ElementRef<HTMLInputElement>;
+  @ViewChild(CashBarComponent) cashBar?: CashBarComponent;
+
+  cashSession: CashSessionDTO | null = null;
 
   cart: CartItem[] = [];
   barcodeValue = '';
@@ -263,6 +267,10 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboard(event: KeyboardEvent): void {
+    if (this.cashBar?.dialogOpen) {
+      return;
+    }
+
     if (this.showOutOfStockModal) {
       if (event.key === 'Escape') {
         this.closeOutOfStockModal();
@@ -607,6 +615,11 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       this.showStatus('Carrinho vazio. Adicione produtos antes de finalizar.', 'error');
       return;
     }
+    if (!this.cashSession) {
+      this.showStatus('Abra o caixa para finalizar vendas.', 'info');
+      this.cashBar?.requestOpen();
+      return;
+    }
     this.initialPaymentMethod = method;
     this.paymentErrorMessage = '';
     this.paymentProcessing = false;
@@ -626,7 +639,9 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       ...(confirmation.customerName ? { customerName: confirmation.customerName } : {}),
       ...(confirmation.customerPhone ? { customerPhone: confirmation.customerPhone } : {}),
       ...(confirmation.customerCpf ? { customerCpf: confirmation.customerCpf } : {}),
-      ...(this.hasOutOfStockItems ? { skipStockValidation: true } : {})
+      ...(this.hasOutOfStockItems ? { skipStockValidation: true } : {}),
+      ...(confirmation.discount > 0 ? { discount: confirmation.discount } : {}),
+      ...(confirmation.surcharge > 0 ? { surcharge: confirmation.surcharge } : {})
     };
 
     this.paymentProcessing = true;
@@ -660,6 +675,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         }
         this.clearCart();
         this.hasOutOfStockItems = false;
+        this.cashBar?.refresh();
         console.info('[PosScreen] Venda finalizada com sucesso: id=', result.id, 'total=', result.totalAmount);
         this.showStatus('Venda finalizada com sucesso!', 'success');
         this.checkLowStock(soldProductIds);
@@ -771,6 +787,11 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.barcodeInput?.nativeElement?.focus();
     }, 50);
+  }
+
+  onCashSessionChange(session: CashSessionDTO | null): void {
+    this.cashSession = session;
+    if (!this.cashBar?.dialogOpen) this.focusBarcode();
   }
 
   showStatus(message: string, type: 'success' | 'error' | 'info'): void {

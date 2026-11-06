@@ -1,6 +1,7 @@
 import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
+import { netSubtotal } from '../../../shared/receipt/matrix-receipt';
 import { RefundMethod, SaleDTO, SaleReturnDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
@@ -28,6 +30,7 @@ interface ReturnableItem {
   sold: number;
   available: number;
   unitPrice: number;
+  net: number;
 }
 
 interface ProductRanking {
@@ -39,7 +42,7 @@ interface ProductRanking {
 @Component({
   selector: 'app-sales-report',
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterLink,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatChipsModule, MatrixReceiptComponent
   ],
@@ -155,14 +158,14 @@ export class SalesReportComponent implements OnInit {
         const name = item.productDescription || 'Desconhecido';
         const existing = map.get(name) || { name, quantity: 0, revenue: 0 };
         existing.quantity += item.quantity || 0;
-        existing.revenue += item.subtotal || 0;
+        existing.revenue += netSubtotal(item);
         map.set(name, existing);
       }
       for (const item of (sale.returns || []).flatMap(r => r.items || [])) {
         const existing = map.get(item.productDescription || 'Desconhecido');
         if (existing) {
           existing.quantity -= item.quantity || 0;
-          existing.revenue -= item.subtotal || 0;
+          existing.revenue -= netSubtotal(item);
         }
       }
     }
@@ -216,7 +219,7 @@ export class SalesReportComponent implements OnInit {
 
   get returnTotal(): number {
     return round2(this.returnableItems.reduce(
-      (sum, item) => sum + item.unitPrice * this.quantityFor(item), 0));
+      (sum, item) => sum + (item.sold > 0 ? (item.net / item.sold) * this.quantityFor(item) : 0), 0));
   }
 
   private quantityFor(item: ReturnableItem): number {
@@ -233,6 +236,7 @@ export class SalesReportComponent implements OnInit {
       const current = byProduct.get(item.productId);
       if (current) {
         current.sold += item.quantity ?? 0;
+        current.net += netSubtotal(item);
       } else {
         byProduct.set(item.productId, {
           productId: item.productId,
@@ -240,6 +244,7 @@ export class SalesReportComponent implements OnInit {
           sold: item.quantity ?? 0,
           available: 0,
           unitPrice: item.unitPrice ?? 0,
+          net: netSubtotal(item),
         });
       }
     }
