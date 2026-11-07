@@ -258,8 +258,8 @@ export class CashBarComponent implements OnInit {
   private readonly cashSessions = inject(CashSessionService);
   private readonly authService = inject(AuthService);
 
-  @Output() sessionChange = new EventEmitter<CashSessionDTO | null>();
-  @Output() notify = new EventEmitter<string>();
+  @Output() readonly sessionChange = new EventEmitter<CashSessionDTO | null>();
+  @Output() readonly notify = new EventEmitter<string>();
   @ViewChild('amountField') amountField?: ElementRef<HTMLInputElement>;
 
   session: CashSessionDTO | null = null;
@@ -353,7 +353,7 @@ export class CashBarComponent implements OnInit {
     this.run(this.cashSessions.addMovement(this.session.id, this.movementType, value, this.reason.trim()), (session) => {
       this.setSession(session);
       this.closeDialog();
-      this.notify.emit(`${label} de R$ ${value.toFixed(2).replace('.', ',')} registrado.`);
+      this.notify.emit(`${label} de R$ ${value.toFixed(2).replaceAll('.', ',')} registrado.`);
     });
   }
 
@@ -389,7 +389,7 @@ export class CashBarComponent implements OnInit {
 
   differenceLabel(difference: number): string {
     if (Math.abs(difference) < 0.005) return 'Caixa conferido: sem diferença.';
-    const value = Math.abs(difference).toFixed(2).replace('.', ',');
+    const value = Math.abs(difference).toFixed(2).replaceAll('.', ',');
     return difference < 0 ? `Falta R$ ${value} no caixa.` : `Sobra R$ ${value} no caixa.`;
   }
 
