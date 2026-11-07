@@ -9,7 +9,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { SaleService } from '../../../pos/services/sale.service';
-import { netSubtotal } from '../../../shared/receipt/matrix-receipt';
 import { RefundMethod, SaleDTO, SaleReturnDTO } from '../../../shared/models/api.models';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { localIsoDate } from '../../../core/local-date';
@@ -19,7 +18,7 @@ import {
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
-import { buildReturnReceipt, buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
+import { buildReturnReceipt, buildSaleReceipt, netSubtotal, printMatrix } from '../../../shared/receipt/matrix-receipt';
 import {
   REFUND_LABELS, hasOpenCrediario, netAmount, netCost, returnedQuantity, round2, saleStatus,
 } from '../../sale-amounts';
