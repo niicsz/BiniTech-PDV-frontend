@@ -194,6 +194,14 @@ export const routes: Routes = [
     canActivate: [adminGuard]
   },
   {
+    path: 'pix',
+    title: 'Pix integrado | BiniTech PDV',
+    data: seo({ title: 'Pix integrado | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./pix/pix-settings.component').then(m => m.PixSettingsComponent),
+    canActivate: [adminGuard]
+  },
+  {
     path: 'fiscal',
     title: 'Nota Fiscal | BiniTech PDV',
     data: seo({ title: 'Nota Fiscal | BiniTech PDV', noindex: true }),

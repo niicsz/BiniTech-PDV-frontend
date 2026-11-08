@@ -11,6 +11,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../auth/services/auth.service';
 import { FiscalFeatureService } from '../../fiscal/fiscal-feature.service';
 
+import { Router } from '@angular/router';
+import { PixFeatureService } from '../../pix/pix-feature.service';
 @Component({
   selector: 'app-settings-modal',
   imports: [CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSlideToggleModule, MatSnackBarModule],
@@ -50,6 +52,16 @@ import { FiscalFeatureService } from '../../fiscal/fiscal-feature.service';
               Minha loja emite NFC-e
             </mat-slide-toggle>
             <p class="description">Deixe desligado se você vende como pessoa física ou não tem inscrição estadual.</p>
+          </div>
+          <div class="fiscal-section" *ngIf="canManageFiscal && pixFeature.featureAvailable()">
+            <h4>Pix integrado</h4>
+            <p class="description">
+              {{ pixFeature.active() ? 'Ligado: o caixa gera o QR e registra a venda quando o cliente paga.' : 'Desligado: o Pix é só marcado no caixa, sem conferência automática.' }}
+            </p>
+            <button mat-stroked-button type="button" (click)="openPix()">
+              <mat-icon>pix</mat-icon>
+              Configurar Pix
+            </button>
           </div>
         </mat-card-content>
 
@@ -150,13 +162,21 @@ export class SettingsModalComponent {
   private readonly snackBar = inject(MatSnackBar);
   readonly fiscalFeature = inject(FiscalFeatureService);
   readonly canManageFiscal = inject(AuthService).canManageTenantUsers();
+  readonly pixFeature = inject(PixFeatureService);
+  private readonly router = inject(Router);
   savingFiscal = false;
   colors: ThemeColors = {};
 
   constructor() {
+    if (this.canManageFiscal) this.pixFeature.ensureLoaded().subscribe();
     this.colors = { ...this.themeService.customColors() };
     if (!this.colors.primary) this.colors.primary = '#d4391a';
     if (!this.colors.headerBg) this.colors.headerBg = '#241a12';
+  }
+
+  openPix(): void {
+    this.close.emit();
+    this.router.navigate(['/pix']);
   }
 
   updateColor(key: keyof ThemeColors, value: string) {

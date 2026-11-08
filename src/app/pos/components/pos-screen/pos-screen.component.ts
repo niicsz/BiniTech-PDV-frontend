@@ -20,16 +20,26 @@ import {
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
 import { CashBarComponent } from '../cash-bar/cash-bar.component';
+import { PixChargeModalComponent } from '../pix-charge-modal/pix-charge-modal.component';
+import { PixCharge, PixService } from '../../../pix/pix.service';
+import { PixFeatureService } from '../../../pix/pix-feature.service';
 import { AnalyticsService } from '../../../core/analytics.service';
 import { FiscalIssuer, FiscalService, NfceDocument, canPrintNfce } from '../../../fiscal/fiscal.service';
 import { FiscalFeatureService } from '../../../fiscal/fiscal-feature.service';
 import { MatrixReceiptComponent } from '../../../shared/receipt/matrix-receipt.component';
 import { buildSaleReceipt, printMatrix } from '../../../shared/receipt/matrix-receipt';
 
+type SaleParams = Record<string, string | number | boolean>;
+
+interface PixSaleContext {
+  params: SaleParams;
+  productIds: string[];
+}
+
 @Component({
   selector: 'app-pos-screen',
   imports: [
-    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent, MatrixReceiptComponent, CashBarComponent,
+    CommonModule, FormsModule, RouterLink, CartTableComponent, PaymentModalComponent, MatrixReceiptComponent, CashBarComponent, PixChargeModalComponent,
     MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatChipsModule
   ],
   templateUrl: './pos-screen.component.html',
@@ -41,6 +51,10 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   @ViewChild(CashBarComponent) cashBar?: CashBarComponent;
 
   cashSession: CashSessionDTO | null = null;
+  pixCharge: PixCharge | null = null;
+  private pixContext: PixSaleContext | null = null;
+  private readonly pixService = inject(PixService);
+  readonly pixFeature = inject(PixFeatureService);
 
   cart: CartItem[] = [];
   barcodeValue = '';
@@ -106,6 +120,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     this.loadProducts();
     this.checkTwoFactor();
     this.loadFiscalProfile();
+    this.pixFeature.ensureLoaded().subscribe();
   }
 
   private loadFiscalProfile(): void {
@@ -327,7 +342,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
   }
 
   private handleOverlayKeys(event: KeyboardEvent): boolean {
-    if (this.cashBar?.dialogOpen) {
+    if (this.cashBar?.dialogOpen || this.pixCharge) {
       return true;
     }
     if (this.showOutOfStockModal) {
@@ -662,28 +677,12 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     };
 
     console.info('[PosScreen] Finalizando venda com', items.length, 'item(ns), total:', this.total);
+    if (this.pixFeature.active() && confirmation.payments.some(p => p.method === 'PIX')) {
+      this.startPixCharge(sale, saleParams, soldProductIds);
+      return;
+    }
     this.saleService.create(sale).subscribe({
-      next: (result: SaleDTO) => {
-        this.paymentProcessing = false;
-        this.trackSaleCompleted({ ...saleParams, value: result.totalAmount ?? this.total });
-        this.lastSale = result;
-        this.receiptLines = buildSaleReceipt(result, { operator: this.loggedInUsername });
-        this.nfce = null;
-        this.nfceError = '';
-        this.nfceCpf = '';
-        this.showPaymentModal = false;
-        this.showReceiptModal = true;
-        this.nfceCpf = result.customerCpf ?? '';
-        if (this.canIssueNfce && result.id) {
-          this.watchNfce(result.id);
-        }
-        this.clearCart();
-        this.hasOutOfStockItems = false;
-        this.cashBar?.refresh();
-        console.info('[PosScreen] Venda finalizada com sucesso: id=', result.id, 'total=', result.totalAmount);
-        this.showStatus('Venda finalizada com sucesso!', 'success');
-        this.checkLowStock(soldProductIds);
-      },
+      next: (result: SaleDTO) => this.completeSale(result, saleParams, soldProductIds),
       error: (err) => {
         this.paymentProcessing = false;
         const msg = err.error?.message || 'Erro ao finalizar a venda.';
@@ -699,7 +698,65 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     });
   }
 
-  private trackSaleCompleted(params: Record<string, string | number | boolean>): void {
+  private completeSale(result: SaleDTO, saleParams: SaleParams, soldProductIds: string[]): void {
+    this.paymentProcessing = false;
+    this.trackSaleCompleted({ ...saleParams, value: result.totalAmount ?? this.total });
+    this.lastSale = result;
+    this.receiptLines = buildSaleReceipt(result, { operator: this.loggedInUsername });
+    this.nfce = null;
+    this.nfceError = '';
+    this.showPaymentModal = false;
+    this.showReceiptModal = true;
+    this.nfceCpf = result.customerCpf ?? '';
+    if (this.canIssueNfce && result.id) {
+      this.watchNfce(result.id);
+    }
+    this.clearCart();
+    this.hasOutOfStockItems = false;
+    this.cashBar?.refresh();
+    console.info('[PosScreen] Venda finalizada com sucesso: id=', result.id, 'total=', result.totalAmount);
+    this.showStatus('Venda finalizada com sucesso!', 'success');
+    this.checkLowStock(soldProductIds);
+  }
+
+  private startPixCharge(sale: CreateSaleDTO, saleParams: SaleParams, soldProductIds: string[]): void {
+    this.pixService.createCharge(sale).subscribe({
+      next: (charge) => {
+        this.paymentProcessing = false;
+        this.pixContext = { params: { ...saleParams, pix_integrated: true }, productIds: soldProductIds };
+        this.showPaymentModal = false;
+        this.pixCharge = charge;
+      },
+      error: (err) => {
+        this.paymentProcessing = false;
+        this.paymentErrorMessage = err.error?.message || 'Não foi possível gerar o QR do Pix.';
+      }
+    });
+  }
+
+  onPixPaid(charge: PixCharge): void {
+    const context = this.pixContext;
+    this.pixCharge = null;
+    this.pixContext = null;
+    if (charge.sale) {
+      this.completeSale(charge.sale, context?.params ?? {}, context?.productIds ?? []);
+    }
+  }
+
+  onPixClosed(reason: 'retry' | 'failed'): void {
+    this.pixCharge = null;
+    this.pixContext = null;
+    if (reason === 'retry') {
+      this.initialPaymentMethod = null;
+      this.paymentErrorMessage = '';
+      this.showPaymentModal = true;
+    } else {
+      this.showStatus('Pix recebido sem venda registrada. Lance a venda manualmente marcando PIX.', 'error');
+      this.focusBarcode();
+    }
+  }
+
+  private trackSaleCompleted(params: SaleParams): void {
     this.analytics.track('sale_completed', params);
     if (!this.analytics.enabled || this.analytics.hasDone('first_sale')) return;
     // Uma consulta por loja/navegador: confirma que é a primeira venda da loja.
