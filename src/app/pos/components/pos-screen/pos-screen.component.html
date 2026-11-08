@@ -171,9 +171,17 @@
   [getPaymentLabel]="getPaymentLabel"
   [errorMessage]="paymentErrorMessage"
   [processing]="paymentProcessing"
+  [pixIntegrated]="pixFeature.active()"
   (paymentsConfirmed)="onPaymentsConfirmed($event)"
   (cancel)="closePaymentModal()">
 </app-payment-modal>
+
+<app-pix-charge-modal
+  *ngIf="pixCharge"
+  [charge]="pixCharge"
+  (paid)="onPixPaid($event)"
+  (closed)="onPixClosed($event)">
+</app-pix-charge-modal>
 
 <div class="modal-overlay receipt-overlay" *ngIf="showReceiptModal" (click)="closeReceiptModal()">
   <div class="receipt-modal-container" (click)="$event.stopPropagation()">

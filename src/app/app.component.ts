@@ -15,6 +15,7 @@ import { ThemeService } from './shared/services/theme.service';
 import { SettingsModalComponent } from './shared/components/settings-modal.component';
 import { NfceQuestionComponent } from './fiscal/nfce-question.component';
 import { FiscalFeatureService } from './fiscal/fiscal-feature.service';
+import { PixFeatureService } from './pix/pix-feature.service';
 import { DeliveryFeatureService } from './delivery/delivery-feature.service';
 import { CookieConsentComponent } from './shared/components/cookie-consent.component';
 import { SaleService } from './pos/services/sale.service';
@@ -522,6 +523,7 @@ export class AppComponent implements OnInit {
   private analytics = inject(AnalyticsService);
   readonly fiscalFeature = inject(FiscalFeatureService);
   readonly deliveryFeature = inject(DeliveryFeatureService);
+  private readonly pixFeature = inject(PixFeatureService);
 
   showSettings = false;
   debtorsCount = 0;
@@ -672,6 +674,7 @@ export class AppComponent implements OnInit {
   onLogout(): void {
     this.fiscalFeature.reset();
     this.deliveryFeature.reset();
+    this.pixFeature.reset();
     this.authService.logout();
   }
 }

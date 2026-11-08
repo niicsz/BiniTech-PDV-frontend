@@ -219,6 +219,11 @@ export interface PaymentConfirmation {
           <span>{{ errorMessage }}</span>
         </div>
 
+        <p class="pix-note" *ngIf="pixIntegrated && hasPix()">
+          <mat-icon>qr_code_2</mat-icon>
+          Ao confirmar, o caixa mostra o QR do Pix. A venda só é registrada depois que o cliente pagar.
+        </p>
+
         <mat-card-actions align="end">
           <button mat-stroked-button (click)="cancel.emit()">
             Cancelar (Esc)
@@ -345,6 +350,9 @@ export interface PaymentConfirmation {
       margin-top: 8px;
     }
     .text-danger { color: var(--danger); }
+    .pix-note { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 8px 12px; border-radius: var(--radius);
+      background: var(--surface-alt); border: 1px solid var(--border); color: var(--text); font-size: 13px; }
+    .pix-note mat-icon { color: #32bcad; flex: none; }
     .adjustment-lines {
       margin: -8px 0 16px;
       padding: 8px 12px;
@@ -617,6 +625,7 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
   @Input() getPaymentLabel!: (method: string) => string;
   @Input() errorMessage: string = '';
   @Input() processing: boolean = false;
+  @Input() pixIntegrated = false;
 
   @Output() paymentsConfirmed = new EventEmitter<PaymentConfirmation>();
   @Output() cancel = new EventEmitter<void>();
@@ -896,6 +905,10 @@ export class PaymentModalComponent implements AfterViewInit, OnInit {
 
   removePayment(index: number): void {
     this.payments.splice(index, 1);
+  }
+
+  hasPix(): boolean {
+    return this.payments.some(p => p.method === 'PIX');
   }
 
   getTotalPaid(): number {
