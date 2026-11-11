@@ -181,12 +181,15 @@ const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
                     <div class="total"><dt>Total</dt><dd>{{ money(order.total) }}</dd></div>
                     <div>
                       <dt>Pagamento</dt>
-                      <dd>{{ paymentLabel(order.paymentMethod) }}@if (order.changeFor) { · troco p/ {{ money(order.changeFor) }} }</dd>
+                      <dd>{{ paymentLabel(order.paymentMethod) }}@if (order.paidAt) { · pago pelo Pix }@if (order.changeFor) { · troco p/ {{ money(order.changeFor) }} }</dd>
                     </div>
                   </dl>
 
                   @if (completing() === order.id) {
                     <div class="complete-box">
+                      @if (order.paidAt) {
+                        <p class="hint">O cliente já pagou {{ money(order.total) }} pelo Pix.</p>
+                      } @else {
                       <mat-form-field appearance="outline">
                         <mat-label>Como o cliente pagou?</mat-label>
                         <mat-select [(ngModel)]="completeMethod" name="completeMethod">
@@ -196,6 +199,7 @@ const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
                           <mat-option value="CREDIT_CARD">Cartão de crédito</mat-option>
                         </mat-select>
                       </mat-form-field>
+                      }
                       <p class="hint">A venda entra no caixa com {{ money(order.subtotal) }} em produtos e baixa o estoque. A taxa de entrega fica só no pedido.</p>
                       <div class="row">
                         <button mat-stroked-button type="button" (click)="completing.set(null)">Voltar</button>
@@ -471,6 +475,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
     const name = order.customerName.split(' ')[0];
     const store = this.settings()?.storeName ?? '';
     const messages: Record<DeliveryOrderStatus, string> = {
+      AWAITING_PAYMENT: `Olá, ${name}! Estamos aguardando o Pix do pedido #${order.number}.`,
       RECEIVED: `Olá, ${name}! Recebemos seu pedido #${order.number} aqui na ${store}.`,
       ACCEPTED: `Olá, ${name}! Seu pedido #${order.number} foi aceito e já está sendo separado.`,
       DISPATCHED:
@@ -519,7 +524,7 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
 
   complete(order: DeliveryOrder): void {
     this.busy.set(order.id);
-    this.deliveryService.complete(order.id, this.completeMethod).subscribe({
+    this.deliveryService.complete(order.id, order.paidAt ? null : this.completeMethod).subscribe({
       next: (updated) => {
         this.replace(updated);
         this.busy.set(null);

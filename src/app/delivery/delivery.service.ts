@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export type DeliveryOrderStatus = 'RECEIVED' | 'ACCEPTED' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED';
+export type DeliveryOrderStatus = 'AWAITING_PAYMENT' | 'RECEIVED' | 'ACCEPTED' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED';
 export type DeliveryFulfillment = 'DELIVERY' | 'PICKUP';
 export type DeliveryPaymentMethod = 'PIX' | 'CASH' | 'CARD';
 export type SalePaymentMethod = 'CASH' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'PIX';
@@ -59,6 +59,7 @@ export interface DeliveryOrder {
   changeFor?: number | null;
   notes?: string | null;
   saleId?: string | null;
+  paidAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,6 +85,7 @@ export interface PublicStore {
   pickupAvailable: boolean;
   pickupAddress?: string | null;
   acceptedPayments: DeliveryPaymentMethod[];
+  pixIntegrated?: boolean;
   products: PublicProduct[];
 }
 
@@ -109,8 +111,16 @@ export interface PlacedOrder {
   total: number;
   paymentMethod: DeliveryPaymentMethod;
   pixKey?: string | null;
-  whatsappUrl: string;
+  paid?: boolean;
+  pix?: PlacedOrderPix | null;
+  whatsappUrl?: string | null;
   createdAt: string;
+}
+
+export interface PlacedOrderPix {
+  qrCode: string;
+  qrCodeBase64?: string | null;
+  expiresAt: string;
 }
 
 export const PAYMENT_LABELS: Record<DeliveryPaymentMethod, string> = {
@@ -120,6 +130,7 @@ export const PAYMENT_LABELS: Record<DeliveryPaymentMethod, string> = {
 };
 
 export const STATUS_LABELS: Record<DeliveryOrderStatus, string> = {
+  AWAITING_PAYMENT: 'Aguardando Pix',
   RECEIVED: 'Novo',
   ACCEPTED: 'Em preparo',
   DISPATCHED: 'Saiu / pronto',
@@ -148,8 +159,11 @@ export class DeliveryService {
     return this.http.patch<DeliveryOrder>(`/api/delivery/orders/${encodeURIComponent(id)}/status`, { status });
   }
 
-  complete(id: string, paymentMethod: SalePaymentMethod): Observable<DeliveryOrder> {
-    return this.http.post<DeliveryOrder>(`/api/delivery/orders/${encodeURIComponent(id)}/complete`, { paymentMethod });
+  complete(id: string, paymentMethod: SalePaymentMethod | null): Observable<DeliveryOrder> {
+    return this.http.post<DeliveryOrder>(
+      `/api/delivery/orders/${encodeURIComponent(id)}/complete`,
+      paymentMethod ? { paymentMethod } : {},
+    );
   }
 
   getStore(slug: string): Observable<PublicStore> {

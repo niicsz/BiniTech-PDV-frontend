@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
@@ -161,6 +161,9 @@ const CUSTOMER_KEY = 'pedir:cliente';
                     <button type="button" [class.on]="payment === method" (click)="payment = method">{{ paymentLabel(method) }}</button>
                   }
                 </div>
+                @if (payment === 'PIX' && s.pixIntegrated) {
+                  <p class="fine">Você paga agora pelo QR code do Pix. O pedido só vai para a loja depois do pagamento.</p>
+                }
                 @if (payment === 'CASH') {
                   <label>Troco para quanto? <input [(ngModel)]="changeFor" name="changeFor" type="number" min="0" step="1" inputmode="decimal" placeholder="Deixe vazio se não precisar" /></label>
                 }
@@ -340,6 +343,7 @@ const CUSTOMER_KEY = 'pedir:cliente';
 })
 export class StorefrontComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly deliveryService = inject(DeliveryService);
   private readonly title = inject(Title);
 
@@ -493,6 +497,10 @@ export class StorefrontComponent implements OnInit {
           this.notes = '';
           this.changeFor = null;
           this.persist();
+          if (placed.status === 'AWAITING_PAYMENT') {
+            void this.router.navigate(['/pedir', store.slug, 'pedido', placed.id]);
+            return;
+          }
           this.view.set('done');
           window.scrollTo({ top: 0 });
         },
