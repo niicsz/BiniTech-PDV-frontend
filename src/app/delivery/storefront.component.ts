@@ -183,7 +183,11 @@ const CUSTOMER_KEY = 'pedir:cliente';
                 <button type="submit" class="cta" [disabled]="sending() || !s.open || belowMinimum() || cart().length === 0">
                   {{ sending() ? 'Enviando...' : s.open ? 'Fazer pedido · ' + money(total()) : 'Loja fechada' }}
                 </button>
-                <p class="fine">Ao enviar, o pedido vai para a loja e abrimos o WhatsApp com o resumo para você confirmar.</p>
+                @if (payment === 'PIX' && s.pixIntegrated) {
+                  <p class="fine">Ao enviar, mostramos o QR code do Pix. O pedido vai para a loja assim que o pagamento for confirmado.</p>
+                } @else {
+                  <p class="fine">Ao enviar, o pedido vai para a loja e abrimos o WhatsApp com o resumo para você confirmar.</p>
+                }
               </form>
             </section>
           }
