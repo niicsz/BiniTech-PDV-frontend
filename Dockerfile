@@ -19,6 +19,7 @@ RUN chmod +x /docker-entrypoint.d/40-env-js.sh
 COPY --from=build /app/dist/binitech-pdv-frontend/browser /usr/share/nginx/html
 
 ENV PORT=8080
+ENV IMAGES_CDN_URL=
 # ID público do Google Analytics 4 (sobrescreva no Railway; vazio desabilita).
 ENV GA_MEASUREMENT_ID=G-YD372YEZ1H
 EXPOSE 8080

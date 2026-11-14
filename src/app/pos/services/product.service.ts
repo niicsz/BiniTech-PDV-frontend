@@ -57,6 +57,16 @@ export class ProductService {
     );
   }
 
+  uploadImage(id: string, file: File): Observable<ProductDTO> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.put<ProductDTO>(`${this.baseUrl}/${encodeURIComponent(id)}/image`, body);
+  }
+
+  removeImage(id: string): Observable<ProductDTO> {
+    return this.http.delete<ProductDTO>(`${this.baseUrl}/${encodeURIComponent(id)}/image`);
+  }
+
   delete(id: string): Observable<void> {
     console.info('[ProductService] Removendo produto:', id);
     return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(

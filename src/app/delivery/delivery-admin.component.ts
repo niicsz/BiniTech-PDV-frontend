@@ -16,7 +16,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription, interval, startWith } from 'rxjs';
 import { AuthService } from '../auth/services/auth.service';
 import { DeliveryFeatureService } from './delivery-feature.service';
+import { ImageUploadComponent } from '../shared/components/image-upload.component';
 import {
+  DeliveryImageKind,
   DeliveryOrder,
   DeliveryOrderStatus,
   DeliveryPaymentMethod,
@@ -57,6 +59,7 @@ const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatSnackBarModule,
+    ImageUploadComponent,
   ],
   template: `
     <div class="delivery">
@@ -243,6 +246,34 @@ const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
               <mat-slide-toggle [(ngModel)]="form.open" name="open" [disabled]="!form.enabled">Aceitando pedidos agora</mat-slide-toggle>
             </div>
 
+            <h2>Imagens da loja</h2>
+            <div class="images">
+              <app-image-upload
+                label="Logo"
+                hint="Quadrado, de preferência com fundo transparente."
+                shape="round"
+                placeholderIcon="storefront"
+                testId="logo"
+                [url]="s.logoUrl"
+                [busy]="imageBusy() === 'LOGO'"
+                [errorMessage]="imageError() === 'LOGO' ? imageErrorText() : null"
+                (selected)="uploadImage('LOGO', $event)"
+                (removed)="removeImage('LOGO')"
+              ></app-image-upload>
+              <app-image-upload
+                label="Capa"
+                hint="Faixa no topo do cardápio. Fica em 1200 x 400."
+                shape="banner"
+                placeholderIcon="panorama"
+                testId="cover"
+                [url]="s.coverUrl"
+                [busy]="imageBusy() === 'COVER'"
+                [errorMessage]="imageError() === 'COVER' ? imageErrorText() : null"
+                (selected)="uploadImage('COVER', $event)"
+                (removed)="removeImage('COVER')"
+              ></app-image-upload>
+            </div>
+
             <h2>Onde você recebe os pedidos</h2>
             <div class="grid">
               <mat-form-field appearance="outline">
@@ -324,6 +355,8 @@ const SALE_METHOD: Record<DeliveryPaymentMethod, SalePaymentMethod> = {
     .subtitle { margin:0; color:var(--text-secondary); }
     h2 { font-family:var(--font-display); font-size:18px; font-weight:700; margin:22px 0 12px; color:var(--text); }
     .loading { display:flex; justify-content:center; padding:60px; }
+    .images { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:20px; align-items:start; }
+    @media (max-width: 760px) { .images { grid-template-columns:1fr; } }
     .store-state { display:flex; align-items:center; gap:10px; padding:8px 8px 8px 14px; border:2px solid var(--text);
       border-radius:100px; background:var(--surface); font-weight:700; color:var(--danger); }
     .store-state.open { color:var(--success); }
@@ -417,6 +450,9 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
   completing = signal<string | null>(null);
   tab = signal<'orders' | 'settings'>('orders');
   filter = signal<OrderFilter>('active');
+  imageBusy = signal<DeliveryImageKind | null>(null);
+  imageError = signal<DeliveryImageKind | null>(null);
+  imageErrorText = signal<string | null>(null);
   completeMethod: SalePaymentMethod = 'PIX';
   form: DeliverySettingsRequest = this.emptyForm();
 
@@ -536,6 +572,44 @@ export class DeliveryAdminComponent implements OnInit, OnDestroy {
         this.fail(error, 'Não foi possível concluir o pedido.');
       },
     });
+  }
+
+  uploadImage(kind: DeliveryImageKind, file: File): void {
+    this.imageBusy.set(kind);
+    this.imageError.set(null);
+    this.deliveryService.uploadImage(kind, file).subscribe({
+      next: (settings) => {
+        this.applyImages(settings);
+        this.imageBusy.set(null);
+        this.snackBar.open(kind === 'LOGO' ? 'Logo atualizado.' : 'Capa atualizada.', 'OK', { duration: 2500 });
+      },
+      error: (error: HttpErrorResponse) => this.imageFailed(kind, error, 'Não foi possível enviar a imagem.'),
+    });
+  }
+
+  removeImage(kind: DeliveryImageKind): void {
+    if (!confirm(kind === 'LOGO' ? 'Remover o logo da loja?' : 'Remover a capa do cardápio?')) return;
+    this.imageBusy.set(kind);
+    this.imageError.set(null);
+    this.deliveryService.removeImage(kind).subscribe({
+      next: (settings) => {
+        this.applyImages(settings);
+        this.imageBusy.set(null);
+      },
+      error: (error: HttpErrorResponse) => this.imageFailed(kind, error, 'Não foi possível remover a imagem.'),
+    });
+  }
+
+  private applyImages(settings: DeliverySettings): void {
+    this.settings.update((current) =>
+      current ? { ...current, logoUrl: settings.logoUrl, coverUrl: settings.coverUrl } : settings,
+    );
+  }
+
+  private imageFailed(kind: DeliveryImageKind, error: HttpErrorResponse, fallback: string): void {
+    this.imageBusy.set(null);
+    this.imageError.set(kind);
+    this.imageErrorText.set(error.error?.message || fallback);
   }
 
   togglePayment(method: DeliveryPaymentMethod, checked: boolean): void {

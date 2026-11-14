@@ -16,6 +16,7 @@ import {
   PublicStore,
   brl,
 } from './delivery.service';
+import { imageSrc } from '../core/image-url';
 
 interface CartLine {
   productId: string;
@@ -52,9 +53,16 @@ const CUSTOMER_KEY = 'pedir:cliente';
           <p>Esta loja não está recebendo pedidos pelo link no momento.</p>
         </div>
       } @else if (store(); as s) {
-        <header class="hero">
+        @if (img(s.coverUrl); as cover) {
+          <div class="cover"><img [src]="cover" alt="" fetchpriority="high" /></div>
+        }
+        <header class="hero" [class.with-cover]="img(s.coverUrl)">
           <div class="hero-inner">
-            <div class="badge">{{ initials(s.name) }}</div>
+            @if (img(s.logoUrl); as logo) {
+              <div class="badge logo"><img [src]="logo" [alt]="'Logo da ' + s.name" /></div>
+            } @else {
+              <div class="badge">{{ initials(s.name) }}</div>
+            }
             <div class="hero-text">
               <h1>{{ s.name }}</h1>
               <div class="meta">
@@ -92,7 +100,16 @@ const CUSTOMER_KEY = 'pedir:cliente';
                 <ul class="products">
                   @for (product of group.items; track product.id) {
                     <li>
-                      <button type="button" class="product" [disabled]="!product.available" (click)="open(product)">
+                      <button type="button" class="product" [class.has-thumb]="hasImages()" [disabled]="!product.available" (click)="open(product)">
+                        @if (hasImages()) {
+                          <span class="p-thumb">
+                            @if (img(product.imageUrl); as photo) {
+                              <img [src]="photo" alt="" loading="lazy" decoding="async" width="64" height="64" />
+                            } @else {
+                              <mat-icon>shopping_basket</mat-icon>
+                            }
+                          </span>
+                        }
                         <span class="p-name">{{ product.description }}</span>
                         <span class="p-price">{{ product.available ? money(product.price) : 'Esgotado' }}</span>
                         @if (inCart(product.id) > 0) { <span class="p-qty">{{ inCart(product.id) }}</span> }
@@ -227,6 +244,9 @@ const CUSTOMER_KEY = 'pedir:cliente';
         @if (selected(); as product) {
           <div class="sheet-backdrop" (click)="selected.set(null)"></div>
           <div class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="product.description">
+            @if (img(product.imageUrl); as photo) {
+              <img class="sheet-photo" [src]="photo" [alt]="product.description" />
+            }
             <h3>{{ product.description }}</h3>
             <p class="money big">{{ money(product.price) }}</p>
             <label>Observação<input [(ngModel)]="draftNotes" name="draftNotes" maxlength="140" placeholder="Ex.: bem gelada, sem cebola" /></label>
@@ -252,6 +272,17 @@ const CUSTOMER_KEY = 'pedir:cliente';
     .gone mat-icon { font-size:56px; width:56px; height:56px; color:var(--primary); }
     .hero { background:var(--header-bg); color:var(--header-text); padding:28px 16px 18px; }
     .hero-inner { display:flex; gap:14px; align-items:center; }
+    .cover { aspect-ratio:3 / 1; background:var(--header-bg); overflow:hidden; }
+    .cover img { width:100%; height:100%; object-fit:cover; display:block; }
+    .hero.with-cover { padding-top:0; }
+    .hero.with-cover .badge { margin-top:-32px; }
+    .badge.logo { background:#fff; overflow:hidden; }
+    .badge.logo img { width:100%; height:100%; object-fit:contain; }
+    .product.has-thumb { grid-template-columns:64px 1fr auto; }
+    .p-thumb { grid-row:span 1; width:64px; height:64px; border-radius:var(--radius-md); overflow:hidden; background:var(--bg);
+      display:grid; place-items:center; color:var(--text-tertiary); }
+    .p-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .sheet-photo { width:100%; aspect-ratio:1 / 1; max-height:42vh; object-fit:cover; border-radius:var(--radius-lg); display:block; margin-bottom:12px; }
     .badge { flex:none; width:64px; height:64px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center;
       font-family:var(--font-display); font-weight:800; font-size:24px; border:3px solid var(--header-text); }
     .hero h1 { font-family:var(--font-display); font-size:26px; line-height:1.1; margin:0 0 8px; letter-spacing:-.5px; text-wrap:balance; }
@@ -370,6 +401,12 @@ export class StorefrontComponent implements OnInit {
   notes = '';
   customer: Customer = { name: '', phone: '', street: '', number: '', complement: '', district: '', reference: '' };
   private slug = '';
+
+  hasImages = computed(() => (this.store()?.products ?? []).some((p) => !!p.imageUrl));
+
+  img(url: string | null | undefined): string | null {
+    return imageSrc(url);
+  }
 
   get query(): string {
     return this.queryValue();
