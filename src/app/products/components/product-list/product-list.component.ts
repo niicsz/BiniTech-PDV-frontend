@@ -16,6 +16,8 @@ import { ProductDTO, CreateProductDTO } from '../../../shared/models/api.models'
 import { AnalyticsService } from '../../../core/analytics.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { isValidBarcode } from '../../../core/barcode';
+import { imageSrc } from '../../../core/image-url';
+import { ImageUploadComponent } from '../../../shared/components/image-upload.component';
 
 @Component({
   selector: 'app-product-list',
@@ -24,7 +26,8 @@ import { isValidBarcode } from '../../../core/barcode';
     RouterLink,
     MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatTooltipModule, MatSlideToggleModule
+    MatTooltipModule, MatSlideToggleModule,
+    ImageUploadComponent
   ],
   templateUrl: './product-list.component.html',
   styleUrls: ['./product-list.component.scss']
@@ -34,6 +37,9 @@ export class ProductListComponent implements OnInit {
   products: ProductDTO[] = [];
   showForm = false;
   editingId: string | null = null;
+  editingImageUrl: string | null = null;
+  imageBusy = false;
+  imageError: string | null = null;
 
   selectedCategory = '';
   searchTerm = '';
@@ -190,12 +196,16 @@ export class ProductListComponent implements OnInit {
 
   openCreateForm(): void {
     this.editingId = null;
+    this.editingImageUrl = null;
+    this.imageError = null;
     this.form = { barcode: '', description: '', price: 0, costPrice: 0, stockQuantity: 0, category: '', ncm: '', cfop: '', csosn: '', active: true, deliveryVisible: false };
     this.showForm = true;
   }
 
   openEditForm(product: ProductDTO): void {
     this.editingId = product.id!;
+    this.editingImageUrl = product.imageUrl ?? null;
+    this.imageError = null;
     this.form = {
       barcode: product.barcode || '',
       description: product.description || '',
@@ -290,6 +300,50 @@ export class ProductListComponent implements OnInit {
       },
       error: (err) => this.showStatus(err.error?.message || 'Erro ao reativar produto.', 'error')
     });
+  }
+
+  thumb(product: ProductDTO): string | null {
+    return imageSrc(product.imageUrl);
+  }
+
+  uploadImage(file: File): void {
+    const id = this.editingId;
+    if (!id) return;
+    this.imageBusy = true;
+    this.imageError = null;
+    this.productService.uploadImage(id, file).subscribe({
+      next: (product) => {
+        this.imageBusy = false;
+        this.applyImage(id, product.imageUrl ?? null);
+        this.showStatus('Foto do produto atualizada.', 'success');
+      },
+      error: (err) => {
+        this.imageBusy = false;
+        this.imageError = err.error?.message || 'Não foi possível enviar a foto.';
+      }
+    });
+  }
+
+  removeImage(): void {
+    const id = this.editingId;
+    if (!id || !confirm('Remover a foto deste produto?')) return;
+    this.imageBusy = true;
+    this.imageError = null;
+    this.productService.removeImage(id).subscribe({
+      next: () => {
+        this.imageBusy = false;
+        this.applyImage(id, null);
+      },
+      error: (err) => {
+        this.imageBusy = false;
+        this.imageError = err.error?.message || 'Não foi possível remover a foto.';
+      }
+    });
+  }
+
+  private applyImage(id: string, url: string | null): void {
+    this.editingImageUrl = url;
+    this.products = this.products.map(p => (p.id === id ? { ...p, imageUrl: url } : p));
   }
 
   cancelForm(): void {

@@ -11,6 +11,7 @@ export interface ProductDTO {
   cfop?: string | null;
   csosn?: string | null;
   deliveryVisible?: boolean;
+  imageUrl?: string | null;
   userId?: string;
 }
 

@@ -22,9 +22,13 @@ export interface DeliverySettings {
   pickupAddress: string | null;
   acceptedPayments: DeliveryPaymentMethod[];
   pixKey: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
 }
 
-export type DeliverySettingsRequest = Omit<DeliverySettings, 'slug' | 'storeName'>;
+export type DeliveryImageKind = 'LOGO' | 'COVER';
+
+export type DeliverySettingsRequest = Omit<DeliverySettings, 'slug' | 'storeName' | 'logoUrl' | 'coverUrl'>;
 
 export interface DeliveryAddress {
   street: string;
@@ -71,11 +75,14 @@ export interface PublicProduct {
   price: number;
   available: boolean;
   maxQuantity: number;
+  imageUrl?: string | null;
 }
 
 export interface PublicStore {
   slug: string;
   name: string;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
   open: boolean;
   message?: string | null;
   deliveryFee: number;
@@ -148,6 +155,16 @@ export class DeliveryService {
 
   updateSettings(request: DeliverySettingsRequest): Observable<DeliverySettings> {
     return this.http.put<DeliverySettings>('/api/delivery/settings', request);
+  }
+
+  uploadImage(kind: DeliveryImageKind, file: File): Observable<DeliverySettings> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.put<DeliverySettings>(`/api/delivery/images/${kind}`, body);
+  }
+
+  removeImage(kind: DeliveryImageKind): Observable<DeliverySettings> {
+    return this.http.delete<DeliverySettings>(`/api/delivery/images/${kind}`);
   }
 
   listOrders(status?: DeliveryOrderStatus): Observable<DeliveryOrder[]> {

@@ -144,6 +144,24 @@
           </mat-form-field>
         </div>
       </div>
+      <div class="form-section">
+        <p class="form-section-label">Foto</p>
+        <app-image-upload
+          *ngIf="editingId; else photoAfterSave"
+          label="Foto do produto"
+          hint="Aparece no cardápio do delivery. Fica quadrada, em 600 x 600."
+          placeholderIcon="photo_camera"
+          testId="product-photo"
+          [url]="editingImageUrl"
+          [busy]="imageBusy"
+          [errorMessage]="imageError"
+          (selected)="uploadImage($event)"
+          (removed)="removeImage()"
+        ></app-image-upload>
+        <ng-template #photoAfterSave>
+          <p class="photo-hint">Cadastre o produto e depois clique em editar para adicionar a foto.</p>
+        </ng-template>
+      </div>
       <div class="form-actions">
         <button mat-stroked-button type="button" (click)="cancelForm()">
           <mat-icon>close</mat-icon> Cancelar
@@ -214,7 +232,12 @@
             <td>
               <code class="barcode-badge">{{ product.barcode }}</code>
             </td>
-            <td class="product-name">{{ product.description }}</td>
+            <td class="product-name">
+              <span class="name-with-thumb">
+                <img *ngIf="thumb(product) as src" class="thumb" [src]="src" alt="" loading="lazy" />
+                {{ product.description }}
+              </span>
+            </td>
             <td>
               <span class="category-tag" *ngIf="product.category">{{ product.category }}</span>
               <span class="category-tag category-none" *ngIf="!product.category">Sem Categoria</span>
