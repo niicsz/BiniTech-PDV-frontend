@@ -40,6 +40,9 @@ jobs:
       - name: Esperar e checar os checks obrigatórios
         run: |
           checks_exigidos=("Frontend Build" "Docker Build" "SonarCloud Code Analysis")
+          app_do_check() {
+            if [ "$1" = "SonarCloud Code Analysis" ]; then echo sonarqubecloud; else echo github-actions; fi
+          }
           statuses_exigidos=()
           resumo=""
           for tentativa in $(seq 1 40); do
@@ -48,7 +51,7 @@ jobs:
             resumo=""
             for nome in "${checks_exigidos[@]}"; do
               linhas=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?per_page=100" --paginate \
-                --jq ".check_runs[] | select(.name == \"$nome\") | [.status, (.conclusion // \"\")] | @tsv")
+                --jq ".check_runs[] | select(.name == \"$nome\" and .app.slug == \"$(app_do_check "$nome")\") | [.status, (.conclusion // \"\")] | @tsv")
               if [ -z "$linhas" ]; then
                 pendentes="$pendentes $nome"
                 resumo="$resumo\n- $nome: sem resultado"
@@ -104,7 +107,7 @@ jobs:
       SHA: ${{ inputs.sha }}
     steps:
       - name: Checkout do commit aprovado
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ inputs.sha }}
 

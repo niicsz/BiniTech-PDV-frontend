@@ -130,7 +130,29 @@ export class ProductListComponent implements OnInit {
     return this.filteredProducts.reduce((sum, p) => sum + (p.costPrice || 0) * (p.stockQuantity || 0), 0);
   }
 
+  private filterCache?: { products: ProductDTO[]; category: string; term: string; result: ProductDTO[] };
+
   get filteredProducts(): ProductDTO[] {
+    const cache = this.filterCache;
+    if (
+      cache &&
+      cache.products === this.products &&
+      cache.category === this.selectedCategory &&
+      cache.term === this.searchTerm
+    ) {
+      return cache.result;
+    }
+    const result = this.computeFilteredProducts();
+    this.filterCache = {
+      products: this.products,
+      category: this.selectedCategory,
+      term: this.searchTerm,
+      result
+    };
+    return result;
+  }
+
+  private computeFilteredProducts(): ProductDTO[] {
     let result = this.products;
 
     if (this.selectedCategory) {

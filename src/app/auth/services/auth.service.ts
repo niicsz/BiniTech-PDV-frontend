@@ -192,6 +192,8 @@ export class AuthService {
     localStorage.setItem('role', res.role);
     if (res.tenantId) {
       localStorage.setItem('tenantId', res.tenantId);
+    } else {
+      localStorage.removeItem('tenantId');
     }
     this.loggedIn$.next(true);
     console.debug('[AuthService] Dados de autenticação armazenados para:', res.username);
