@@ -51,6 +51,7 @@ export interface SaleDTO {
   discount?: number;
   surcharge?: number;
   cashSessionId?: string;
+  preSaleId?: string;
 }
 
 export type SaleStatus = 'COMPLETED' | 'PARTIALLY_RETURNED' | 'RETURNED';
@@ -96,6 +97,7 @@ export interface CreateSaleDTO {
   skipStockValidation?: boolean;
   discount?: number;
   surcharge?: number;
+  preSaleId?: string;
 }
 
 export interface CreateSaleItemDTO {
@@ -214,4 +216,32 @@ export interface CashSessionDTO {
   notes?: string;
   summary?: CashSessionSummaryDTO;
   pendingDeliveryOrders?: number;
+}
+
+export type PreSaleStatus = 'OPEN' | 'PAID' | 'CANCELLED';
+
+export interface PreSaleItemDTO {
+  productId: string;
+  description: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface PreSaleDTO {
+  id: string;
+  number: number;
+  status: PreSaleStatus;
+  items: PreSaleItemDTO[];
+  total: number;
+  notes?: string;
+  attendantName?: string;
+  saleId?: string;
+  createdAt?: string;
+  closedAt?: string;
+}
+
+export interface CreatePreSaleDTO {
+  items: CreateSaleItemDTO[];
+  notes?: string;
 }

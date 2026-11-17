@@ -1354,3 +1354,55 @@
 .nfce-key { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); word-break: break-all; }
 .nfce-error { color: var(--danger); font-size: 13px; margin: 6px 0 0; }
 @media print { .nfce-panel { display: none; } }
+
+.pre-sale-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+
+  mat-icon {
+    color: var(--primary);
+  }
+
+  span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.pre-sale-detach {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--surface-alt);
+    outline: none;
+  }
+
+  mat-icon {
+    color: inherit;
+  }
+}
+
+.pre-sale-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}

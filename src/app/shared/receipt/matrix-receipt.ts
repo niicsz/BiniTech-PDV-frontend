@@ -1,4 +1,4 @@
-import { CashSessionDTO, RefundMethod, SaleDTO, SaleItemDTO, SaleReturnDTO } from '../models/api.models';
+import { CashSessionDTO, PreSaleDTO, RefundMethod, SaleDTO, SaleItemDTO, SaleReturnDTO } from '../models/api.models';
 
 export const MATRIX_COLUMNS = 48;
 
@@ -311,6 +311,46 @@ export function buildReturnReceipt(
     '',
     center('_'.repeat(Math.min(36, width)), width),
     center('Assinatura do cliente', width),
+    '',
+  );
+  return lines;
+}
+
+export function buildPreSaleTicket(preSale: PreSaleDTO, options: ReceiptOptions = {}): string[] {
+  const width = options.columns ?? MATRIX_COLUMNS;
+  const rule = '-'.repeat(width);
+  const doubleRule = '='.repeat(width);
+  const number = String(preSale.number);
+  const lines: string[] = [
+    doubleRule,
+    center(plain(options.storeName || 'BiniTech PDV').toUpperCase(), width),
+    center('COMANDA - PAGAR NO CAIXA', width),
+    center('*** NAO E DOCUMENTO FISCAL ***', width),
+    doubleRule,
+    '',
+    center(`*** COMANDA No ${number} ***`, width),
+    '',
+    columns('Emitida em', formatDate(preSale.createdAt), width),
+  ];
+  const attendant = preSale.attendantName || options.operator;
+  if (attendant) {
+    lines.push(`Atendente: ${plain(attendant)}`.slice(0, width));
+  }
+  lines.push(rule);
+  for (const item of preSale.items) {
+    lines.push(...wrap(plain(item.description), width));
+    lines.push(
+      columns(`  ${item.quantity} x ${money(item.unitPrice)}`, money(item.subtotal), width),
+    );
+  }
+  lines.push(rule, columns('TOTAL R$', money(preSale.total), width));
+  if (preSale.notes) {
+    lines.push(rule, ...wrap(`Obs: ${plain(preSale.notes)}`, width));
+  }
+  lines.push(
+    doubleRule,
+    center('Apresente este numero no caixa', width),
+    center(`COMANDA ${number}`, width),
     '',
   );
   return lines;

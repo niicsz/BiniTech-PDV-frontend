@@ -139,6 +139,14 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'comandas',
+    title: 'Comandas | BiniTech PDV',
+    data: seo({ title: 'Comandas | BiniTech PDV', noindex: true }),
+    loadComponent: () =>
+      import('./pre-sales/pre-sale-counter.component').then(m => m.PreSaleCounterComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'products',
     title: 'Produtos | BiniTech PDV',
     data: seo({ title: 'Produtos | BiniTech PDV', noindex: true }),
