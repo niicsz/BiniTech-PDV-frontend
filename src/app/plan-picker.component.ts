@@ -199,7 +199,7 @@ export class PlanPickerComponent implements OnInit {
         : this.billingService.setExtraUsers(p.quantity!);
     request.subscribe({
       next: (overview) => {
-        if (overview.checkoutUrl) {
+        if (overview.checkoutUrl && isTrustedCheckout(overview.checkoutUrl)) {
           window.location.href = overview.checkoutUrl;
           return;
         }
@@ -223,5 +223,17 @@ export class PlanPickerComponent implements OnInit {
   private apply(overview: PlanOverviewDTO): void {
     this.overview.set(overview);
     this.draftUsers.set(overview.extraUsers);
+  }
+}
+
+export function isTrustedCheckout(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'asaas.com' || url.hostname.endsWith('.asaas.com'))
+    );
+  } catch {
+    return false;
   }
 }

@@ -12,6 +12,8 @@ import { Subscription, timer, switchMap, takeWhile } from 'rxjs';
 import { ColumnMapping, ImportField, ImportJob, ImportRow, ProductImportService } from '../../services/product-import.service';
 import { AnalyticsService } from '../../../core/analytics.service';
 
+const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
+
 @Component({
   selector: 'app-product-import',
   standalone: true,
@@ -43,7 +45,21 @@ export class ProductImportComponent implements OnDestroy {
   get lastVisible(): number { return this.rows.length ? this.pageIndex * this.pageSize + this.rows.length : 0; }
   constructor(private imports: ProductImportService, private analytics: AnalyticsService) {}
   ngOnDestroy(): void { this.polling?.unsubscribe(); this.rowsRequest?.unsubscribe(); }
-  chooseFile(event: Event): void { this.selectedFile = (event.target as HTMLInputElement).files?.[0]; this.error = ''; }
+  chooseFile(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    this.selectedFile = undefined;
+    this.error = '';
+    if (!file) return;
+    if (!/[.](csv|xlsx|xls)$/i.test(file.name)) {
+      this.error = 'Envie um arquivo .csv, .xlsx ou .xls.';
+      return;
+    }
+    if (file.size > MAX_IMPORT_BYTES) {
+      this.error = 'O arquivo passa de 20 MB.';
+      return;
+    }
+    this.selectedFile = file;
+  }
   upload(): void {
     if (!this.selectedFile) return;
     this.run(this.imports.upload(this.selectedFile), job => this.resume(job));

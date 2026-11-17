@@ -36,7 +36,8 @@ interface Customer {
 
 type View = 'menu' | 'cart' | 'done';
 
-const CUSTOMER_KEY = 'pedir:cliente';
+const LEGACY_CUSTOMER_KEY = 'pedir:cliente';
+const CUSTOMER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-storefront',
@@ -633,15 +634,29 @@ export class StorefrontComponent implements OnInit {
 
   private restoreCustomer(): void {
     try {
-      const saved = JSON.parse(localStorage.getItem(CUSTOMER_KEY) ?? 'null') as Customer | null;
-      if (saved) this.customer = { ...this.customer, ...saved };
+      localStorage.removeItem(LEGACY_CUSTOMER_KEY);
+      const saved = JSON.parse(localStorage.getItem(this.customerKey()) ?? 'null') as
+        | { savedAt?: number; customer?: Customer }
+        | null;
+      if (!saved?.customer || !saved.savedAt || Date.now() - saved.savedAt > CUSTOMER_TTL_MS) {
+        localStorage.removeItem(this.customerKey());
+        return;
+      }
+      this.customer = { ...this.customer, ...saved.customer };
     } catch {}
   }
 
   private saveCustomer(): void {
     try {
-      localStorage.setItem(CUSTOMER_KEY, JSON.stringify(this.customer));
+      localStorage.setItem(
+        this.customerKey(),
+        JSON.stringify({ savedAt: Date.now(), customer: this.customer })
+      );
     } catch {}
+  }
+
+  private customerKey(): string {
+    return `pedir:${this.slug}:cliente`;
   }
 
   private cartKey(): string {
