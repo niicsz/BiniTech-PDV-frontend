@@ -15,8 +15,9 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { CartItem } from '../../../shared/models/cart.model';
 import {
   ProductDTO, CreateSaleDTO, CreateSaleItemDTO,
-  PaymentMethodEnum, SaleDTO, CreateProductDTO, CashSessionDTO
+  PaymentMethodEnum, SaleDTO, CreateProductDTO, CashSessionDTO, PreSaleDTO
 } from '../../../shared/models/api.models';
+import { PreSaleService, preSaleProblem } from '../../../pre-sales/pre-sale.service';
 import { CartTableComponent } from '../cart-table/cart-table.component';
 import { PaymentModalComponent, PaymentConfirmation } from '../payment-modal/payment-modal.component';
 import { CashBarComponent } from '../cash-bar/cash-bar.component';
@@ -49,12 +50,20 @@ export class PosScreenComponent implements OnInit, OnDestroy {
 
   @ViewChild('barcodeInput') barcodeInput!: ElementRef<HTMLInputElement>;
   @ViewChild(CashBarComponent) cashBar?: CashBarComponent;
+  @ViewChild('preSaleInput') preSaleInput?: ElementRef<HTMLInputElement>;
 
   cashSession: CashSessionDTO | null = null;
   pixCharge: PixCharge | null = null;
   private pixContext: PixSaleContext | null = null;
   private readonly pixService = inject(PixService);
   readonly pixFeature = inject(PixFeatureService);
+  private readonly preSaleService = inject(PreSaleService);
+
+  preSale: PreSaleDTO | null = null;
+  showPreSaleModal = false;
+  preSaleNumber: number | null = null;
+  preSaleLoading = false;
+  preSaleError = '';
 
   cart: CartItem[] = [];
   barcodeValue = '';
@@ -309,6 +318,10 @@ export class PosScreenComponent implements OnInit, OnDestroy {
         event.preventDefault();
         this.openQuantityModal();
         break;
+      case 'F3':
+        event.preventDefault();
+        this.openPreSaleModal();
+        break;
       case 'F4':
         event.preventDefault();
         this.startPayment('CASH');
@@ -355,6 +368,13 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     if (this.showLowStockAlert) {
       if (event.key === 'Escape' || event.key === 'Enter') {
         this.closeLowStockAlert();
+        event.preventDefault();
+      }
+      return true;
+    }
+    if (this.showPreSaleModal) {
+      if (event.key === 'Escape') {
+        this.closePreSaleModal();
         event.preventDefault();
       }
       return true;
@@ -590,7 +610,103 @@ export class PosScreenComponent implements OnInit, OnDestroy {
     this.clearCart();
   }
 
+  openPreSaleModal(): void {
+    this.preSaleNumber = null;
+    this.preSaleError = '';
+    this.preSaleLoading = false;
+    this.showPreSaleModal = true;
+    setTimeout(() => this.preSaleInput?.nativeElement.focus(), 50);
+  }
+
+  closePreSaleModal(): void {
+    this.showPreSaleModal = false;
+    this.focusBarcode();
+  }
+
+  loadPreSale(): void {
+    const number = Number(this.preSaleNumber);
+    if (!Number.isInteger(number) || number < 1) {
+      this.preSaleError = 'Digite o número da comanda.';
+      return;
+    }
+    if (this.preSale?.number === number) {
+      this.closePreSaleModal();
+      return;
+    }
+    this.preSaleLoading = true;
+    this.preSaleError = '';
+    this.preSaleService.findByNumber(number).subscribe({
+      next: (preSale) => {
+        this.preSaleLoading = false;
+        const problem = preSaleProblem(preSale);
+        if (problem) {
+          this.preSaleError = problem;
+          return;
+        }
+        this.applyPreSale(preSale);
+      },
+      error: (err) => {
+        this.preSaleLoading = false;
+        this.preSaleError = err.status === 404
+          ? `Comanda #${number} não encontrada.`
+          : err.error?.message || 'Não foi possível buscar a comanda.';
+      }
+    });
+  }
+
+  private applyPreSale(preSale: PreSaleDTO): void {
+    const missing = preSale.items.filter(item => !this.allProducts.some(p => p.id === item.productId));
+    if (missing.length > 0) {
+      this.preSaleError = `Produto inativo ou excluído na comanda: ${missing.map(m => m.description).join(', ')}.`;
+      return;
+    }
+    if (this.cart.length > 0 && !window.confirm(`Trocar o carrinho atual pelos itens da comanda #${preSale.number}?`)) {
+      return;
+    }
+    const lines: CartItem[] = preSale.items.map(item => {
+      const product = this.allProducts.find(p => p.id === item.productId)!;
+      const unitPrice = product.price ?? item.unitPrice;
+      return {
+        productId: item.productId,
+        barcode: product.barcode || '',
+        description: product.description || item.description,
+        quantity: item.quantity,
+        unitPrice,
+        subtotal: unitPrice * item.quantity,
+        stockQuantity: product.stockQuantity ?? 0
+      };
+    });
+    this.cart = lines;
+    this.selectedCartIndex = -1;
+    this.hasOutOfStockItems = lines.some(line => line.quantity > (line.stockQuantity ?? 0));
+    this.preSale = preSale;
+    this.recalculateTotal();
+    this.showPreSaleModal = false;
+    const priceChanged = preSale.items.some(item => {
+      const line = lines.find(l => l.productId === item.productId);
+      return line && Math.abs(line.unitPrice - item.unitPrice) > 0.004;
+    });
+    if (this.hasOutOfStockItems) {
+      this.showStatus(`Comanda #${preSale.number} carregada. Há itens acima do estoque: a venda baixa o que houver.`, 'info');
+    } else if (priceChanged) {
+      this.showStatus(`Comanda #${preSale.number} carregada com os preços atuais do cadastro.`, 'info');
+    } else {
+      this.showStatus(`Comanda #${preSale.number} carregada.`, 'success');
+    }
+    this.focusBarcode();
+  }
+
+  detachPreSale(): void {
+    if (!this.preSale) return;
+    if (!window.confirm(`Tirar a comanda #${this.preSale.number} do caixa? Os itens saem do carrinho e a comanda continua aberta.`)) {
+      this.focusBarcode();
+      return;
+    }
+    this.clearCart();
+  }
+
   clearCart(): void {
+    this.preSale = null;
     this.cart = [];
     this.selectedCartIndex = -1;
     this.total = 0;
@@ -660,7 +776,8 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       ...(confirmation.customerCpf ? { customerCpf: confirmation.customerCpf } : {}),
       ...(this.hasOutOfStockItems ? { skipStockValidation: true } : {}),
       ...(confirmation.discount > 0 ? { discount: confirmation.discount } : {}),
-      ...(confirmation.surcharge > 0 ? { surcharge: confirmation.surcharge } : {})
+      ...(confirmation.surcharge > 0 ? { surcharge: confirmation.surcharge } : {}),
+      ...(this.preSale ? { preSaleId: this.preSale.id } : {})
     };
 
     this.paymentProcessing = true;
@@ -673,7 +790,8 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       payment_count: confirmation.payments.length,
       items_count: this.getTotalQty(),
       on_credit: methods.includes('CREDIARIO'),
-      skip_stock: this.hasOutOfStockItems
+      skip_stock: this.hasOutOfStockItems,
+      pre_sale: !!this.preSale
     };
 
     console.info('[PosScreen] Finalizando venda com', items.length, 'item(ns), total:', this.total);

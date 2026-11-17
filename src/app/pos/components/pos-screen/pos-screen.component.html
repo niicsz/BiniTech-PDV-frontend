@@ -12,6 +12,7 @@
   <div class="shortcuts-bar">
     <div class="shortcut-item" *ngFor="let s of [
       {key: 'F2', label: 'Alterar Qtd'},
+      {key: 'F3', label: 'Comanda'},
       {key: 'F4', label: 'Dinheiro'},
       {key: 'F7', label: 'Crédito'},
       {key: 'F8', label: 'Débito'},
@@ -73,6 +74,14 @@
             <span class="item-price">R$ {{ product.price | number:'1.2-2' }}</span>
           </div>
         </div>
+      </div>
+
+      <div class="pre-sale-chip" *ngIf="preSale" role="status">
+        <mat-icon>confirmation_number</mat-icon>
+        <span>Comanda <strong>#{{ preSale.number }}</strong><ng-container *ngIf="preSale.attendantName"> · {{ preSale.attendantName }}</ng-container><ng-container *ngIf="preSale.notes"> · {{ preSale.notes }}</ng-container></span>
+        <button type="button" class="pre-sale-detach" aria-label="Tirar comanda do caixa" (click)="detachPreSale()">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
 
       <app-cart-table
@@ -160,6 +169,29 @@
     <mat-card-actions align="end">
       <button mat-stroked-button (click)="closeQuantityModal()">Cancelar</button>
       <button mat-flat-button color="primary" (click)="confirmQuantity()">Confirmar</button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<div class="modal-overlay" *ngIf="showPreSaleModal" (click)="closePreSaleModal()">
+  <mat-card class="modal-content modal-sm" (click)="$event.stopPropagation()" appearance="outlined">
+    <div class="modal-header">
+      <mat-icon class="modal-header-icon">confirmation_number</mat-icon>
+      <h3>Buscar comanda</h3>
+    </div>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Número da comanda</mat-label>
+        <input #preSaleInput matInput type="number" min="1" inputmode="numeric" [(ngModel)]="preSaleNumber"
+               (keydown.enter)="loadPreSale()" />
+      </mat-form-field>
+      <p class="pre-sale-error" *ngIf="preSaleError" role="alert">{{ preSaleError }}</p>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-stroked-button (click)="closePreSaleModal()">Cancelar</button>
+      <button mat-flat-button color="primary" (click)="loadPreSale()" [disabled]="preSaleLoading">
+        {{ preSaleLoading ? 'Buscando...' : 'Carregar' }}
+      </button>
     </mat-card-actions>
   </mat-card>
 </div>

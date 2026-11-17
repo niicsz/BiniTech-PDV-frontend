@@ -51,6 +51,10 @@ import { BillingService } from './billing.service';
               <mat-icon>storefront</mat-icon>
               <span>Frente de Caixa</span>
             </a>
+            <a routerLink="/comandas" routerLinkActive="active-link" class="nav-item">
+              <mat-icon>confirmation_number</mat-icon>
+              <span>Comandas</span>
+            </a>
             <a routerLink="/products" routerLinkActive="active-link" class="nav-item">
               <mat-icon>inventory_2</mat-icon>
               <span>Produtos</span>
