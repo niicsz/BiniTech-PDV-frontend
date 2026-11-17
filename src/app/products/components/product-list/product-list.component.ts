@@ -135,8 +135,7 @@ export class ProductListComponent implements OnInit {
   get filteredProducts(): ProductDTO[] {
     const cache = this.filterCache;
     if (
-      cache &&
-      cache.products === this.products &&
+      cache?.products === this.products &&
       cache.category === this.selectedCategory &&
       cache.term === this.searchTerm
     ) {
