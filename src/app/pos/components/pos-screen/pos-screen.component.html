@@ -76,13 +76,13 @@
         </div>
       </div>
 
-      <div class="pre-sale-chip" *ngIf="preSale" role="status">
+      <output class="pre-sale-chip" *ngIf="preSale">
         <mat-icon>confirmation_number</mat-icon>
         <span>Comanda <strong>#{{ preSale.number }}</strong><ng-container *ngIf="preSale.attendantName"> · {{ preSale.attendantName }}</ng-container><ng-container *ngIf="preSale.notes"> · {{ preSale.notes }}</ng-container></span>
         <button type="button" class="pre-sale-detach" aria-label="Tirar comanda do caixa" (click)="detachPreSale()">
           <mat-icon>close</mat-icon>
         </button>
-      </div>
+      </output>
 
       <app-cart-table
         [items]="cart"
@@ -173,7 +173,7 @@
   </mat-card>
 </div>
 
-<div class="modal-overlay" *ngIf="showPreSaleModal" (click)="closePreSaleModal()">
+<div class="modal-overlay" *ngIf="showPreSaleModal" (click)="closePreSaleModal()" (keydown.escape)="closePreSaleModal()">
   <mat-card class="modal-content modal-sm" (click)="$event.stopPropagation()" appearance="outlined">
     <div class="modal-header">
       <mat-icon class="modal-header-icon">confirmation_number</mat-icon>

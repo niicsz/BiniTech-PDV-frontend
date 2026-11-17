@@ -660,6 +660,17 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       this.preSaleError = `Produto inativo ou excluído na comanda: ${missing.map(m => m.description).join(', ')}.`;
       return;
     }
+    const overStock = preSale.items.filter(item => {
+      const product = this.allProducts.find(p => p.id === item.productId);
+      return item.quantity > (product?.stockQuantity ?? 0);
+    });
+    if (overStock.length > 0) {
+      const names = overStock.map(item => item.description).join(', ');
+      if (!window.confirm(`Estoque insuficiente na comanda #${preSale.number}: ${names}. Vender mesmo assim? A venda baixa só o que houver em estoque.`)) {
+        this.preSaleError = `Ajuste o estoque de ${names} em Produtos ou venda sem a comanda.`;
+        return;
+      }
+    }
     if (this.cart.length > 0 && !window.confirm(`Trocar o carrinho atual pelos itens da comanda #${preSale.number}?`)) {
       return;
     }
@@ -686,9 +697,7 @@ export class PosScreenComponent implements OnInit, OnDestroy {
       const line = lines.find(l => l.productId === item.productId);
       return line && Math.abs(line.unitPrice - item.unitPrice) > 0.004;
     });
-    if (this.hasOutOfStockItems) {
-      this.showStatus(`Comanda #${preSale.number} carregada. Há itens acima do estoque: a venda baixa o que houver.`, 'info');
-    } else if (priceChanged) {
+    if (priceChanged) {
       this.showStatus(`Comanda #${preSale.number} carregada com os preços atuais do cadastro.`, 'info');
     } else {
       this.showStatus(`Comanda #${preSale.number} carregada.`, 'success');

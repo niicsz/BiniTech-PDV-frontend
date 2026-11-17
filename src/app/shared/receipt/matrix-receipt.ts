@@ -338,8 +338,8 @@ export function buildPreSaleTicket(preSale: PreSaleDTO, options: ReceiptOptions 
   }
   lines.push(rule);
   for (const item of preSale.items) {
-    lines.push(...wrap(plain(item.description), width));
     lines.push(
+      ...wrap(plain(item.description), width),
       columns(`  ${item.quantity} x ${money(item.unitPrice)}`, money(item.subtotal), width),
     );
   }
